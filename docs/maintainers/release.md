@@ -4,7 +4,7 @@ Pre-releases are created automatically on every push to the `master` branch. A s
 of those pre-releases.
 
 1. Wait for the pre-release to be created and for its build workflows to finish.
-2. Confirm the pre-release contains the Windows installer, the portable archive, and the prebuilt Web UI asset.
+2. Confirm the pre-release contains the Windows installer (`Solstice.exe`) and the prebuilt Web UI asset.
 3. Edit the release notes.
 
    - Add any top-level release notes.
@@ -23,5 +23,5 @@ cmake -B build -G Ninja -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTS=OFF
 cmake --build build
 ```
 
-The installer and portable archive are produced in `build/cpack_artifacts`. Attach them to the GitHub release manually
-when you build outside of CI.
+`cpack` writes the installer as `build/cpack_artifacts/Solstice.exe`, and `cpack -G ZIP` writes the portable archive
+next to it. Attach them to the GitHub release manually when you build outside of CI.

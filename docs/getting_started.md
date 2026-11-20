@@ -26,43 +26,35 @@ Binaries can be found in the [latest release][latest-release].
 
 #### Installer (recommended)
 
-> [!CAUTION]
-> The msi installer is preferred moving forward. Before using a different type of installer, you should manually
-> uninstall the previous installation.
+1. Download the installer:
 
-1. Download and install based on your architecture:
+   | Architecture          | Installer                                                                                                 |
+   |-----------------------|-----------------------------------------------------------------------------------------------------------|
+   | AMD64/x64 (Intel/AMD) | [Solstice.exe](https://github.com/paulwongkwan/Sunshine/releases/download/v2026.1120.165916/Solstice.exe) |
 
-   | Architecture          | Installer                                                                                                                                    |
-   |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-   | AMD64/x64 (Intel/AMD) | [Solstice-Windows-AMD64-installer.msi](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-AMD64-installer.msi) |
-   | ARM64                 | [Solstice-Windows-ARM64-installer.msi](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-ARM64-installer.msi) |
+   `Solstice.exe` is an AMD64 build. No ARM64 installer has been published, so ARM64 hosts build from source.
 
-> [!TIP]
-> Installer logs can be found in the following directory:
-> `%%TEMP%/Solstice/logs/install/`
+2. Run the installer. It installs to `%ProgramFiles%\Solstice`, adds a start menu shortcut, adds the firewall rules,
+   and installs the `SolsticeService` service, so Solstice keeps running while you are signed out of Windows.
 
 > [!CAUTION]
 > You should carefully select or unselect the options you want to install. Do not blindly install or
 > enable features.
 
 To uninstall, find Solstice in the list <a href="ms-settings:installed-apps">here</a> and select "Uninstall" from the
-overflow menu. Different versions of Windows may provide slightly different steps for uninstall.
+overflow menu, or run the uninstaller in `%ProgramFiles%\Solstice`. The uninstaller stops and removes the service, then
+asks whether to delete the installation directory, which also removes your configuration and cover images.
 
-#### Standalone (lite version)
+#### Portable (build from source)
 
-> [!WARNING]
-> By using this package instead of the installer, performance will be reduced. This package is not
-> recommended for most users. No support will be provided!
+The releases do not include a portable archive yet. A local build produces the same files: run `cpack -G ZIP` after
+building and extract `Solstice.zip` to a folder of your choice.
 
-1. Download and extract based on your architecture:
+The archive contains the `scripts` directory that the installer runs, so the firewall rules and the service can also be
+set up by hand:
 
-   | Architecture          | Installer                                                                                                                          |
-   |-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
-   | AMD64/x64 (Intel/AMD) | [Solstice-Windows-AMD64-lite.zip](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-AMD64-lite.zip) |
-   | ARM64                 | [Solstice-Windows-ARM64-lite.zip](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-ARM64-lite.zip)  |
-
-2. Open command prompt as administrator
-3. Firewall rules
+1. Open command prompt as administrator
+2. Firewall rules
 
    Install:
    ```bash
@@ -76,7 +68,7 @@ overflow menu. Different versions of Windows may provide slightly different step
    scripts/delete-firewall-rule.bat
    ```
 
-4. Windows service
+3. Windows service
 
    Install:
    ```bash
@@ -239,4 +231,4 @@ Guides are available [here](guides.md).
 Tutorials and Guides are community generated. Want to contribute? Reach out to us on our discord server.}
 
 
-[latest-release]: https://github.com/paulwongkwan/Sunshine/releases/latest
+[latest-release]: https://github.com/paulwongkwan/Sunshine/releases

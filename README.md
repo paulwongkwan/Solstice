@@ -44,16 +44,19 @@ Core i5, and wired Ethernet on both ends. These recommendations are a work in pr
 them alone.
 
 > [!NOTE]
-> Virtual gamepads require the ViGEmBus driver. The installer offers to download and install it; without the driver,
-> keyboard, mouse, touch, and pen input still work.
+> Virtual gamepads require the [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) driver, which the
+> installer does not bundle. Without it, keyboard, mouse, touch, and pen input still work.
 
 ## Install
 
-1. Download the latest installer or portable archive from the
-   [releases page](https://github.com/paulwongkwan/Sunshine/releases/latest).
-2. Run the installer, or extract the portable archive to a folder of your choice.
-3. Start Solstice. The installed build runs as a service so it keeps streaming after you sign out of Windows.
-4. Open <https://localhost:47990> and create your Web UI credentials on first launch.
+1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Sunshine/releases/download/v2026.1120.165916/Solstice.exe)
+   from the [releases page](https://github.com/paulwongkwan/Sunshine/releases).
+2. Run the installer. It installs to `%ProgramFiles%\Solstice`, adds the firewall rules, and registers
+   `SolsticeService`, so Solstice keeps streaming after you sign out of Windows.
+3. Open <https://localhost:47990> and create your Web UI credentials on first launch.
+
+The published installer is an AMD64 build; there is no ARM64 installer yet, so ARM64 hosts build from source. The
+releases also do not include the portable archive, which `cpack -G ZIP` produces from a local build.
 
 ## Pair a client
 
@@ -99,8 +102,9 @@ cmake -B cmake-build-release -G Ninja -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build cmake-build-release
 ```
 
-The resulting binaries are `cmake-build-release/solstice.exe` and `cmake-build-release/tools/solsticesvc.exe`. The
-Windows installer and portable archive are produced by CPack:
+The resulting binaries are `cmake-build-release/solstice.exe` and `cmake-build-release/tools/solsticesvc.exe`. CPack
+produces the NSIS installer `Solstice.exe`; add `-G ZIP` for the portable archive, or `-G WIX` for an MSI (the MSI needs
+the WiX toolset):
 
 ```bash
 cpack --config cmake-build-release/CPackConfig.cmake
