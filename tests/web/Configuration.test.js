@@ -227,10 +227,10 @@ describe('gamepad input configuration', () => {
     expect(wrapper.find('#mouse').exists()).toBe(true)
   })
 
-  it('limits Windows ViGEmBus to Xbox 360 and DualShock 4', async () => {
+  it('limits Windows PadBus to Xbox 360 and DualShock 4', async () => {
     const wrapper = mountInputs('windows', 'virtualhid', 'xone')
 
-    await wrapper.get('#gamepad_driver').setValue('vigembus')
+    await wrapper.get('#gamepad_driver').setValue('padbus')
 
     expect(wrapper.get('#gamepad').findAll('option').map(option => option.attributes('value'))).toEqual([
       'auto', 'x360', 'ds4',

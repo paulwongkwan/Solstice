@@ -71,7 +71,7 @@
         </div>
       </div>
     </div>
-    <!-- ViGEmBus virtual gamepad driver -->
+    <!-- PadBus virtual gamepad driver -->
     <div class="card my-4 virtual-gamepad-card">
       <div class="card-body">
         <header class="virtual-gamepad-hero">
@@ -79,8 +79,8 @@
             <gamepad-2 :size="28"></gamepad-2>
           </div>
           <div>
-            <h2 id="vigembus" class="mb-1">{{ $t('troubleshooting.virtual_gamepad') }}</h2>
-            <p class="mb-0">{{ $t('troubleshooting.virtual_gamepad_vigembus_desc') }}</p>
+            <h2 id="padbus" class="mb-1">{{ $t('troubleshooting.virtual_gamepad') }}</h2>
+            <p class="mb-0">{{ $t('troubleshooting.virtual_gamepad_padbus_desc') }}</p>
           </div>
         </header>
 
@@ -112,22 +112,22 @@
                 </tr>
               </thead>
               <tbody>
-                <tr id="vigembus">
-                  <th scope="row">{{ $t('troubleshooting.vigembus_driver') }}</th>
-                  <td>{{ driverVersion(vigembus) }}</td>
-                  <td>{{ vigembus.supported_versions }}</td>
+                <tr id="padbus">
+                  <th scope="row">{{ $t('troubleshooting.padbus_driver') }}</th>
+                  <td>{{ driverVersion(padbus) }}</td>
+                  <td>{{ padbus.supported_versions }}</td>
                   <td>
-                    <span class="status-icon driver-status-icon" :class="driverStatusClass(vigembus)"
-                          :title="driverStatusText(vigembus)">
-                      <alert-circle v-if="!vigembus.installed" :size="20" aria-hidden="true"></alert-circle>
-                      <check-circle v-else-if="vigembus.version_compatible" :size="20" aria-hidden="true"></check-circle>
+                    <span class="status-icon driver-status-icon" :class="driverStatusClass(padbus)"
+                          :title="driverStatusText(padbus)">
+                      <alert-circle v-if="!padbus.installed" :size="20" aria-hidden="true"></alert-circle>
+                      <check-circle v-else-if="padbus.version_compatible" :size="20" aria-hidden="true"></check-circle>
                       <x-circle v-else :size="20" aria-hidden="true"></x-circle>
-                      <span class="visually-hidden">{{ driverStatusText(vigembus) }}</span>
+                      <span class="visually-hidden">{{ driverStatusText(padbus) }}</span>
                     </span>
                   </td>
                   <td class="driver-download-column">
                     <a class="btn btn-outline-primary driver-download-button"
-                       href="https://github.com/nefarius/ViGEmBus/releases/latest"
+                       href="https://github.com/paulwongkwan/padbus/releases/latest"
                        target="_blank"
                        rel="noopener noreferrer">
                       <download :size="17"></download>
@@ -393,7 +393,7 @@
           platform: "",
           unpairAllPressed: false,
           unpairAllStatus: null,
-          vigembus: {
+          padbus: {
             installed: false,
             version: '',
             version_compatible: false,
@@ -744,13 +744,13 @@
           fetch("/api/virtual-input/status")
             .then((r) => r.json())
             .then((r) => {
-              const vigembus = r.vigembus || {};
-              this.vigembus = {
-                installed: vigembus.installed || false,
-                version: vigembus.version || '',
-                version_compatible: vigembus.version_compatible || false,
-                minimum_version: vigembus.minimum_version || '',
-                supported_versions: vigembus.supported_versions || '',
+              const padbus = r.padbus || {};
+              this.padbus = {
+                installed: padbus.installed || false,
+                version: padbus.version || '',
+                version_compatible: padbus.version_compatible || false,
+                minimum_version: padbus.minimum_version || '',
+                supported_versions: padbus.supported_versions || '',
               };
             })
             .catch((err) => {

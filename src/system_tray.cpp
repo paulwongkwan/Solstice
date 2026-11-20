@@ -104,11 +104,11 @@ namespace system_tray {
     }
 
     /**
-     * @brief Access storage for the ViGEmBus compatibility notification.
+     * @brief Access storage for the PadBus compatibility notification.
      *
      * @return Persistent string storage backing the tray notification pointer.
      */
-    std::string &vigembus_driver_notification_text_storage() {
+    std::string &padbus_driver_notification_text_storage() {
       static std::string notification_text;
       return notification_text;
     }
@@ -220,14 +220,14 @@ namespace system_tray {
   }
 
   /**
-   * @brief Show a startup notification when the installed ViGEmBus release is unsupported.
+   * @brief Show a startup notification when the installed PadBus release is unsupported.
    *
-   * @param installed Whether ViGEmBus is installed.
-   * @param version Installed ViGEmBus version.
+   * @param installed Whether PadBus is installed.
+   * @param version Installed PadBus version.
    * @param version_compatible Whether Solstice supports the installed version.
    * @param supported_versions User-visible supported version range.
    */
-  void update_tray_vigembus_driver(
+  void update_tray_padbus_driver(
     const bool installed,
     const std::string_view version,
     const bool version_compatible,
@@ -241,17 +241,17 @@ namespace system_tray {
     clear_tray_notification();
 
     const auto displayed_version = version.empty() ? "unknown" : std::format("v{}", version);
-    auto &notification_text = vigembus_driver_notification_text_storage();
+    auto &notification_text = padbus_driver_notification_text_storage();
     notification_text = std::format(
-      "Installed ViGEmBus {} is not supported by this version of Solstice. Supported versions: {}. Restart Solstice after updating. Click for instructions.",
+      "Installed PadBus {} is not supported by this version of Solstice. Supported versions: {}. Restart Solstice after updating. Click for instructions.",
       displayed_version,
       supported_versions
     );
-    tray.notification_title = "Update ViGEmBus";
+    tray.notification_title = "Update PadBus";
     tray.notification_text = notification_text.c_str();
     tray.notification_icon = tray.allIconPaths[0];
     tray.notification_cb = []() {
-      launch_ui("/troubleshooting#vigembus");
+      launch_ui("/troubleshooting#padbus");
     };
 
     BOOST_LOG(warning) << notification_text;
@@ -261,11 +261,11 @@ namespace system_tray {
   }
 
   /**
-   * @brief Query the installed ViGEmBus version and prepare its startup notification.
+   * @brief Query the installed PadBus version and prepare its startup notification.
    */
-  void prepare_tray_vigembus_driver() {
-    const auto status = confighttp::get_vigembus_driver_status();
-    update_tray_vigembus_driver(
+  void prepare_tray_padbus_driver() {
+    const auto status = confighttp::get_padbus_driver_status();
+    update_tray_padbus_driver(
       status.value("installed", false),
       status.value("version", std::string {}),
       status.value("version_compatible", false),

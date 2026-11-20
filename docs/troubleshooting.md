@@ -95,11 +95,11 @@ resort suggestion.
 
 ### No gamepad detected
 Confirm **Enable Gamepad Input** is on under **Configuration > Input**. Solstice creates virtual gamepads through
-[ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest); install version 1.17 or newer and restart your computer.
-The Troubleshooting page shows the installed ViGEmBus version and whether Solstice supports it. Reconnect the Moonlight
+[PadBus](https://github.com/paulwongkwan/padbus/releases/latest); install the latest release and restart your computer.
+The Troubleshooting page shows the installed PadBus version and whether Solstice supports it. Reconnect the Moonlight
 session after choosing a different emulated gamepad profile.
 
-![ViGEmBus driver status on the Troubleshooting page, with the installer button](images/vigembus-installer.png)
+![PadBus driver status on the Troubleshooting page, with the installer button](images/padbus-installer.png)
 
 ### Games do not detect keyboard input
 Solstice sends keyboard input with the Windows `SendInput` API. Games that read keyboard state only through Raw Input

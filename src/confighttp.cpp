@@ -133,7 +133,7 @@ namespace confighttp {
    */
   constexpr auto SESSION_LIFETIME = std::chrono::hours(12);
 
-  constexpr auto VIGEMBUS_MINIMUM_VERSION = "1.17.0.0"sv;  ///< Minimum supported ViGEmBus fallback driver version.  // NOSONAR(cpp:S1313): not an IP address
+  constexpr auto PADBUS_MINIMUM_VERSION = "1.16.0.0"sv;  ///< Minimum supported PadBus fallback driver version.  // NOSONAR(cpp:S1313): not an IP address
 
   /**
    * @brief Read one cookie value from the request headers.
@@ -1957,25 +1957,25 @@ namespace confighttp {
   }
 
   /**
-   * @brief Build ViGEmBus fallback driver version and installation status.
+   * @brief Build PadBus fallback driver version and installation status.
    *
-   * @return ViGEmBus fallback driver status JSON.
+   * @return PadBus fallback driver status JSON.
    */
-  nlohmann::json get_vigembus_driver_status() {
+  nlohmann::json get_padbus_driver_status() {
   std::string version_str;
 
-    // Check if ViGEmBus driver exists
+    // Check if PadBus driver exists
     std::string system_root;
     if (!lizardbyte::common::get_env("SystemRoot", system_root)) {
       system_root = "C:\\Windows";
     }
-    const std::filesystem::path driver_path = std::filesystem::path(system_root) / "System32" / "drivers" / "ViGEmBus.sys";
+    const std::filesystem::path driver_path = std::filesystem::path(system_root) / "System32" / "drivers" / "PadBus.sys";
     const auto installed = std::filesystem::exists(driver_path);
     if (installed) {
       platf::getFileVersionInfo(driver_path, version_str);
     }
 
-  auto output_tree = build_driver_status(installed, version_str, VIGEMBUS_MINIMUM_VERSION);
+  auto output_tree = build_driver_status(installed, version_str, PADBUS_MINIMUM_VERSION);
 
   return output_tree;
   }
@@ -1995,7 +1995,7 @@ namespace confighttp {
     print_req(request);
 
     nlohmann::json output_tree;
-  output_tree["vigembus"] = get_vigembus_driver_status();
+  output_tree["padbus"] = get_padbus_driver_status();
     send_response(response, output_tree);
   }
 

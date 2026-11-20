@@ -150,11 +150,11 @@ namespace confighttp {
   nlohmann::json build_driver_status(bool installed, const std::string &version, std::string_view minimum_version);
 
   /**
-   * @brief Build ViGEmBus fallback driver version and installation status.
+   * @brief Build PadBus fallback driver version and installation status.
    *
-   * @return ViGEmBus fallback driver status JSON.
+   * @return PadBus fallback driver status JSON.
    */
-  nlohmann::json get_vigembus_driver_status();
+  nlohmann::json get_padbus_driver_status();
 
   void getVirtualInputStatus(const resp_https_t &response, const req_https_t &request);
 

@@ -19,7 +19,7 @@ async function mountHome(platform, { developmentVersion = true, licensed = true,
       return {
         json: async () => ({
           virtualhid: { installed: true, development_version: developmentVersion, version_compatible: true },
-          vigembus: { installed: false, version_compatible: false },
+          padbus: { installed: false, version_compatible: false },
         }),
       }
     }

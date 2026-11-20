@@ -94,16 +94,16 @@ namespace system_tray {
   void update_tray_require_pin();
 
   /**
-   * @brief Show an update notification when the installed ViGEmBus release is unsupported.
+   * @brief Show an update notification when the installed PadBus release is unsupported.
    *
-   * Existing notifications are preserved when ViGEmBus is absent or its version is supported.
+   * Existing notifications are preserved when PadBus is absent or its version is supported.
    *
-   * @param installed Whether ViGEmBus is installed.
-   * @param version Installed ViGEmBus version.
+   * @param installed Whether PadBus is installed.
+   * @param version Installed PadBus version.
    * @param version_compatible Whether Solstice supports the installed version.
    * @param supported_versions User-visible supported version range.
    */
-  void update_tray_vigembus_driver(
+  void update_tray_padbus_driver(
     bool installed,
     std::string_view version,
     bool version_compatible,
@@ -111,9 +111,9 @@ namespace system_tray {
   );
 
   /**
-   * @brief Query the ViGEmBus version and prepare its startup notification.
+   * @brief Query the PadBus version and prepare its startup notification.
    */
-  void prepare_tray_vigembus_driver();
+  void prepare_tray_padbus_driver();
 
   /**
    * @brief Initializes and runs the system tray in a separate thread.
