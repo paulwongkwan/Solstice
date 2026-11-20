@@ -93,16 +93,15 @@ MSYS2 Node.js package is not supported because its shared runtime cannot load th
 Ensure [git](https://git-scm.com) is installed on your system, then clone the repository using the following command:
 
 ```bash
-git clone https://github.com/paulwongkwan/Sunshine.git --recurse-submodules
+git clone https://github.com/paulwongkwan/Sunshine.git Solstice --recurse-submodules
 cd Solstice
-mkdir build
 ```
 
 ### Build
 
 ```bash
-cmake -B build -G Ninja -S .
-ninja -C build
+cmake -B cmake-build-release -G Ninja -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build cmake-build-release
 ```
 
 > [!TIP]
@@ -112,9 +111,9 @@ ninja -C build
 ### Package
 
 ```bash
-cpack -G NSIS --config ./build/CPackConfig.cmake
-cpack -G WIX --config ./build/CPackConfig.cmake
-cpack -G ZIP --config ./build/CPackConfig.cmake
+cpack --config cmake-build-release/CPackConfig.cmake
+cpack -G ZIP --config cmake-build-release/CPackConfig.cmake
+cpack -G WIX --config cmake-build-release/CPackConfig.cmake
 ```
 
 

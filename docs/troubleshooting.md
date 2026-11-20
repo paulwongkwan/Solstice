@@ -5,20 +5,9 @@
 ### Forgotten Credentials
 If you forgot your credentials to the web UI, try this.
 
-@tabs_grouped{linux-package|:|
-  @tab{General |:| ```bash
-    solstice --creds {new-username} {new-password}
-    ```
-  }
-  @tab{AppImage |:| ```bash
-    ./sunshine.AppImage --creds {new-username} {new-password}
-    ```
-  }
-  @tab{Flatpak |:| ```bash
-    flatpak run --command=solstice dev.solstice.app.Solstice --creds {new-username} {new-password}
-    ```
-  }
-}
+```bash
+solstice --creds {new-username} {new-password}
+```
 
 > [!TIP]
 > Remember to replace `{new-username}` and `{new-password}` with your new credentials.
@@ -40,8 +29,7 @@ One trick might be to change Steam settings and check or uncheck the configurati
 controllers and leave only support for Generic controllers.
 
 Also, if you have many controllers already directly connected to the host, it might help to disable them so that the
-Solstice-provided controller (connected to the guest) is the "first" one. In Linux this can be achieved on USB
-devices by finding the device in `/sys/bus/usb/devices/` and writing `0` to the `authorized` file.
+Solstice-provided controller (connected to the guest) is the "first" one.
 
 ### Network performance test
 
@@ -92,32 +80,6 @@ instead of 2.5 or 100 Mbps instead of 1 Gbps. A technically more advanced
 solution would be to configure traffic shaping rules at the OS level, so that
 only Solstice's traffic is slowed down.
 
-Such a solution on Linux could look like that:
-
-```bash
-# 1) Remove existing qdisc (pfifo_fast)
-sudo tc qdisc del dev <NIC> root
-
-# 2) Add HTB root qdisc with default class 1:1
-sudo tc qdisc add dev <NIC> root handle 1: htb default 1
-
-# 3) Create class 1:1 for full 10 Gbit/s (all other traffic)
-sudo tc class add dev <NIC> parent 1: classid 1:1 htb \
-    rate 10000mbit ceil 10000mbit burst 32k
-
-# 4) Create class 1:10 for Solstice game stream at 1 Gbit/s
-sudo tc class add dev <NIC> parent 1: classid 1:10 htb \
-    rate 1000mbit ceil 1000mbit burst 32k
-
-# 5) Filter UDP source port 47998 into class 1:10
-sudo tc filter add dev <NIC> protocol ip parent 1: prio 1 \
-    u32 match ip protocol 17 0xff \
-    match ip sport 47998 0xffff flowid 1:10
-```
-
-In that way only the Solstice traffic is limited by 1 Gbit. This is not persistent on reboots.
-If you use a different port for the game stream, you need to adjust the last command.
-
 Solstice versions > 0.23.1 include improved networking code that should
 alleviate or even solve this issue (without reducing the NIC speed).
 
@@ -126,7 +88,7 @@ Although unlikely, some guests might work better with a lower
 [MTU](https://en.wikipedia.org/wiki/Maximum_transmission_unit) from the host.
 For example, an LG TV was found to have 30–60% packet loss when the host had MTU
 set to 1500 and 1472, but 0% packet loss with a MTU of 1428 set in the network card
-serving the stream (a Linux PC). It's unclear how that helped precisely, so it's a last
+serving the stream. It's unclear how that helped precisely, so it's a last
 resort suggestion.
 
 ## Windows
@@ -136,6 +98,8 @@ Confirm **Enable Gamepad Input** is on under **Configuration > Input**. Solstice
 [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest); install version 1.17 or newer and restart your computer.
 The Troubleshooting page shows the installed ViGEmBus version and whether Solstice supports it. Reconnect the Moonlight
 session after choosing a different emulated gamepad profile.
+
+![ViGEmBus driver status on the Troubleshooting page, with the installer button](images/vigembus-installer.png)
 
 ### Games do not detect keyboard input
 Solstice sends keyboard input with the Windows `SendInput` API. Games that read keyboard state only through Raw Input

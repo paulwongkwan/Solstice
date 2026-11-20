@@ -19,8 +19,8 @@ network.
   encoder as a fallback.
 - **Desktop capture.** DXGI Desktop Duplication in both portable and service mode, Windows.Graphics.Capture in portable
   mode.
-- **Virtual gamepads.** Xbox 360, Xbox One, Xbox Series, DualShock 4, DualSense, Switch Pro, and a generic gamepad through
-  the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver.
+- **Virtual gamepads.** Xbox 360 and DualShock 4 emulation, either fixed or selected automatically from the client's
+  controller, through the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver.
 - **Web UI with sign-in.** Pair clients, change settings, and read logs from `https://localhost:47990`, protected by a
   login screen with an optional "remember me" session.
 - **Sunshine-compatible.** Existing Sunshine configuration is picked up automatically, and the client, application, and

@@ -24,8 +24,8 @@ Read our contribution guide in our organization level
 
 @tabs{
   @tab{CMake |:| ```bash
-    cmake -B build -G Ninja -S . --target web-ui
-    ninja -C build web-ui
+    cmake -B cmake-build-release -G Ninja -S . --target web-ui
+    ninja -C cmake-build-release web-ui
     ```}
   @tab{Manual |:| ```bash
     npm run dev
@@ -53,7 +53,7 @@ If you are interested, please reach out to us on our Discord server.}
 Translations live in `src_assets/common/assets/web/public/assets/locale` and are updated directly in this repository.
 
 ##### Translation Basics
-* The brand names *Solstice* and *Solstice* should never be translated.
+* The brand names *Solstice* and *Sunshine* should never be translated.
 * Other brand names should never be translated. Examples include *AMD*, *Intel*, and *NVIDIA*.
 
 ##### Adding or Updating a Language
@@ -80,10 +80,9 @@ The following is a simple example of how to use it.
   > to sort the keys.
 
   > [!IMPORTANT]
-  > Due to the integration with Crowdin, it is important to only add strings to the *en.json* file,
-  > and to not modify any other language files. After the PR is merged, the translations can take place
-  > on [CrowdIn][crowdin-url]. Once the translations are complete, a PR will be made
-  > to merge the translations into Solstice.
+  > Add new strings only to the *en.json* file, and do not modify any other language file in the same pull
+  > request. Every language falls back to English for keys it does not define yet, so translations for other
+  > languages are contributed as separate pull requests.
 
 * Use the string in the Vue component.
   ```html
@@ -100,59 +99,9 @@ The following is a simple example of how to use it.
 
 ##### C++
 
-There should be minimal cases where strings need to be extracted from C++ source code; however it may be necessary in
-some situations. For example the system tray icon could be localized as it is user interfacing.
-
-* Wrap the string to be extracted in a function as shown.
-  ```cpp
-  #include <boost/locale.hpp>
-  #include <string>
-
-  std::string msg = boost::locale::translate("Hello world!");
-  ```
-
-> [!TIP]
-> More examples can be found in the documentation for
-> [boost locale](https://www.boost.org/doc/libs/1_70_0/libs/locale/doc/html/messages_formatting.html).
-
-> [!WARNING]
-> The below is for information only. Contributors should never include manually updated template files, or
-> manually compiled language files in Pull Requests.
-
-Strings are automatically extracted from the code to the `locale/sunshine.po` template file. The generated file is
-used by CrowdIn to generate language specific template files. The file is generated using the
-`.github/workflows/localize.yml` workflow and is run on any push event into the `master` branch. Jobs are only run if
-any of the following paths are modified.
-
-```yaml
-- 'src/**'
-```
-
-When testing locally, it may be desirable to manually extract, initialize, update, and compile strings. Python and
-uv are required for this, along with the Python dependencies in the Solstice `pyproject.toml`. From the repository
-root, install these with the following command.
-
-```bash
-uv sync --locked
-```
-
-Additionally, [xgettext](https://www.gnu.org/software/gettext) must be installed.
-
-* Extract, initialize, and update
-  ```bash
-  uv run --locked --no-sync lb-localize --root-dir . --extract --init --update
-  ```
-
-* Compile
-  ```bash
-  uv run --locked --no-sync lb-localize --root-dir . --compile
-  ```
-
-> [!IMPORTANT]
-> Due to the integration with CrowdIn, it is important to not include any extracted or compiled files in
-> Pull Requests. The files are automatically generated and updated by the workflow. Once the PR is merged, the
-> translations can take place on [CrowdIn][crowdin-url]. Once the translations are
-> complete, a PR will be made to merge the translations into Solstice.
+User-facing text in the C++ sources is English only. This repository has no message catalog and no extraction
+workflow, so `boost::locale::translate` and gettext tooling are not used. Only the Web UI strings described above
+are translated.
 
 ### Testing
 
@@ -177,13 +126,13 @@ can be disabled by setting the `BUILD_TESTS` CMake option to `OFF`.
 To run the tests, execute the following command.
 
 ```bash
-./build/tests/test_sunshine
+cmake-build-release/tests/test_sunshine
 ```
 
 To see all available options, run the tests with the `--help` flag.
 
 ```bash
-./build/tests/test_sunshine --help
+cmake-build-release/tests/test_sunshine --help
 ```
 
 > [!TIP]

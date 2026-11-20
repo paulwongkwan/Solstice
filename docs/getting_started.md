@@ -88,8 +88,8 @@ After installation, some initial setup is required.
 
 ### Windows
 Solstice creates virtual gamepads through [ViGEmBus](https://github.com/nefarius/ViGEmBus). Install the driver, then
-enable gamepad input in the Web UI under **Configuration > Input**. Solstice supports the Xbox 360 and DualShock 4
-emulation profiles.
+enable gamepad input in the Web UI under **Configuration > Input**. ViGEmBus supports three profiles: **auto** (the
+default, which picks Xbox 360 or DualShock 4 from the controller the client reports), **x360**, and **ds4**.
 
 Keyboard and mouse input is injected with the Windows `SendInput` API, and touch and pen input uses the Windows
 pointer injection APIs. No additional driver is required for those devices.
@@ -157,17 +157,9 @@ by default. You may replace *localhost* with your internal ip address.
 ### Arguments
 To get a list of available arguments, run the following command.
 
-@tabs_grouped{linux-package|:|
-   @tab{ General |:| ```bash
-      solstice --help
-      ```}
-   @tab{ AppImage |:| ```bash
-      ./Solstice_{version}_{arch}.AppImage --help
-      ```}
-   @tab{ Flatpak |:| ```bash
-      flatpak run --command=solstice dev.solstice.app.Solstice --help
-      ```}
-}
+```bash
+solstice --help
+```
 
 ### Shortcuts
 All shortcuts start with `Ctrl+Alt+Shift`, just like Moonlight.
