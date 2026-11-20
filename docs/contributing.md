@@ -1,6 +1,6 @@
 # Contributing
 Read our contribution guide in our organization level
-[docs](https://github.com/paulwongkwan/Sunshine).
+[docs](https://github.com/paulwongkwan/Solstice).
 
 ## Recommended Tools
 

@@ -3,7 +3,7 @@
 The recommended method for running Solstice is to use the [binaries](#binaries) included in the
 [latest release][latest-release], unless otherwise specified.
 
-[Pre-releases](https://github.com/paulwongkwan/Sunshine/releases) are also available. These should be considered beta,
+[Pre-releases](https://github.com/paulwongkwan/Solstice/releases) are also available. These should be considered beta,
 and release artifacts may be missing when merging changes on a faster cadence.
 
 ## Binaries
@@ -30,7 +30,7 @@ Binaries can be found in the [latest release][latest-release].
 
    | Architecture          | Installer                                                                                                 |
    |-----------------------|-----------------------------------------------------------------------------------------------------------|
-   | AMD64/x64 (Intel/AMD) | [Solstice.exe](https://github.com/paulwongkwan/Sunshine/releases/download/v2026.1120.165916/Solstice.exe) |
+   | AMD64/x64 (Intel/AMD) | [Solstice.exe](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.165916/Solstice.exe) |
 
    `Solstice.exe` is an AMD64 build. No ARM64 installer has been published, so ARM64 hosts build from source.
 
@@ -223,4 +223,4 @@ Guides are available [here](guides.md).
 Tutorials and Guides are community generated. Want to contribute? Reach out to us on our discord server.}
 
 
-[latest-release]: https://github.com/paulwongkwan/Sunshine/releases
+[latest-release]: https://github.com/paulwongkwan/Solstice/releases

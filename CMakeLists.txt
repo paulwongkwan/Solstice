@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(Solstice VERSION 0.0.0
         DESCRIPTION "Self-hosted game stream host for Moonlight"
-        HOMEPAGE_URL "https://github.com/paulwongkwan/Sunshine")
+        HOMEPAGE_URL "https://github.com/paulwongkwan/Solstice")
 
 if(NOT WIN32)
     message(FATAL_ERROR

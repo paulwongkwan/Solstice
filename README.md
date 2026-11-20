@@ -7,9 +7,9 @@ desktop or a single application, encodes it in hardware, and streams it with low
 phone, tablet, TV, or another computer. A web UI handles pairing, configuration, and logging from any browser on your
 network.
 
-[![GitHub stars](https://img.shields.io/github/stars/paulwongkwan/Sunshine.svg?logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Sunshine)
-[![Latest release](https://img.shields.io/github/v/release/paulwongkwan/Sunshine.svg?style=for-the-badge&logo=github)](https://github.com/paulwongkwan/Sunshine/releases/latest)
-[![CI build](https://img.shields.io/github/actions/workflow/status/paulwongkwan/Sunshine/ci.yml.svg?branch=master&label=CI%20build&logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Sunshine/actions/workflows/ci.yml?query=branch%3Amaster)
+[![GitHub stars](https://img.shields.io/github/stars/paulwongkwan/Solstice.svg?logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Solstice)
+[![Latest release](https://img.shields.io/github/v/release/paulwongkwan/Solstice.svg?style=for-the-badge&logo=github)](https://github.com/paulwongkwan/Solstice/releases/latest)
+[![CI build](https://img.shields.io/github/actions/workflow/status/paulwongkwan/Solstice/ci.yml.svg?branch=master&label=CI%20build&logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Solstice/actions/workflows/ci.yml?query=branch%3Amaster)
 
 ## Highlights
 
@@ -49,8 +49,8 @@ them alone.
 
 ## Install
 
-1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Sunshine/releases/download/v2026.1120.165916/Solstice.exe)
-   from the [releases page](https://github.com/paulwongkwan/Sunshine/releases).
+1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.165916/Solstice.exe)
+   from the [releases page](https://github.com/paulwongkwan/Solstice/releases).
 2. Run the installer. It installs to `%ProgramFiles%\Solstice`, adds the firewall rules, and registers
    `SolsticeService`, so Solstice keeps streaming after you sign out of Windows.
 3. Open <https://localhost:47990> and create your Web UI credentials on first launch.

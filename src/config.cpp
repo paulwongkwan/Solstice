@@ -1594,7 +1594,7 @@ namespace config {
       }
     }
     if (csrf_invalid_config) {
-      BOOST_LOG(warning) << "Please refer to: https://github.com/paulwongkwan/Sunshine/tree/master/docs"sv;
+      BOOST_LOG(warning) << "Please refer to: https://github.com/paulwongkwan/Solstice/tree/master/docs"sv;
     }
 
     int to = -1;

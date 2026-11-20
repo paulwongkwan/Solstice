@@ -343,7 +343,7 @@
           this.error = null;
 
           // Fetch the app directory for Solstice
-          const indexUrl = 'https://github.com/paulwongkwan/Sunshine/app-directory/sunshine.json';
+          const indexUrl = 'https://github.com/paulwongkwan/Solstice/app-directory/sunshine.json';
 
           const response = await fetch(indexUrl);
           if (!response.ok) {

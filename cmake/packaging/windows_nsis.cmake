@@ -60,12 +60,12 @@ set(CPACK_NSIS_DELETE_ICONS_EXTRA
 # Checking for previous installed versions
 set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL "ON")
 
-set(CPACK_NSIS_HELP_LINK "https://github.com/paulwongkwan/Sunshine/tree/master/docs")
+set(CPACK_NSIS_HELP_LINK "https://github.com/paulwongkwan/Solstice/tree/master/docs")
 set(CPACK_NSIS_URL_INFO_ABOUT "${CMAKE_PROJECT_HOMEPAGE_URL}")
 set(CPACK_NSIS_CONTACT "${CMAKE_PROJECT_HOMEPAGE_URL}/support")
 
 set(CPACK_NSIS_MENU_LINKS
-        "https://github.com/paulwongkwan/Sunshine/tree/master/docs" "Solstice documentation"
-        "https://github.com/paulwongkwan/Sunshine" "Solstice Web Site"
-        "https://github.com/paulwongkwan/Sunshine/issues" "Solstice Support")
+        "https://github.com/paulwongkwan/Solstice/tree/master/docs" "Solstice documentation"
+        "https://github.com/paulwongkwan/Solstice" "Solstice Web Site"
+        "https://github.com/paulwongkwan/Solstice/issues" "Solstice Support")
 set(CPACK_NSIS_MANIFEST_DPI_AWARE true)

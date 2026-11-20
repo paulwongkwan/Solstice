@@ -29,9 +29,9 @@ flatpak = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/paulwongkwan/Sunshine"
-Repository = "https://github.com/paulwongkwan/Sunshine"
-Issues = "https://github.com/paulwongkwan/Sunshine/issues"
+Homepage = "https://github.com/paulwongkwan/Solstice"
+Repository = "https://github.com/paulwongkwan/Solstice"
+Issues = "https://github.com/paulwongkwan/Solstice/issues"
 
 [tool.setuptools]
 py-modules = []

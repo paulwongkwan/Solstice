@@ -11,8 +11,8 @@ A collection of community guides, tools, and configurations for running Solstice
 
 ## Community
 
-- [Discussions](https://github.com/paulwongkwan/Sunshine/discussions) — ask questions and share setups.
-- [Issues](https://github.com/paulwongkwan/Sunshine/issues) — report bugs and request features.
+- [Discussions](https://github.com/paulwongkwan/Solstice/discussions) — ask questions and share setups.
+- [Issues](https://github.com/paulwongkwan/Solstice/issues) — report bugs and request features.
 
 Community content is maintained by its authors. Solstice maintainers review the links here but do not support
 third-party guides, applications, or configurations.

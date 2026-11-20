@@ -221,8 +221,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DSOLSTICE_ASSETS_DIR=assets \
             -DSOLSTICE_PUBLISHER_NAME="Solstice" \
-            -DSOLSTICE_PUBLISHER_WEBSITE="https://github.com/paulwongkwan/Sunshine" \
-            -DSOLSTICE_PUBLISHER_ISSUE_URL="https://github.com/paulwongkwan/Sunshine/issues"
+            -DSOLSTICE_PUBLISHER_WEBSITE="https://github.com/paulwongkwan/Solstice" \
+            -DSOLSTICE_PUBLISHER_ISSUE_URL="https://github.com/paulwongkwan/Solstice/issues"
           echo "::add-matcher::.github/matchers/gcc.json"
           ninja -C build
           echo "::remove-matcher owner=gcc::"

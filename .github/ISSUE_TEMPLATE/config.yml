@@ -6,14 +6,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Discussions
-    url: https://github.com/paulwongkwan/Sunshine/discussions
+    url: https://github.com/paulwongkwan/Solstice/discussions
     about: Community discussions
   - name: Questions
-    url: https://github.com/paulwongkwan/Sunshine/discussions
+    url: https://github.com/paulwongkwan/Solstice/discussions
     about: Ask questions
   - name: Feature Requests
-    url: https://github.com/paulwongkwan/Sunshine/discussions
+    url: https://github.com/paulwongkwan/Solstice/discussions
     about: Request new features
   - name: Support Center
-    url: https://github.com/paulwongkwan/Sunshine/issues
+    url: https://github.com/paulwongkwan/Solstice/issues
     about: Official Solstice support

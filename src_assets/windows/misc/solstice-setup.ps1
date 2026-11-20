@@ -15,7 +15,7 @@ param(
 )
 
 # Constants
-$DocsUrl = "https://github.com/paulwongkwan/Sunshine/tree/master/docs"
+$DocsUrl = "https://github.com/paulwongkwan/Solstice/tree/master/docs"
 
 # Set preference variables for output streams
 $InformationPreference = 'Continue'

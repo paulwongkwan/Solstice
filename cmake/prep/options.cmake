@@ -3,7 +3,7 @@ set(SOLSTICE_PUBLISHER_NAME "Third Party Publisher"
         CACHE STRING "The name of the publisher (not developer) of the application.")
 set(SOLSTICE_PUBLISHER_WEBSITE ""
         CACHE STRING "The URL of the publisher's website.")
-set(SOLSTICE_PUBLISHER_ISSUE_URL "https://github.com/paulwongkwan/Sunshine/issues"
+set(SOLSTICE_PUBLISHER_ISSUE_URL "https://github.com/paulwongkwan/Solstice/issues"
         CACHE STRING "The URL of the publisher's support site or issue tracker.
         If you provide a modified version of Solstice, we kindly request that you use your own url.")
 

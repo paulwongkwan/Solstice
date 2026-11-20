@@ -3,7 +3,7 @@
         <div class="card-body">
             <h2>{{ $t('resource_card.resources') }}</h2>
             <div class="d-flex flex-wrap gap-2 mt-4">
-                <a class="btn btn-success" href="https://github.com/paulwongkwan/Sunshine" target="_blank">
+                <a class="btn btn-success" href="https://github.com/paulwongkwan/Solstice" target="_blank">
                   <Globe :size="18" class="icon"></Globe>
                   {{ $t('resource_card.project_website') }}
                 </a>
@@ -11,11 +11,11 @@
                   <BookOpen :size="18" class="icon"></BookOpen>
                   {{ $t('resource_card.documentation') }}
                 </a>
-                <a class="btn btn-primary" href="https://github.com/paulwongkwan/Sunshine/discord" target="_blank">
+                <a class="btn btn-primary" href="https://github.com/paulwongkwan/Solstice/discord" target="_blank">
                   <SimpleIcon icon="Discord" :size="18" class="icon"></SimpleIcon>
                   Discord
                 </a>
-                <a class="btn btn-secondary" href="https://github.com/paulwongkwan/Sunshine/discussions" target="_blank">
+                <a class="btn btn-secondary" href="https://github.com/paulwongkwan/Solstice/discussions" target="_blank">
                   <SimpleIcon icon="GitHub" :size="18" class="icon"></SimpleIcon>
                   {{ $t('resource_card.github_discussions') }}
                 </a>
@@ -69,7 +69,7 @@ export default {
   computed: {
     documentationUrl() {
       const docsVersion = this.installedVersionNotStable ? 'master' : 'latest'
-      return `https://github.com/paulwongkwan/Sunshine/blob/${docsVersion}/docs/`
+      return `https://github.com/paulwongkwan/Solstice/blob/${docsVersion}/docs/`
     }
   }
 }

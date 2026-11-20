@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "description": "Prebuilt web UI assets for the Solstice game-stream host",
   "license": "GPL-3.0-only",
-  "homepage": "https://github.com/paulwongkwan/Sunshine",
+  "homepage": "https://github.com/paulwongkwan/Solstice",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/paulwongkwan/Sunshine.git"
+    "url": "git+https://github.com/paulwongkwan/Solstice.git"
   },
   "bugs": {
-    "url": "https://github.com/paulwongkwan/Sunshine/issues"
+    "url": "https://github.com/paulwongkwan/Solstice/issues"
   },
   "files": [
     "build/assets/web/"

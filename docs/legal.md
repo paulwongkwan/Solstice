@@ -5,7 +5,7 @@
 > any legal questions or concerns about using Solstice, we recommend consulting with a lawyer.
 
 Solstice is licensed under the GPL-3.0 license, which allows for free use and modification of the software.
-The full text of the license can be reviewed [here](https://github.com/paulwongkwan/Sunshine/blob/master/LICENSE).
+The full text of the license can be reviewed [here](https://github.com/paulwongkwan/Solstice/blob/master/LICENSE).
 
 ## Commercial Use
 Solstice can be used in commercial applications without any limitations. This means that businesses and organizations

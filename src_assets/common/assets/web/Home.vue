@@ -196,9 +196,9 @@
           console.error('Failed to fetch permission status:', e);
         }
         console.log("Version: ", this.version.version)
-        this.githubVersion = new SolsticeVersion(await fetch("https://api.github.com/repos/paulwongkwan/Sunshine/releases/latest").then((r) => r.json()), null);
+        this.githubVersion = new SolsticeVersion(await fetch("https://api.github.com/repos/paulwongkwan/Solstice/releases/latest").then((r) => r.json()), null);
         console.log("GitHub Version: ", this.githubVersion.version)
-        this.preReleaseVersion = new SolsticeVersion((await fetch("https://api.github.com/repos/paulwongkwan/Sunshine/releases").then((r) => r.json())).find(release => release.prerelease), null);
+        this.preReleaseVersion = new SolsticeVersion((await fetch("https://api.github.com/repos/paulwongkwan/Solstice/releases").then((r) => r.json())).find(release => release.prerelease), null);
         console.log("Pre-Release Version: ", this.preReleaseVersion.version)
 
         try {

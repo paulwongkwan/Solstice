@@ -718,7 +718,7 @@
       },
       documentationBaseUrl() {
         const docsVersion = this.installedVersionNotStable ? 'master' : 'latest'
-        return `https://github.com/paulwongkwan/Sunshine/blob/${docsVersion}/docs/`
+        return `https://github.com/paulwongkwan/Solstice/blob/${docsVersion}/docs/`
       },
       displayedApps() {
         let list = this.apps.map((app, index) => ({ app, index }));
@@ -785,7 +785,7 @@
           this.version = new SolsticeVersion(null, r.version);
         });
 
-      fetch("https://api.github.com/repos/paulwongkwan/Sunshine/releases/latest")
+      fetch("https://api.github.com/repos/paulwongkwan/Solstice/releases/latest")
         .then((r) => r.json())
         .then((r) => this.githubVersion = new SolsticeVersion(r, null))
         .catch((e) => console.error(e));
