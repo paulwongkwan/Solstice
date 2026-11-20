@@ -49,7 +49,7 @@ them alone.
 
 ## Install
 
-1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.165916/Solstice.exe)
+1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.194334/Solstice.exe)
    from the [releases page](https://github.com/paulwongkwan/Solstice/releases).
 2. Run the installer. It installs to `%ProgramFiles%\Solstice`, adds the firewall rules, and registers
    `SolsticeService`, so Solstice keeps streaming after you sign out of Windows.

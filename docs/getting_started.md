@@ -30,7 +30,7 @@ Binaries can be found in the [latest release][latest-release].
 
    | Architecture          | Installer                                                                                                 |
    |-----------------------|-----------------------------------------------------------------------------------------------------------|
-   | AMD64/x64 (Intel/AMD) | [Solstice.exe](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.165916/Solstice.exe) |
+   | AMD64/x64 (Intel/AMD) | [Solstice.exe](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.194334/Solstice.exe) |
 
    `Solstice.exe` is an AMD64 build. No ARM64 installer has been published, so ARM64 hosts build from source.
 
