@@ -327,7 +327,9 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
             The type of gamepad to emulate on the host. Automatic selection uses the controller type
             reported by the client. If the type is unknown, Solstice can select a PlayStation-style
             controller from reported motion or touchpad support; otherwise it uses an Xbox-style controller.
-            @note{ViGEmBus supports only the auto, x360, and ds4 profiles.}
+            @note{The ViGEmBus fallback supports only the auto, x360, and ds4 profiles. The other profiles require the
+            libvirtualgamepad driver, and Xbox 360 emulation is only available through ViGEmBus because Windows reaches
+            Xbox 360 devices through the USB bus.}
         </td>
     </tr>
     <tr>

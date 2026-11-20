@@ -37,6 +37,9 @@ add_definitions(-DMINIUPNP_STATICLIB)
 # extra tools/binaries for audio/display devices
 add_subdirectory(tools)  # todo - this is temporary, only tools for Windows are needed, for now
 
+# libvirtualgamepad
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/third-party/libvirtualgamepad/include")
+
 # nvidia
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/third-party/nvapi")
 file(GLOB NVPREFS_FILES CONFIGURE_DEPENDS
@@ -67,6 +70,9 @@ set(PLATFORM_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/platform/windows/misc.h"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/misc.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/input.cpp"
+        "${CMAKE_SOURCE_DIR}/src/platform/windows/vhf_gamepad.cpp"
+        "${CMAKE_SOURCE_DIR}/src/platform/windows/vhf_gamepad.h"
+        "${CMAKE_SOURCE_DIR}/third-party/libvirtualgamepad/client/client.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/display.h"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/display_base.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/display_vram.cpp"

@@ -135,6 +135,28 @@
                     </a>
                   </td>
                 </tr>
+                <tr id="libvirtualgamepad">
+                  <th scope="row">{{ $t('troubleshooting.libvirtualgamepad_driver') }}</th>
+                  <td>{{ driverVersion(libvirtualgamepad) }}</td>
+                  <td>{{ libvirtualgamepad.supported_versions }}</td>
+                  <td>
+                    <span class="status-icon driver-status-icon" :class="driverStatusClass(libvirtualgamepad)"
+                          :title="driverStatusText(libvirtualgamepad)">
+                      <alert-circle v-if="!libvirtualgamepad.installed" :size="20" aria-hidden="true"></alert-circle>
+                      <check-circle v-else :size="20" aria-hidden="true"></check-circle>
+                      <span class="visually-hidden">{{ driverStatusText(libvirtualgamepad) }}</span>
+                    </span>
+                  </td>
+                  <td class="driver-download-column">
+                    <a class="btn btn-outline-primary driver-download-button"
+                       href="https://github.com/Nonary/libvirtualgamepad/releases/latest"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                      <download :size="17"></download>
+                      {{ $t('troubleshooting.driver_download') }}
+                    </a>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -394,6 +416,13 @@
           unpairAllPressed: false,
           unpairAllStatus: null,
           vigembus: {
+            installed: false,
+            version: '',
+            version_compatible: false,
+            minimum_version: '',
+            supported_versions: '',
+          },
+          libvirtualgamepad: {
             installed: false,
             version: '',
             version_compatible: false,
@@ -751,6 +780,14 @@
                 version_compatible: vigembus.version_compatible || false,
                 minimum_version: vigembus.minimum_version || '',
                 supported_versions: vigembus.supported_versions || '',
+              };
+              const libvirtualgamepad = r.libvirtualgamepad || {};
+              this.libvirtualgamepad = {
+                installed: libvirtualgamepad.installed || false,
+                version: libvirtualgamepad.version || '',
+                version_compatible: libvirtualgamepad.version_compatible || false,
+                minimum_version: libvirtualgamepad.minimum_version || '',
+                supported_versions: libvirtualgamepad.supported_versions || '',
               };
             })
             .catch((err) => {

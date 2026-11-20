@@ -156,6 +156,13 @@ namespace confighttp {
    */
   nlohmann::json get_vigembus_driver_status();
 
+  /**
+   * @brief Build libvirtualgamepad driver version and installation status.
+   *
+   * @return libvirtualgamepad driver status JSON.
+   */
+  nlohmann::json get_libvirtualgamepad_driver_status();
+
   void getVirtualInputStatus(const resp_https_t &response, const req_https_t &request);
 
   /**

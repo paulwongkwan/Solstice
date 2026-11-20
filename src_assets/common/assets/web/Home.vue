@@ -179,6 +179,7 @@
         platform: "",
         controllerEnabled: false,
         vigembus: null,
+        libvirtualgamepad: null,
         permissions: [],
       }
     },
@@ -202,9 +203,11 @@
         console.log("Pre-Release Version: ", this.preReleaseVersion.version)
 
         try {
-          this.vigembus = (await fetch("./api/virtual-input/status").then((r) => r.json())).vigembus;
+          const driverStatus = await fetch("./api/virtual-input/status").then((r) => r.json());
+          this.vigembus = driverStatus.vigembus;
+          this.libvirtualgamepad = driverStatus.libvirtualgamepad;
         } catch (e) {
-          console.error("Failed to fetch the ViGEmBus driver status:", e);
+          console.error("Failed to fetch the virtual gamepad driver status:", e);
         }
       } catch (e) {
         console.error(e);
@@ -222,15 +225,16 @@
         return this.permissions.filter(permission => permission.required && permission.verifiable && permission.status !== 'granted');
       },
       /**
-       * Build the ViGEmBus notice shown on the home page.
-       * Warn when virtual gamepads are enabled but ViGEmBus is missing or unsupported.
+       * Build the virtual gamepad driver notice shown on the home page.
+       * Warn when virtual gamepads are enabled but no usable driver is installed.
        */
       virtualInputNotice() {
         if (!this.controllerEnabled || !this.vigembus) {
           return null;
         }
 
-        return this.buildVigembusNotice(this.vigembus.installed && this.vigembus.version_compatible);
+        const libvirtualgamepadUsable = this.libvirtualgamepad?.installed && this.libvirtualgamepad?.version_compatible;
+        return this.buildVigembusNotice(libvirtualgamepadUsable || (this.vigembus.installed && this.vigembus.version_compatible));
       },
       installedVersionNotStable() {
         if (!this.githubVersion || !this.version) {
@@ -288,13 +292,13 @@
         };
       },
       /**
-       * Build the notice for an explicitly selected ViGEmBus backend.
+       * Build the notice for an unavailable virtual gamepad driver.
        *
-       * @param {boolean} vigembusUsable Whether ViGEmBus is installed and compatible.
-       * @returns {object|null} Warning data, or no notice when ViGEmBus is usable.
+       * @param {boolean} driverUsable Whether any virtual gamepad driver is installed and compatible.
+       * @returns {object|null} Warning data, or no notice when a driver is usable.
        */
-      buildVigembusNotice(vigembusUsable) {
-        if (!this.controllerEnabled || vigembusUsable) {
+      buildVigembusNotice(driverUsable) {
+        if (!this.controllerEnabled || driverUsable) {
           return null;
         }
         return this.buildVirtualInputNotice(true, 'index.vigembus_required_title', [{

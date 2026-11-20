@@ -1652,10 +1652,6 @@ namespace config {
     }
 
     string_restricted_f(vars, "gamepad"s, input.gamepad, get_supported_gamepad_options());
-    if (input.gamepad != "auto"sv && input.gamepad != "x360"sv && input.gamepad != "ds4"sv) {
-      BOOST_LOG(warning) << "Gamepad type '"sv << input.gamepad << "' is not supported by ViGEmBus; using automatic selection"sv;
-      input.gamepad = "auto";
-    }
     bool_f(vars, "ds4_back_as_touchpad_click", input.ds4_back_as_touchpad_click);
     bool_f(vars, "motion_as_ds4", input.motion_as_ds4);
     bool_f(vars, "touchpad_as_ds4", input.touchpad_as_ds4);

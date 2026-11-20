@@ -134,6 +134,7 @@ namespace confighttp {
   constexpr auto SESSION_LIFETIME = std::chrono::hours(12);
 
   constexpr auto VIGEMBUS_MINIMUM_VERSION = "1.17.0.0"sv;  ///< Minimum supported ViGEmBus fallback driver version.  // NOSONAR(cpp:S1313): not an IP address
+  constexpr auto LIBVIRTUALGAMEPAD_DRIVER_FILE = "VibeshineVhfGamepad.dll"sv;  ///< Driver binary installed by the libvirtualgamepad package.
 
   /**
    * @brief Read one cookie value from the request headers.
@@ -1981,6 +1982,27 @@ namespace confighttp {
   }
 
   /**
+   * @brief Build libvirtualgamepad driver version and installation status.
+   *
+   * @return libvirtualgamepad driver status JSON.
+   */
+  nlohmann::json get_libvirtualgamepad_driver_status() {
+    std::string version_str;
+
+    std::string system_root;
+    if (!lizardbyte::common::get_env("SystemRoot", system_root)) {
+      system_root = "C:\\Windows";
+    }
+    const std::filesystem::path driver_path = std::filesystem::path(system_root) / "System32" / "drivers" / LIBVIRTUALGAMEPAD_DRIVER_FILE;
+    const auto installed = std::filesystem::exists(driver_path);
+    if (installed) {
+      platf::getFileVersionInfo(driver_path, version_str);
+    }
+
+    return build_driver_status(installed, version_str, ""sv);
+  }
+
+  /**
    * @brief Get virtual input driver version and installation status.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
@@ -1996,6 +2018,7 @@ namespace confighttp {
 
     nlohmann::json output_tree;
   output_tree["vigembus"] = get_vigembus_driver_status();
+  output_tree["libvirtualgamepad"] = get_libvirtualgamepad_driver_status();
     send_response(response, output_tree);
   }
 

@@ -25,6 +25,11 @@ install(FILES
 install(DIRECTORY "${SOLSTICE_SOURCE_ASSETS_DIR}/windows/misc/service/"
         DESTINATION "scripts"
         COMPONENT assets)
+
+# libvirtualgamepad driver package, staged but not installed: its catalog has to be signed for the distribution
+install(DIRECTORY "${SOLSTICE_SOURCE_ASSETS_DIR}/windows/drivers/"
+        DESTINATION "drivers"
+        COMPONENT assets)
 install(DIRECTORY "${SOLSTICE_SOURCE_ASSETS_DIR}/windows/misc/migration/"
         DESTINATION "scripts"
         COMPONENT assets)

@@ -451,9 +451,9 @@
     "review_virtual_input": "Review Virtual Input",
     "version_dirty": "Thank you for helping to make Solstice a better software!",
     "version_latest": "You are running the latest version of Solstice",
-    "vigembus_not_installed_desc": "ViGEmBus is selected, but it is not installed or running. Install ViGEmBus or choose a different gamepad driver before using gamepad input.",
-    "vigembus_outdated_desc": "ViGEmBus is selected, but the installed version (v{version}) is not supported. Supported versions: {supported_versions}.",
-    "vigembus_required_title": "ViGEmBus Is Unavailable",
+    "vigembus_not_installed_desc": "Gamepad input is enabled, but neither the libvirtualgamepad driver nor ViGEmBus is installed. Install one of them, or choose a different gamepad driver before using gamepad input.",
+    "vigembus_outdated_desc": "The installed ViGEmBus version (v{version}) is not supported. Supported versions: {supported_versions}.",
+    "vigembus_required_title": "Gamepad Driver Is Unavailable",
     "welcome": "Hello, Solstice!"
   },
   "navbar": {
@@ -618,11 +618,12 @@
     "unpair_single_success": "However, the device(s) may still be in an active session. Use the 'Force Close' button above to end any open sessions.",
     "unpair_single_unknown": "Unknown Client",
     "unpair_title": "Unpair Devices",
-    "vigembus_driver": "ViGEmBus Driver",
+    "libvirtualgamepad_driver": "libvirtualgamepad Driver",
+    "vigembus_driver": "ViGEmBus Fallback Driver",
     "virtual_gamepad": "Virtual Input",
     "virtual_gamepad_drivers": "Virtual Input Backend Status",
     "virtual_gamepad_drivers_desc": "Installed versions are compared with each project's latest stable GitHub release. Prereleases are ignored.",
-    "virtual_gamepad_vigembus_desc": "Solstice is using ViGEmBus for limited Xbox 360 and DualShock 4 emulation and SendInput for keyboard and mouse. ViGEmBus has reached end of life. Consider upgrading to Virtual HID Broker for broader, actively supported virtual input."
+    "virtual_gamepad_vigembus_desc": "Solstice emulates Xbox One, Xbox Series, DualShock 4, DualSense, Switch Pro, and Steam Controller pads through the libvirtualgamepad driver, and uses SendInput for keyboard and mouse. ViGEmBus remains available as a fallback for Xbox 360 and DualShock 4 gamepads."
   },
   "featured": {
     "category_filter": "Category filter",

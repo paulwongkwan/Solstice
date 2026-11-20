@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -35,6 +36,7 @@
 #include "src/logging.h"
 #include "src/platform/common.h"
 #include "utf_utils.h"
+#include "vhf_gamepad.h"
 
 namespace platf {
   using namespace std::literals;
@@ -522,27 +524,120 @@ namespace platf {
    */
   struct input_raw_t {
     std::unique_ptr<vigem_t> vigem;  ///< ViGEm gamepad context.
+    std::unique_ptr<vhf_gamepad_t> vhf;  ///< libvirtualgamepad gamepad context.
   };
 
   /**
-   * @brief Return the gamepad choices supported by ViGEmBus.
-   *
-   * @param available Whether Solstice can connect to ViGEmBus.
-   * @return Automatic, Xbox 360, and DualShock 4 choices with availability metadata.
+   * @brief Controller selected for a newly arrived client gamepad.
    */
-  std::vector<supported_gamepad_t> vigembus_supported_gamepads(const bool available) {
-    const auto reason = available ? "" : "gamepads.vigembus-not-available";
-    return {
-      {"auto", available, reason},
-      {"x360", available, reason},
-      {"ds4", available, reason},
+  struct gamepad_choice_t {
+    std::optional<lvg::profile> vhf_profile;  ///< libvirtualgamepad profile to create, when that backend is used.
+    VIGEM_TARGET_TYPE vigem_type {Xbox360Wired};  ///< ViGEm target type used when the fallback backend is needed.
+    const char *description {""};  ///< Description used in the log message.
+  };
+
+  /**
+   * @brief Return the gamepad choices offered by the available backends.
+   *
+   * @param vigem_available Whether Solstice can connect to ViGEmBus.
+   * @param vhf_profiles Profiles the libvirtualgamepad driver accepts, or zero when it is unavailable.
+   * @return Automatic and per-profile choices with availability metadata.
+   */
+  std::vector<supported_gamepad_t> supported_gamepad_list(const bool vigem_available, const lvg::profile_mask_t vhf_profiles) {
+    const auto vigem_reason = vigem_available ? "" : "gamepads.vigembus-not-available";
+    const auto vhf_available = vhf_profiles != 0;
+    const auto vhf_reason = vhf_available ? "" : "gamepads.vhf-not-available";
+    const auto vhf_enabled = [vhf_profiles](const lvg::profile profile) {
+      return (vhf_profiles & lvg::profile_bit(profile)) != 0;
     };
+
+    return {
+      {"auto", vigem_available || vhf_available, "gamepads.not-available"},
+      {"x360", vigem_available, vigem_reason},
+      {"ds4", vigem_available || vhf_enabled(lvg::profile::dualshock_4), vhf_available ? vigem_reason : vhf_reason},
+      {"dualsense", vhf_enabled(lvg::profile::dualsense), vhf_reason},
+      {"switch_pro", vhf_enabled(lvg::profile::switch_pro), vhf_reason},
+      {"steam_controller", vhf_enabled(lvg::profile::steam_controller), vhf_reason},
+      {"xbox_one", vhf_enabled(lvg::profile::xbox_one), vhf_reason},
+      {"xbox_series", vhf_enabled(lvg::profile::xbox_series), vhf_reason},
+    };
+  }
+
+  /**
+   * @brief Choose the controller emulated for a newly arrived client gamepad.
+   *
+   * @param metadata Capabilities reported when the client gamepad arrived.
+   * @param vhf libvirtualgamepad backend, or nullptr when it is unavailable.
+   * @return Selected backend and controller profile.
+   */
+  gamepad_choice_t select_gamepad(const gamepad_arrival_t &metadata, const vhf_gamepad_t *vhf) {
+    const auto vhf_supports = [vhf](const lvg::profile profile) {
+      return vhf && vhf->supports(profile);
+    };
+    const auto vhf_choice = [](const lvg::profile profile, const VIGEM_TARGET_TYPE fallback, const char *description) {
+      return gamepad_choice_t {profile, fallback, description};
+    };
+    const auto vigem_choice = [](const VIGEM_TARGET_TYPE type, const char *description) {
+      return gamepad_choice_t {std::nullopt, type, description};
+    };
+
+    if (config::input.gamepad == "x360"sv) {
+      return vigem_choice(Xbox360Wired, "Xbox 360 controller (manual selection)");
+    }
+    if (config::input.gamepad == "ds4"sv) {
+      if (vhf_supports(lvg::profile::dualshock_4)) {
+        return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (manual selection)");
+      }
+      return vigem_choice(DualShock4Wired, "DualShock 4 controller (manual selection)");
+    }
+
+    if (const auto profile = vhf::profile_from_name(config::input.gamepad); profile && vhf_supports(*profile)) {
+      return vhf_choice(*profile, DualShock4Wired, "controller (manual selection)");
+    }
+
+    if (config::input.gamepad != "auto"sv) {
+      BOOST_LOG(warning) << "Gamepad type '"sv << config::input.gamepad << "' is not available; using automatic selection"sv;
+    }
+
+    if (metadata.type == LI_CTYPE_PS) {
+      if (vhf_supports(lvg::profile::dualshock_4)) {
+        return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (auto-selected by client-reported type)");
+      }
+      return vigem_choice(DualShock4Wired, "DualShock 4 controller (auto-selected by client-reported type)");
+    }
+    if (metadata.type == LI_CTYPE_XBOX) {
+      if (vhf_supports(lvg::profile::xbox_series)) {
+        return vhf_choice(lvg::profile::xbox_series, Xbox360Wired, "Xbox Series controller (auto-selected by client-reported type)");
+      }
+      return vigem_choice(Xbox360Wired, "Xbox 360 controller (auto-selected by client-reported type)");
+    }
+    if (config::input.motion_as_ds4 && (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO)) && vhf_supports(lvg::profile::dualshock_4)) {
+      return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (auto-selected by motion sensor presence)");
+    }
+    if (config::input.touchpad_as_ds4 && (metadata.capabilities & LI_CCAP_TOUCHPAD)) {
+      if (vhf_supports(lvg::profile::dualsense)) {
+        return vhf_choice(lvg::profile::dualsense, DualShock4Wired, "DualSense controller (auto-selected by touchpad presence)");
+      }
+      if (vhf_supports(lvg::profile::dualshock_4)) {
+        return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (auto-selected by touchpad presence)");
+      }
+      return vigem_choice(DualShock4Wired, "DualShock 4 controller (auto-selected by touchpad presence)");
+    }
+    if (vhf_supports(lvg::profile::xbox_series)) {
+      return vhf_choice(lvg::profile::xbox_series, Xbox360Wired, "Xbox Series controller (default)");
+    }
+    return vigem_choice(Xbox360Wired, "Xbox 360 controller (default)");
   }
 
   input_t input() {
     input_t result {new input_raw_t {}};
 
     if (auto &raw = *result; config::input.controller) {
+      auto vhf = std::make_unique<vhf_gamepad_t>();
+      if (vhf->init() == 0) {
+        raw.vhf = std::move(vhf);
+      }
+
       auto vigem = std::make_unique<vigem_t>();
       if (!vigem->init()) {
         raw.vigem = std::move(vigem);
@@ -667,36 +762,40 @@ namespace platf {
   int alloc_gamepad(input_t &input, const gamepad_id_t &id, const gamepad_arrival_t &metadata, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
 
+    const auto choice = select_gamepad(metadata, raw->vhf.get());
+
+    if (choice.vhf_profile && raw->vhf) {
+      if (vhf::folds_playstation_state(*choice.vhf_profile)) {
+        if (!(metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
+          BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " is emulating a "sv << vhf::name_from_profile(*choice.vhf_profile) << " controller, but the client gamepad doesn't have motion sensors active"sv;
+        }
+        if (!(metadata.capabilities & LI_CCAP_TOUCHPAD)) {
+          BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " is emulating a "sv << vhf::name_from_profile(*choice.vhf_profile) << " controller, but the client gamepad doesn't have a touchpad"sv;
+        }
+      } else {
+        if (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO)) {
+          BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " has motion sensors, but they are not usable when emulating an Xbox controller"sv;
+        }
+        if (metadata.capabilities & LI_CCAP_TOUCHPAD) {
+          BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " has a touchpad, but it is not usable when emulating an Xbox controller"sv;
+        }
+      }
+
+      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be a "sv << choice.description;
+      if (raw->vhf->alloc_gamepad(id, feedback_queue, *choice.vhf_profile) == 0) {
+        return 0;
+      }
+
+      BOOST_LOG(warning) << "Couldn't create the virtual gamepad through libvirtualgamepad; falling back to ViGEmBus"sv;
+    }
+
     if (!ensure_vigem(raw)) {
       return -1;
     }
 
-    VIGEM_TARGET_TYPE selectedGamepadType;
+    BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be "sv << choice.description;
 
-    if (config::input.gamepad == "x360"sv) {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be Xbox 360 controller (manual selection)"sv;
-      selectedGamepadType = Xbox360Wired;
-    } else if (config::input.gamepad == "ds4"sv) {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (manual selection)"sv;
-      selectedGamepadType = DualShock4Wired;
-    } else if (metadata.type == LI_CTYPE_PS) {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (auto-selected by client-reported type)"sv;
-      selectedGamepadType = DualShock4Wired;
-    } else if (metadata.type == LI_CTYPE_XBOX) {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be Xbox 360 controller (auto-selected by client-reported type)"sv;
-      selectedGamepadType = Xbox360Wired;
-    } else if (config::input.motion_as_ds4 && (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (auto-selected by motion sensor presence)"sv;
-      selectedGamepadType = DualShock4Wired;
-    } else if (config::input.touchpad_as_ds4 && (metadata.capabilities & LI_CCAP_TOUCHPAD)) {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (auto-selected by touchpad presence)"sv;
-      selectedGamepadType = DualShock4Wired;
-    } else {
-      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be Xbox 360 controller (default)"sv;
-      selectedGamepadType = Xbox360Wired;
-    }
-
-    if (selectedGamepadType == Xbox360Wired) {
+    if (choice.vigem_type == Xbox360Wired) {
       if (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO)) {
         BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " has motion sensors, but they are not usable when emulating an Xbox 360 controller"sv;
       }
@@ -706,7 +805,7 @@ namespace platf {
       if (metadata.capabilities & LI_CCAP_RGB_LED) {
         BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " has an RGB LED, but it is not usable when emulating an Xbox 360 controller"sv;
       }
-    } else if (selectedGamepadType == DualShock4Wired) {
+    } else {
       if (!(metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
         BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " is emulating a DualShock 4 controller, but the client gamepad doesn't have motion sensors active"sv;
       }
@@ -715,11 +814,15 @@ namespace platf {
       }
     }
 
-    return raw->vigem->alloc_gamepad_internal(id, feedback_queue, selectedGamepadType);
+    return raw->vigem->alloc_gamepad_internal(id, feedback_queue, choice.vigem_type);
   }
 
   int rebind_gamepad(input_t &input, const gamepad_id_t &id, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
+
+    if (raw->vhf && raw->vhf->rebind_gamepad(id, feedback_queue) == 0) {
+      return 0;
+    }
 
     if (!raw->vigem) {
       return -1;
@@ -730,6 +833,10 @@ namespace platf {
 
   void free_gamepad(input_t &input, int nr) {
     auto raw = (input_raw_t *) input.get();
+
+    if (raw->vhf) {
+      raw->vhf->free_gamepad(nr);
+    }
 
     if (!raw->vigem) {
       return;
@@ -990,6 +1097,11 @@ namespace platf {
   void gamepad_update(input_t &input, int nr, const gamepad_state_t &gamepad_state) {
     auto raw = (input_raw_t *) input.get();
 
+    if (raw->vhf && raw->vhf->attached(nr)) {
+      raw->vhf->update_gamepad(nr, gamepad_state);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1164,6 +1276,11 @@ namespace platf {
   void gamepad_touch(input_t &input, const gamepad_touch_t &touch) {
     auto raw = (input_raw_t *) input.get();
 
+    if (raw->vhf && raw->vhf->attached(touch.id.globalIndex)) {
+      raw->vhf->update_touch(touch);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1194,6 +1311,11 @@ namespace platf {
   void gamepad_motion(input_t &input, const gamepad_motion_t &motion) {
     auto raw = (input_raw_t *) input.get();
 
+    if (raw->vhf && raw->vhf->attached(motion.id.globalIndex)) {
+      raw->vhf->update_motion(motion);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1223,6 +1345,11 @@ namespace platf {
   void gamepad_battery(input_t &input, const gamepad_battery_t &battery) {
     auto raw = (input_raw_t *) input.get();
 
+    if (raw->vhf && raw->vhf->attached(battery.id.globalIndex)) {
+      raw->vhf->update_battery(battery);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1251,12 +1378,13 @@ namespace platf {
   std::vector<supported_gamepad_t> &supported_gamepads(input_t *input) {
     static std::vector<supported_gamepad_t> gps;
     if (!input || !input->get()) {
-      gps = vigembus_supported_gamepads(false);
+      gps = supported_gamepad_list(false, 0);
       return gps;
     }
 
     const auto raw = (input_raw_t *) input->get();
-    gps = vigembus_supported_gamepads(raw->vigem != nullptr);
+    const auto vhf_profiles = raw->vhf ? raw->vhf->available_profiles() : 0;
+    gps = supported_gamepad_list(raw->vigem != nullptr, vhf_profiles);
     return gps;
   }
 

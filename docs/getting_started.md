@@ -87,14 +87,21 @@ set up by hand:
 After installation, some initial setup is required.
 
 ### Windows
-Solstice creates virtual gamepads through [ViGEmBus](https://github.com/nefarius/ViGEmBus). Install the driver, then
-enable gamepad input in the Web UI under **Configuration > Input**. ViGEmBus supports three profiles: **auto** (the
-default, which picks Xbox 360 or DualShock 4 from the controller the client reports), **x360**, and **ds4**.
+Solstice creates virtual gamepads through one of two drivers. The
+[ViGEmBus](https://github.com/nefarius/ViGEmBus) fallback is used whenever the other driver is missing, and it supports
+the **auto**, **x360**, and **ds4** profiles. [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) uses a
+user-mode Virtual HID Framework driver and adds **xbox_one**, **xbox_series**, **dualsense**, **switch_pro**, and
+**steam_controller**; when it is installed, **auto** picks a profile from the controller the client reports.
+
+Enable gamepad input in the Web UI under **Configuration > Input**. The driver package is bundled under `drivers` in the
+installation directory together with an `install.ps1` script, but it is not installed automatically: the catalog has to
+be signed with the distribution's own code-signing identity first, so install it from an elevated PowerShell prompt
+only when your build ships a signed package.
 
 Keyboard and mouse input is injected with the Windows `SendInput` API, and touch and pen input uses the Windows
 pointer injection APIs. No additional driver is required for those devices.
 
-After installing or updating ViGEmBus, restart your computer.
+After installing or updating a gamepad driver, restart your computer.
 
 ## Usage
 

@@ -19,8 +19,10 @@ network.
   encoder as a fallback.
 - **Desktop capture.** DXGI Desktop Duplication in both portable and service mode, Windows.Graphics.Capture in portable
   mode.
-- **Virtual gamepads.** Xbox 360 and DualShock 4 emulation, either fixed or selected automatically from the client's
-  controller, through the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver.
+- **Virtual gamepads.** Xbox 360, Xbox One, Xbox Series, DualShock 4, DualSense, Switch Pro, and Steam Controller
+  emulation, either fixed or selected automatically from the client's controller, through
+  [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) with the
+  [ViGEmBus](https://github.com/nefarius/ViGEmBus) fallback.
 - **Web UI with sign-in.** Pair clients, change settings, and read logs from `https://localhost:47990`, protected by a
   login screen with an optional "remember me" session.
 - **Sunshine-compatible.** Existing Sunshine configuration is picked up automatically, and the client, application, and
@@ -44,8 +46,11 @@ Core i5, and wired Ethernet on both ends. These recommendations are a work in pr
 them alone.
 
 > [!NOTE]
-> Virtual gamepads require the [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) driver, which the
-> installer does not bundle. Without it, keyboard, mouse, touch, and pen input still work.
+> Virtual gamepads need a driver. The installer ships the
+> [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) package under `drivers\vhf-gamepad` but does not
+> install it, because its catalog has to be signed for each distribution; the
+> [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) fallback covers Xbox 360 and DualShock 4 when no
+> driver is installed. Without a driver, keyboard, mouse, touch, and pen input still work.
 
 ## Install
 
