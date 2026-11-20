@@ -5,7 +5,7 @@ vi.mock('vue-i18n', () => ({
 }))
 
 import { createI18n } from 'vue-i18n'
-import createSunshineI18n, { loadLocaleMessages } from '../../src_assets/common/assets/web/locale.js'
+import createSolsticeI18n, { loadLocaleMessages } from '../../src_assets/common/assets/web/locale.js'
 
 describe('locale initialization', () => {
   afterEach(() => {
@@ -23,7 +23,7 @@ describe('locale initialization', () => {
       .mockResolvedValueOnce({ json: async () => ({ locale: 'de' }) })
       .mockResolvedValueOnce({ json: async () => ({ greeting: 'Hallo' }) }))
 
-    const i18n = await createSunshineI18n()
+    const i18n = await createSolsticeI18n()
 
     expect(fetch).toHaveBeenCalledWith('./api/configLocale')
     expect(fetch).toHaveBeenCalledWith('./assets/locale/de.json')
@@ -43,7 +43,7 @@ describe('locale initialization', () => {
       json: async () => ({ locale }),
     })))
 
-    const i18n = await createSunshineI18n()
+    const i18n = await createSolsticeI18n()
 
     expect(document.documentElement.lang).toBe('en')
     expect(i18n.locale).toBe('en')

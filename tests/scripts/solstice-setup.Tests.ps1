@@ -1,7 +1,7 @@
 BeforeAll {
     $sourcePath = Join-Path `
         $PSScriptRoot `
-        "..\..\src_assets\windows\misc\sunshine-setup-process.ps1"
+        "..\..\src_assets\windows\misc\solstice-setup-process.ps1"
 
     function Write-LogMessage {
         param(
@@ -226,7 +226,7 @@ Describe "Executable wrappers" {
         }
     }
 
-    It "passes the packaged Sunshine path to the common runner" {
+    It "passes the packaged Solstice path to the common runner" {
         $script:RootDir = $TestDrive
 
         $result = Invoke-SunshineIfExist `
@@ -236,11 +236,11 @@ Describe "Executable wrappers" {
 
         $result | Should -Be 0
         Should -Invoke -CommandName Invoke-ExecutableIfExist -Times 1 -Exactly -Scope It -ParameterFilter {
-            $ExecutablePath -eq (Join-Path $TestDrive "sunshine.exe") -and
+            $ExecutablePath -eq (Join-Path $TestDrive "solstice.exe") -and
                 $Arguments -eq "--restore-nvprefs-undo" -and
                 $Description -eq "Restoring" -and
                 $Emoji -eq "*" -and
-                $ExecutableName -eq "Sunshine" -and
+                $ExecutableName -eq "Solstice" -and
                 $MissingTarget -eq "executable" -and
                 -not $FailureTarget
         }

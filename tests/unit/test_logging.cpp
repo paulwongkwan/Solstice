@@ -88,7 +88,7 @@ protected:
     return path;
   }
 
-  const std::filesystem::path test_directory {std::filesystem::path {SUNSHINE_TEST_BIN_DIR} / "log_rotation_tests"};  ///< Directory containing log rotation test files.
+  const std::filesystem::path test_directory {std::filesystem::path {SOLSTICE_TEST_BIN_DIR} / "log_rotation_tests"};  ///< Directory containing log rotation test files.
   const std::filesystem::path log_path {test_directory / "custom.log"};  ///< Path to the current test log.
 };
 

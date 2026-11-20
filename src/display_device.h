@@ -127,7 +127,7 @@ namespace display_device {
    * This could happen if the display is no longer available or the hardware was changed
    * and the device ids no longer match.
    *
-   * The user then accepts that Sunshine is not able to restore the state and "agrees" to
+   * The user then accepts that Solstice is not able to restore the state and "agrees" to
    * do it manually.
    *
    * @return True if persistence was reset, false otherwise.
@@ -180,7 +180,7 @@ namespace display_device {
    */
   [[nodiscard]] std::variant<failed_to_parse_tag_t, configuration_disabled_tag_t, SingleDisplayConfiguration> parse_configuration(const config::video_t &video_config, const rtsp_stream::launch_session_t &session);
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   class SettingsManagerInterface;
   class SettingsPersistenceInterface;
 

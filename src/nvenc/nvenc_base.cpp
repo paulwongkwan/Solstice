@@ -61,9 +61,9 @@ namespace {
   }
 
   /**
-   * @brief Get the display name for a Sunshine video format.
+   * @brief Get the display name for a Solstice video format.
    *
-   * @param video_format Sunshine video format identifier.
+   * @param video_format Solstice video format identifier.
    * @return Display name including its trailing separator.
    */
   std::string_view video_format_name(int video_format) {

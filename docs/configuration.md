@@ -8,14 +8,14 @@ By providing the host authority (URI + port), you can easily open each configura
 @endhtmlonly
 }
 
-Sunshine will work with the default settings for most users. In some cases you may want to configure Sunshine further.
+Solstice will work with the default settings for most users. In some cases you may want to configure Solstice further.
 
 The default location for the configuration file is listed below. You can use another location if you
-choose, by passing in the full configuration file path as the first argument when you start Sunshine.
+choose, by passing in the full configuration file path as the first argument when you start Solstice.
 
 **Example**
 ```bash
-sunshine ~/sunshine_config.conf
+solstice ~/solstice.conf
 ```
 
 The default location of the `apps.json` is the same as the configuration file. You can use a custom
@@ -25,9 +25,9 @@ location by modifying the configuration file.
 
 | OS      | Location                                        |
 |---------|-------------------------------------------------|
-| Windows | @code{}%ProgramFiles%\\Sunshine\\config@endcode |
+| Windows | @code{}%ProgramFiles%\\Solstice\\config@endcode |
 
-Although it is recommended to use the configuration UI, it is possible manually configure Sunshine by
+Although it is recommended to use the configuration UI, it is possible manually configure Solstice by
 editing the `conf` file in a text editor. Use the examples as reference.
 
 The web UI groups these settings into the sidebar categories documented below. Encoder categories are shown only when
@@ -36,10 +36,10 @@ supported on the current platform.
 ## Permissions
 
 Open **Troubleshooting > Permissions** in the Web UI to see required and optional access. The Home page flags
-verifiable required access that is missing. Sunshine checks for access granted while it is running and restarts
+verifiable required access that is missing. Solstice checks for access granted while it is running and restarts
 once after all verifiable required access is available.
 
-Sunshine checks whether its account can list and create files in the `config` directory beside the executable.
+Solstice checks whether its account can list and create files in the `config` directory beside the executable.
 Windows provides no consent prompt for directory ACLs, so the Web UI shows setup steps for correcting access.
 
 ## General
@@ -50,7 +50,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            The locale used for Sunshine's user interface.
+            The locale used for Solstice's user interface.
         </td>
     </tr>
     <tr>
@@ -164,7 +164,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Example</td>
         <td colspan="2">@code{}
-            sunshine_name = Sunshine
+            sunshine_name = Solstice
             @endcode</td>
     </tr>
 </table>
@@ -253,7 +253,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Whether to be notified of new pre-release versions of Sunshine.
+            Whether to be notified of new pre-release versions of Solstice.
         </td>
     </tr>
     <tr>
@@ -325,7 +325,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
         <td>Description</td>
         <td colspan="2">
             The type of gamepad to emulate on the host. Automatic selection uses the controller type
-            reported by the client. If the type is unknown, Sunshine can select a PlayStation-style
+            reported by the client. If the type is unknown, Solstice can select a PlayStation-style
             controller from reported motion or touchpad support; otherwise it uses an Xbox-style controller.
             @note{ViGEmBus supports only the auto, x360, and ds4 profiles.}
         </td>
@@ -571,7 +571,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">It may be possible that you cannot send the Windows Key from Moonlight directly. In those cases it may be useful to
-            make Sunshine think the Right Alt key is the Windows key.
+            make Solstice think the Right Alt key is the Windows key.
             </td>
     </tr>
     <tr>
@@ -617,7 +617,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            When enabled, Sunshine will pass through high resolution scroll events from Moonlight clients.
+            When enabled, Solstice will pass through high resolution scroll events from Moonlight clients.
             <br>
             This can be useful to disable for older applications that scroll too fast with high resolution scroll
             events.
@@ -643,7 +643,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            When enabled, Sunshine will pass through native pen/touch events from Moonlight clients.
+            When enabled, Solstice will pass through native pen/touch events from Moonlight clients.
             <br>
             This can be useful to disable for older applications without native pen/touch support.
         </td>
@@ -711,7 +711,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
             <br>
             Enter the following command in command prompt or PowerShell.
             @code{}
-            %ProgramFiles%\Sunshine\tools\audio-info.exe
+            %ProgramFiles%\Solstice\tools\audio-info.exe
             @endcode
             If you have multiple audio devices with identical names, use the Device ID instead.
             }
@@ -721,7 +721,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     </tr>
     <tr>
         <td>Default</td>
-        <td colspan="2">Sunshine will select the default audio device.</td>
+        <td colspan="2">Solstice will select the default audio device.</td>
     </tr>
     <tr>
         <td>Example (Windows)</td>
@@ -737,7 +737,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            The audio device that's virtual, like Steam Streaming Speakers. This allows Sunshine to stream audio,
+            The audio device that's virtual, like Steam Streaming Speakers. This allows Solstice to stream audio,
             while muting the speakers.
             @tip{See [audio_sink](#audio_sink)!}
             @tip{These are some options for virtual sound devices.
@@ -817,7 +817,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
         <td colspan="2">
             Enables capture-only operation when an external audio router manages application playback.
             An explicit [audio_sink](#audio_sink) is required; use an endpoint ID when names are ambiguous.
-            Sunshine captures that endpoint directly without changing or restoring Windows default devices
+            Solstice captures that endpoint directly without changing or restoring Windows default devices
             or endpoint formats.
             <br>
             <br>
@@ -857,7 +857,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
             <br>
             Enter the following command in command prompt or PowerShell.
             @code{}
-            %ProgramFiles%\Sunshine\tools\dxgi-info.exe
+            %ProgramFiles%\Solstice\tools\dxgi-info.exe
             @endcode
             For hybrid graphics systems, DXGI reports the outputs are connected to whichever graphics
             adapter that the application is configured to use, so it's not a reliable indicator of how the
@@ -867,7 +867,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     </tr>
     <tr>
         <td>Default</td>
-        <td colspan="2">Sunshine will select the default video card.</td>
+        <td colspan="2">Solstice will select the default video card.</td>
     </tr>
     <tr>
         <td>Example (Windows)</td>
@@ -889,7 +889,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
             <br>
             **Windows:**
             <br>
-            During Sunshine startup, you should see the list of detected displays:
+            During Solstice startup, you should see the list of detected displays:
             @code{}
             Info: Currently available display devices:
             [
@@ -902,7 +902,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
               {
                 "device_id": "{77f67f3e-754f-5d31-af64-ee037e18100a}",
                 "display_name": "",
-                "friendly_name": "SunshineHDR",
+                "friendly_name": "SolsticeHDR",
                 "info": null
               },
               {
@@ -944,7 +944,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     </tr>
     <tr>
         <td>Default</td>
-        <td colspan="2">Sunshine will select the default display.</td>
+        <td colspan="2">Solstice will select the default display.</td>
     </tr>
     <tr>
         <td>Example (Windows)</td>
@@ -1154,8 +1154,8 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            When using virtual display device (VDD) for streaming, it might incorrectly display HDR color. Sunshine can try to mitigate this issue, by turning HDR off and then on again.<br>
-            If the value is set to 0, the workaround is disabled (default). If the value is between 0 and 3000 milliseconds, Sunshine will turn off HDR, wait for the specified amount of time and then turn HDR on again. The recommended delay time is around 500 milliseconds in most cases.<br>
+            When using virtual display device (VDD) for streaming, it might incorrectly display HDR color. Solstice can try to mitigate this issue, by turning HDR off and then on again.<br>
+            If the value is set to 0, the workaround is disabled (default). If the value is between 0 and 3000 milliseconds, Solstice will turn off HDR, wait for the specified amount of time and then turn HDR on again. The recommended delay time is around 500 milliseconds in most cases.<br>
             DO NOT use this workaround unless you actually have issues with HDR as it directly impacts stream start time!
             @note{This option works independently of [dd_hdr_option](#dd_hdr_option)}
             @note{Applies to Windows only.}
@@ -1315,7 +1315,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            The maximum bitrate (in Kbps) that Sunshine will encode the stream at. If set to 0, it will always use the bitrate requested by Moonlight.
+            The maximum bitrate (in Kbps) that Solstice will encode the stream at. If set to 0, it will always use the bitrate requested by Moonlight.
         </td>
     </tr>
     <tr>
@@ -1338,7 +1338,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            The maximum resolution (formatted as WIDTHxHEIGHT) that Sunshine will stream at. Larger client requests
+            The maximum resolution (formatted as WIDTHxHEIGHT) that Solstice will stream at. Larger client requests
             are downscaled, preserving aspect ratio. Lowering this reduces encoding latency on hosts where the
             encoder cannot keep up with the requested resolution. If empty, the resolution requested by Moonlight
             is used.
@@ -1363,7 +1363,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Sunshine tries to save bandwidth when content on screen is static or a low framerate. Because many clients expect a constant stream of video frames, a certain amount of duplicate frames are sent when this happens. This setting controls the lowest effective framerate a stream can reach.
+            Solstice tries to save bandwidth when content on screen is static or a low framerate. Because many clients expect a constant stream of video frames, a certain amount of duplicate frames are sent when this happens. This setting controls the lowest effective framerate a stream can reach.
         </td>
     </tr>
     <tr>
@@ -1391,7 +1391,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Sunshine will attempt to open ports for streaming over the internet.
+            Solstice will attempt to open ports for streaming over the internet.
         </td>
     </tr>
     <tr>
@@ -1414,7 +1414,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Set the address family that Sunshine will use.
+            Set the address family that Solstice will use.
         </td>
     </tr>
     <tr>
@@ -1446,12 +1446,12 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Set the IP address to bind Sunshine to. This is useful when you have multiple network interfaces
-            and want to restrict Sunshine to a specific one. If not set, Sunshine will bind to all available
+            Set the IP address to bind Solstice to. This is useful when you have multiple network interfaces
+            and want to restrict Solstice to a specific one. If not set, Solstice will bind to all available
             interfaces (0.0.0.0 for IPv4 or :: for IPv6).
             <br><br>
             <strong>Note:</strong> The address must exist on the host and be compatible with address_family.
-            An IPv4 address works with either "ipv4" or "both"; when used with "both", Sunshine listens only
+            An IPv4 address works with either "ipv4" or "both"; when used with "both", Solstice listens only
             on that IPv4 address. An IPv6 address requires address_family to be set to "both".
         </td>
     </tr>
@@ -1487,7 +1487,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Set the family of ports used by Sunshine.
+            Set the family of ports used by Solstice.
             Changing this value will offset other ports as shown in config UI.
         </td>
     </tr>
@@ -1580,7 +1580,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            If no external IP address is given, Sunshine will attempt to automatically detect external ip-address.
+            If no external IP address is given, Solstice will attempt to automatically detect external ip-address.
         </td>
     </tr>
     <tr>
@@ -1817,13 +1817,13 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Default</td>
         <td colspan="2">@code{}
-            sunshine_state.json
+            solstice_state.json
             @endcode</td>
     </tr>
     <tr>
         <td>Example</td>
         <td colspan="2">@code{}
-            credentials_file = sunshine_state.json
+            credentials_file = solstice_state.json
             @endcode</td>
     </tr>
 </table>
@@ -1834,20 +1834,20 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            The path where the current Sunshine log is stored. Each time Sunshine starts, up to five previous
+            The path where the current Solstice log is stored. Each time Solstice starts, up to five previous
             logs are retained by appending <code>.1</code> through <code>.5</code> to this path.
         </td>
     </tr>
     <tr>
         <td>Default</td>
         <td colspan="2">@code{}
-            sunshine.log
+            solstice.log
             @endcode</td>
     </tr>
     <tr>
         <td>Example</td>
         <td colspan="2">@code{}
-            log_path = sunshine.log
+            log_path = solstice.log
             @endcode</td>
     </tr>
 </table>
@@ -1908,19 +1908,19 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            The file where current state of Sunshine is stored.
+            The file where current state of Solstice is stored.
         </td>
     </tr>
     <tr>
         <td>Default</td>
         <td colspan="2">@code{}
-            sunshine_state.json
+            solstice_state.json
             @endcode</td>
     </tr>
     <tr>
         <td>Example</td>
         <td colspan="2">@code{}
-            file_state = sunshine_state.json
+            file_state = solstice_state.json
             @endcode</td>
     </tr>
 </table>
@@ -2103,7 +2103,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Default</td>
         <td colspan="2">Automatic.
-            Sunshine will use the first capture method available in the order of the table above.</td>
+            Solstice will use the first capture method available in the order of the table above.</td>
     </tr>
     <tr>
         <td>Example</td>
@@ -2119,7 +2119,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>wgc</td>
         <td>(beta feature) Use Windows.Graphics.Capture to capture the display.
-            @attention{This capture method is not compatible with the Sunshine service.}</td>
+            @attention{This capture method is not compatible with the Solstice service.}</td>
     </tr>
 </table>
 
@@ -2162,7 +2162,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     </tr>
     <tr>
         <td>Default</td>
-        <td colspan="2">Sunshine will use the first encoder that is available.</td>
+        <td colspan="2">Solstice will use the first encoder that is available.</td>
     </tr>
     <tr>
         <td>Example</td>
@@ -2324,7 +2324,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
         <td>Description</td>
         <td colspan="2">
             Single-frame VBV/HRD percentage increase.
-            By default Sunshine uses single-frame VBV/HRD, which means any encoded video frame size is not expected to
+            By default Solstice uses single-frame VBV/HRD, which means any encoded video frame size is not expected to
             exceed requested bitrate divided by requested frame rate. Relaxing this restriction can be beneficial and
             act as low-latency variable bitrate, but may also lead to packet loss if the network doesn't have buffer
             headroom to handle bitrate spikes. Maximum accepted value is 400, which corresponds to 5x increased
@@ -2426,7 +2426,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
         <td>Description</td>
         <td colspan="2">
             Adaptive P-State algorithm which NVIDIA drivers employ doesn't work well with low latency streaming,
-            so Sunshine requests high power mode explicitly.
+            so Solstice requests high power mode explicitly.
             @note{This option only applies when using NVENC [encoder](#encoder).}
             @warning{Disabling this is not recommended since this can lead to significantly increased encoding latency.}
             @note{Applies to Windows only.}
@@ -2452,9 +2452,9 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>Description</td>
         <td colspan="2">
-            Sunshine can't capture fullscreen OpenGL and Vulkan programs at full frame rate unless they present on
-            top of DXGI. With this option enabled Sunshine changes global Vulkan/OpenGL present method to
-            "Prefer layered on DXGI Swapchain". This is system-wide setting that is reverted on Sunshine program exit.
+            Solstice can't capture fullscreen OpenGL and Vulkan programs at full frame rate unless they present on
+            top of DXGI. With this option enabled Solstice changes global Vulkan/OpenGL present method to
+            "Prefer layered on DXGI Swapchain". This is system-wide setting that is reverted on Solstice program exit.
             @note{This option only applies when using NVENC [encoder](#encoder).}
             @note{Applies to Windows only.}
         </td>
@@ -2743,7 +2743,7 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
         <td>Description</td>
         <td colspan="2">
             Maximum Access Unit (frame) size for rate control, in bits. This is a last-resort
-            control for capping oversized encoded frames that would otherwise exceed Sunshine's
+            control for capping oversized encoded frames that would otherwise exceed Solstice's
             four-block FEC capacity and be sent without FEC protection.
             @note{This option only applies to H.264 and HEVC when using amdvce [encoder](#encoder).
             AV1 does not support this option.}

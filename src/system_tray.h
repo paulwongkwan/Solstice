@@ -25,37 +25,19 @@ namespace system_tray {
   void tray_open_ui_cb([[maybe_unused]] struct tray_menu *item);
 
   /**
-   * @brief Callback for opening GitHub Sponsors from the system tray.
-   * @param item The tray menu item.
-   */
-  void tray_donate_github_cb([[maybe_unused]] struct tray_menu *item);
-
-  /**
-   * @brief Callback for opening Patreon from the system tray.
-   * @param item The tray menu item.
-   */
-  void tray_donate_patreon_cb([[maybe_unused]] struct tray_menu *item);
-
-  /**
-   * @brief Callback for opening PayPal donation from the system tray.
-   * @param item The tray menu item.
-   */
-  void tray_donate_paypal_cb([[maybe_unused]] struct tray_menu *item);
-
-  /**
    * @brief Callback for resetting display device configuration.
    * @param item The tray menu item.
    */
   void tray_reset_display_device_config_cb([[maybe_unused]] struct tray_menu *item);
 
   /**
-   * @brief Callback for restarting Sunshine from the system tray.
+   * @brief Callback for restarting Solstice from the system tray.
    * @param item The tray menu item.
    */
   void tray_restart_cb([[maybe_unused]] struct tray_menu *item);
 
   /**
-   * @brief Callback for exiting Sunshine from the system tray.
+   * @brief Callback for exiting Solstice from the system tray.
    * @param item The tray menu item.
    */
   void tray_quit_cb([[maybe_unused]] struct tray_menu *item);
@@ -78,7 +60,7 @@ namespace system_tray {
    * If tray initialization failed, wait for the application's shutdown event instead
    * of stopping its workers. An initialized tray still requests shutdown when its loop exits.
    *
-   * @param shutdown_event Event used to stop Sunshine's server threads.
+   * @param shutdown_event Event used to stop Solstice's server threads.
    */
   void run_tray_until_exit(const std::shared_ptr<safe::event_t<bool>> &shutdown_event);
 
@@ -118,7 +100,7 @@ namespace system_tray {
    *
    * @param installed Whether ViGEmBus is installed.
    * @param version Installed ViGEmBus version.
-   * @param version_compatible Whether Sunshine supports the installed version.
+   * @param version_compatible Whether Solstice supports the installed version.
    * @param supported_versions User-visible supported version range.
    */
   void update_tray_vigembus_driver(
@@ -139,7 +121,7 @@ namespace system_tray {
    */
   int init_tray_threaded();
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Get the tray data used by the system tray implementation.
    *

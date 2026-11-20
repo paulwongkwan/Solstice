@@ -36,7 +36,7 @@
 #include <src/process.h>
 #include <src/utility.h>
 
-#ifdef SUNSHINE_BUILD_PORTAL
+#ifdef SOLSTICE_BUILD_PORTAL
   #include <src/platform/linux/misc.h>
 #endif
 
@@ -431,10 +431,10 @@ protected:
     /**
      * @brief Create the temporary apps.json directory and take ownership of `proc::proc`.
      *
-     * @param subdir Directory name under `SUNSHINE_TEST_BIN_DIR`.
+     * @param subdir Directory name under `SOLSTICE_TEST_BIN_DIR`.
      */
     explicit ScopedSaveAppAppsFile(std::string_view subdir):
-        test_dir(std::filesystem::path(SUNSHINE_TEST_BIN_DIR) / subdir) {
+        test_dir(std::filesystem::path(SOLSTICE_TEST_BIN_DIR) / subdir) {
       std::filesystem::create_directories(test_dir);
       config::stream.file_apps = (test_dir / "apps.json").string();
     }
@@ -803,7 +803,7 @@ TEST_F(ConfigHttpTest, PortalTokenResetReportsDeletionFailure) {
   EXPECT_TRUE(std::filesystem::exists(token_path));
 }
 
-#ifdef SUNSHINE_BUILD_PORTAL
+#ifdef SOLSTICE_BUILD_PORTAL
 TEST_F(ConfigHttpTest, PortalTokenResetUsesSessionResolverAndPreservesOtherDesktops) {
   const auto active_token = test_web_dir / "portal_token.kde";
   const auto other_token = test_web_dir / "portal_token.gnome";

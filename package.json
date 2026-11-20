@@ -1,16 +1,15 @@
 {
-  "name": "@lizardbyte/sunshine",
+  "name": "solstice",
   "version": "0.0.0",
-  "description": "Prebuilt web UI assets for the Sunshine game-stream host",
+  "description": "Prebuilt web UI assets for the Solstice game-stream host",
   "license": "GPL-3.0-only",
-  "funding": "https://app.lizardbyte.dev",
-  "homepage": "https://sunshine.lizardbyte.dev",
+  "homepage": "https://github.com/paulwongkwan/Sunshine",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SunshineStream/Sunshine.git"
+    "url": "git+https://github.com/paulwongkwan/Sunshine.git"
   },
   "bugs": {
-    "url": "https://github.com/SunshineStream/Sunshine/issues"
+    "url": "https://github.com/paulwongkwan/Sunshine/issues"
   },
   "files": [
     "build/assets/web/"

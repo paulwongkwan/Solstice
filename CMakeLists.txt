@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 3.24)
 # `set_source_files_properties` requires 3.18
 # `cmake_path(CONVERT ... TO_NATIVE_PATH_LIST ...)` requires 3.20
 
-project(Sunshine VERSION 0.0.0
+project(Solstice VERSION 0.0.0
         DESCRIPTION "Self-hosted game stream host for Moonlight"
-        HOMEPAGE_URL "https://sunshine.lizardbyte.dev")
+        HOMEPAGE_URL "https://github.com/paulwongkwan/Sunshine")
 
 if(NOT WIN32)
     message(FATAL_ERROR
-            "Sunshine supports Windows 11 only. Configure the build with a Windows toolchain.")
+            "Solstice supports Windows 11 only. Configure the build with a Windows toolchain.")
 endif()
 
 set(CMAKE_CXX_STANDARD 23)
@@ -16,12 +16,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_LICENSE "GPL-3.0-only")
 
-set(PROJECT_FQDN "dev.lizardbyte.app.Sunshine")
+set(PROJECT_FQDN "dev.solstice.app.Solstice")
 
 set(PROJECT_BRIEF_DESCRIPTION "GameStream host for Moonlight")  # must be <= 35 characters
 
 set(PROJECT_LONG_DESCRIPTION "Offering low latency, cloud gaming server capabilities with support for AMD, Intel, \
-and Nvidia GPUs for hardware encoding. Software encoding is also available. You can connect to Sunshine from any \
+and Nvidia GPUs for hardware encoding. Software encoding is also available. You can connect to Solstice from any \
 Moonlight client on a variety of devices. A web UI is provided to allow configuration, and client pairing, from \
 your favorite web browser. Pair from the local server or any mobile device.")
 

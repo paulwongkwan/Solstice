@@ -30,7 +30,7 @@
 
 namespace {
   using callback_t = std::function<void()>;  ///< Callable used by task and cleanup wrappers.
-  using int_ptr_t = util::uniq_ptr<int, std::default_delete<int>>;  ///< Integer owned by a Sunshine unique pointer.
+  using int_ptr_t = util::uniq_ptr<int, std::default_delete<int>>;  ///< Integer owned by a Solstice unique pointer.
   using shared_ptr_t = safe::shared_t<int>::ptr_t;  ///< Reference to shared integer storage.
   using move_wrapper_t = move_by_copy_util::MoveByCopy<std::unique_ptr<int>>;  ///< Copy-shaped owner of a move-only integer.
 

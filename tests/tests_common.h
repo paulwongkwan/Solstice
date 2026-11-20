@@ -1,8 +1,8 @@
 /**
  * @file tests/tests_common.h
- * @brief Common GoogleTest support, BaseTest fixtures, and Sunshine test helpers.
+ * @brief Common GoogleTest support, BaseTest fixtures, and Solstice test helpers.
  *
- * Include this header from Sunshine tests instead of including GoogleTest directly. The shared test support
+ * Include this header from Solstice tests instead of including GoogleTest directly. The shared test support
  * makes TEST use BaseTest so tests receive common setup, teardown, and output capture.
  */
 #pragma once

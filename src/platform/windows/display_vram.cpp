@@ -31,12 +31,12 @@ extern "C" {
 #include "src/video.h"
 #include "utf_utils.h"
 
-#if !defined(SUNSHINE_SHADERS_DIR)  // for testing this needs to be defined in cmake as we don't do an install
+#if !defined(SOLSTICE_SHADERS_DIR)  // for testing this needs to be defined in cmake as we don't do an install
   /**
-   * @def SUNSHINE_SHADERS_DIR
+   * @def SOLSTICE_SHADERS_DIR
    * @brief Macro for SUNSHINE SHADERS DIR.
    */
-  #define SUNSHINE_SHADERS_DIR SUNSHINE_ASSETS_DIR "/shaders/directx"
+  #define SOLSTICE_SHADERS_DIR SOLSTICE_ASSETS_DIR "/shaders/directx"
 #endif
 namespace platf {
   using namespace std::literals;
@@ -831,7 +831,7 @@ namespace platf::dxgi {
      *
      * @param capture_display Display object or identifier associated with the operation.
      * @param adapter_p Adapter p.
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return 0 on success; nonzero or negative platform status on failure.
      */
     int init(std::shared_ptr<platf::display_t> capture_display, adapter_t::pointer adapter_p, pix_fmt_e pix_fmt) {
@@ -1117,7 +1117,7 @@ namespace platf::dxgi {
      *
      * @param display Display object or identifier associated with the operation.
      * @param adapter_p Adapter p.
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return 0 on success; nonzero or negative platform status on failure.
      */
     int init(std::shared_ptr<platf::display_t> display, adapter_t::pointer adapter_p, pix_fmt_e pix_fmt) {
@@ -1246,7 +1246,7 @@ namespace platf::dxgi {
      *
      * @param display Display object or identifier associated with the operation.
      * @param adapter_p Adapter p.
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return True when the D3D11 device resources are initialized.
      */
     bool init_device(std::shared_ptr<platf::display_t> display, adapter_t::pointer adapter_p, pix_fmt_e pix_fmt) {
@@ -2160,12 +2160,12 @@ namespace platf::dxgi {
 
 #ifndef DOXYGEN
   #define compile_vertex_shader_helper(x) \
-    if (!(x##_hlsl = compile_vertex_shader(SUNSHINE_SHADERS_DIR "/" #x ".hlsl"))) \
+    if (!(x##_hlsl = compile_vertex_shader(SOLSTICE_SHADERS_DIR "/" #x ".hlsl"))) \
       return -1;
 #endif
 #ifndef DOXYGEN
   #define compile_pixel_shader_helper(x) \
-    if (!(x##_hlsl = compile_pixel_shader(SUNSHINE_SHADERS_DIR "/" #x ".hlsl"))) \
+    if (!(x##_hlsl = compile_pixel_shader(SOLSTICE_SHADERS_DIR "/" #x ".hlsl"))) \
       return -1;
 #endif
 

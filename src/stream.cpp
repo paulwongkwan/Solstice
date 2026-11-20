@@ -65,11 +65,11 @@ static const std::array<short, 17> packetTypes = {
   0x0302,  // IDR frame
   0x0001,  // fully encrypted
   0x010e,  // HDR mode
-  0x5500,  // Rumble triggers (Sunshine protocol extension)
-  0x5501,  // Set motion event (Sunshine protocol extension)
-  0x5502,  // Set RGB LED (Sunshine protocol extension)
-  0x5503,  // Set Adaptive triggers (Sunshine protocol extension)
-  0x5504,  // Set player indicator LEDs (Sunshine protocol extension)
+  0x5500,  // Rumble triggers (Solstice protocol extension)
+  0x5501,  // Set motion event (Solstice protocol extension)
+  0x5502,  // Set RGB LED (Solstice protocol extension)
+  0x5503,  // Set Adaptive triggers (Solstice protocol extension)
+  0x5504,  // Set player indicator LEDs (Solstice protocol extension)
 };
 
 namespace asio = boost::asio;
@@ -107,7 +107,7 @@ namespace stream {
 
     std::uint8_t headerType;  ///< Always 0x01 for short headers.
 
-    // Sunshine extension
+    // Solstice extension
     // Frame processing latency, in 1/10 ms units
     //     zero when the frame is repeated or there is no backend implementation
     boost::endian::little_uint16_at frame_processing_latency;  ///< Frame processing latency.
@@ -120,7 +120,7 @@ namespace stream {
     std::uint8_t frameType;  ///< Frame type.
 
     // Length of the final packet payload for codecs that cannot handle
-    // zero padding, such as AV1 (Sunshine extension).
+    // zero padding, such as AV1 (Solstice extension).
     boost::endian::little_uint16_at lastPayloadLen;  ///< Last payload len.
 
     std::array<std::uint8_t, 2> unknown;  ///< Reserved bytes with no known client-visible meaning.
@@ -279,7 +279,7 @@ namespace stream {
 
     std::uint8_t enabled;  ///< Nonzero when HDR should be enabled.
 
-    // Sunshine protocol extension
+    // Solstice protocol extension
     SS_HDR_METADATA metadata;  ///< HDR10 metadata sent with the control message.
   };
 
@@ -1545,7 +1545,7 @@ namespace stream {
     }
   }
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Exercise production ping routing with concurrent loopback audio and video receives.
    * @param session_id_pings Use session-ID pings instead of legacy address-based pings.
@@ -2294,7 +2294,7 @@ namespace stream {
     void join(session_t &session) {
       // Current Nvidia drivers have a bug where NVENC can deadlock the encoder thread with hardware-accelerated
       // GPU scheduling enabled. If this happens, we will terminate ourselves and the service can restart.
-      // The alternative is that Sunshine can never start another session until it's manually restarted.
+      // The alternative is that Solstice can never start another session until it's manually restarted.
       auto task = []() {
         BOOST_LOG(fatal) << "Hang detected! Session failed to terminate in 10 seconds."sv;
         logging::log_flush();
@@ -2320,7 +2320,7 @@ namespace stream {
       if (--running_sessions == 0) {
         bool revert_display_config {config::video.dd.config_revert_on_disconnect};
         if (proc::proc.running()) {
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
+#if defined SOLSTICE_TRAY && SOLSTICE_TRAY >= 1
           system_tray::update_tray_pausing(proc::proc.get_last_run_app_name());
 #endif
         } else {
@@ -2376,7 +2376,7 @@ namespace stream {
       // If this is the first session, invoke the platform callbacks
       if (++running_sessions == 1) {
         platf::streaming_will_start();
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
+#if defined SOLSTICE_TRAY && SOLSTICE_TRAY >= 1
         system_tray::update_tray_playing(proc::proc.get_last_run_app_name());
 #endif
       }

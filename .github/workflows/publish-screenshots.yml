@@ -19,5 +19,5 @@ jobs:
       statuses: write
     uses: LizardByte/tray/.github/workflows/_publish-screenshots.yml@master
     with:
-      artifact-name-prefix: sunshine-screenshots-
+      artifact-name-prefix: solstice-screenshots-
       source-run-id: ${{ github.event.workflow_run.id }}

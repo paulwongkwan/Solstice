@@ -159,7 +159,7 @@ TEST(ProcessTest, PrepLaunchErrorsAbortDesktopLaunch) {
   proc::ctx_t app {};
   app.id = "42";
   app.name = "Desktop";
-  app.working_dir = SUNSHINE_SOURCE_DIR;
+  app.working_dir = SOLSTICE_SOURCE_DIR;
   app.prep_cmds.emplace_back("sunshine-nonexistent-prep-command", "", false);
   boost::process::v1::environment env = boost::this_process::environment();
   proc::proc_t process(std::move(env), {std::move(app)});
@@ -174,7 +174,7 @@ TEST(ProcessTest, PrepLaunchErrorsAbortDesktopLaunch) {
 #ifdef _WIN32
 TEST(ProcessTest, ExpandsEnvironmentNamesWithoutChangingTheirCase) {
   auto env = boost::this_process::environment();
-  const std::string key = "SUNSHINE_RANGE_SEARCH_REGRESSION";
+  const std::string key = "SOLSTICE_RANGE_SEARCH_REGRESSION";
   const auto original = env.find(key);
   const std::optional<std::string> saved = original == env.end() ? std::nullopt : std::optional {original->to_string()};
   const auto restore = util::fail_guard([&env, &key, &saved]() {
@@ -187,7 +187,7 @@ TEST(ProcessTest, ExpandsEnvironmentNamesWithoutChangingTheirCase) {
   env[key] = "case-preserved";
 
   EXPECT_EQ(proc::parse_env_val(env, "before-$(sunshine_range_search_regression)-after"), "before-case-preserved-after");
-  EXPECT_EQ(proc::parse_env_val(env, "$(SUNSHINE_RANGE_SEARCH_REGRESSION)"), "case-preserved");
+  EXPECT_EQ(proc::parse_env_val(env, "$(SOLSTICE_RANGE_SEARCH_REGRESSION)"), "case-preserved");
 }
 #endif
 
@@ -239,7 +239,7 @@ TEST(ProcessTest, ResolvesRelativeCommandsFromTheChildPath) {
 #endif
 
 TEST(ProcessTest, PrepareCommand) {
-#ifdef SUNSHINE_BUILD_FLATPAK
+#ifdef SOLSTICE_BUILD_FLATPAK
   EXPECT_EQ(proc::prepare_command("steam"), "flatpak-spawn --host steam");
   EXPECT_EQ(proc::prepare_command("flatpak-spawn --host steam"), "flatpak-spawn --host steam");
   EXPECT_EQ(proc::prepare_command("  flatpak-spawn --host steam  "), "flatpak-spawn --host steam");
@@ -362,13 +362,13 @@ TEST_F(ProcessPNGTest, CheckValidPNG_NonExistentFile) {
 }
 
 TEST_F(ProcessPNGTest, CheckValidPNG_RealFile) {
-  // Test with the actual sunshine.png from the project root
+  // Test with the actual solstice.png from the project root
 
   // Only run this test if the file exists
-  if (const fs::path sunshine_png = fs::path(SUNSHINE_SOURCE_DIR) / "sunshine.png"; fs::exists(sunshine_png)) {
+  if (const fs::path sunshine_png = fs::path(SOLSTICE_SOURCE_DIR) / "solstice.png"; fs::exists(sunshine_png)) {
     EXPECT_TRUE(proc::check_valid_png(sunshine_png));
   } else {
-    GTEST_SKIP() << "sunshine.png not found in project root";
+    GTEST_SKIP() << "solstice.png not found in project root";
   }
 }
 
@@ -510,7 +510,7 @@ TEST_F(ProcessPNGTest, ValidateAppImagePath_ValidPNG) {
 TEST_F(ProcessPNGTest, ValidateAppImagePath_OldSteamDefault) {
   // Test the special case for old steam image path
   const std::string result = proc::validate_app_image_path("./assets/steam.png");
-  EXPECT_EQ(result, SUNSHINE_ASSETS_DIR "/steam.png");
+  EXPECT_EQ(result, SOLSTICE_ASSETS_DIR "/steam.png");
 }
 
 /**

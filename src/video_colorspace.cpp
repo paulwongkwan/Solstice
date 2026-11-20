@@ -37,14 +37,14 @@ namespace video {
   }
 
   /**
-   * @brief Check whether a Sunshine colorspace represents HDR video.
+   * @brief Check whether a Solstice colorspace represents HDR video.
    */
   bool colorspace_is_hdr(const sunshine_colorspace_t &colorspace) {
     return colorspace.colorspace == colorspace_e::bt2020;
   }
 
   /**
-   * @brief Derive Sunshine colorspace metadata from client stream configuration.
+   * @brief Derive Solstice colorspace metadata from client stream configuration.
    */
   sunshine_colorspace_t colorspace_from_client_config(const config_t &config, bool hdr_display) {
     using enum colorspace_e;
@@ -105,7 +105,7 @@ namespace video {
   }
 
   /**
-   * @brief Convert Sunshine colorspace metadata to FFmpeg AVCodec fields.
+   * @brief Convert Solstice colorspace metadata to FFmpeg AVCodec fields.
    */
   avcodec_colorspace_t avcodec_colorspace_from_sunshine_colorspace(const sunshine_colorspace_t &sunshine_colorspace) {
     avcodec_colorspace_t avcodec_colorspace;

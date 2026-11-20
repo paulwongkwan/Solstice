@@ -76,7 +76,7 @@ namespace input {
    */
   std::shared_ptr<input_t> alloc(safe::mail_t mail, std::string session_id);
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   namespace testing {
     /**
      * @brief Replace the global platform input backend for a unit test.
@@ -133,7 +133,7 @@ namespace input {
     void process_queued_messages(std::shared_ptr<input_t> input);
 
     /**
-     * @brief Keyboard event Sunshine emitted toward the platform backend.
+     * @brief Keyboard event Solstice emitted toward the platform backend.
      */
     struct keyboard_event_t {
       std::uint16_t key_code;  ///< Platform keycode after the configured keybinding remap.
@@ -174,12 +174,12 @@ namespace input {
     void send_relative_mouse_packet(std::shared_ptr<input_t> &input, std::int16_t delta_x, std::int16_t delta_y);
 
     /**
-     * @brief Forget every key Sunshine tracks as pressed and cancel any pending key repeat.
+     * @brief Forget every key Solstice tracks as pressed and cancel any pending key repeat.
      */
     void reset_keyboard_state();
 
     /**
-     * @brief Release every key Sunshine tracks as pressed, as a disconnect does.
+     * @brief Release every key Solstice tracks as pressed, as a disconnect does.
      */
     void release_held_keys();
 

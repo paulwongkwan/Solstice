@@ -37,7 +37,7 @@ namespace nvenc {
      *
      * @param config NVENC encoder configuration.
      * @param client_config Stream configuration requested by the client.
-     * @param colorspace Sunshine colorspace metadata.
+     * @param colorspace Solstice colorspace metadata.
      * @param buffer_format Platform-agnostic input surface format.
      * @return `true` on success, `false` on error.
      */

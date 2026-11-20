@@ -5,9 +5,9 @@ BeforeAll {
     $source.Contains($systemKey) | Should -BeTrue
 
     # Run the packaged batch script against an isolated test key, never the system PATH.
-    $script:registrySubKey = "Software\Sunshine.Tests\$([guid]::NewGuid().ToString('N'))"
+    $script:registrySubKey = "Software\Solstice.Tests\$([guid]::NewGuid().ToString('N'))"
     $script:registryKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($script:registrySubKey)
-    $script:sunshineRoot = Join-Path $TestDrive "Sunshine install"
+    $script:sunshineRoot = Join-Path $TestDrive "Solstice install"
     $scriptDirectory = Join-Path $script:sunshineRoot "scripts"
     New-Item -ItemType Directory -Path $scriptDirectory -Force | Out-Null
     $script:batchPath = Join-Path $scriptDirectory "update-path.bat"
@@ -68,7 +68,7 @@ Describe "update-path.bat" {
             Should -BeExactly "$original;$script:sunshineRoot;$script:sunshineRoot\tools"
     }
 
-    It "preserves a trailing backslash when Sunshine entries occur in the middle of PATH" {
+    It "preserves a trailing backslash when Solstice entries occur in the middle of PATH" {
         $original = "C:\Windows;$script:sunshineRoot;C:\Other;$script:sunshineRoot\tools;C:\Last\"
         $script:registryKey.SetValue('Path', $original, [Microsoft.Win32.RegistryValueKind]::ExpandString)
 
@@ -78,7 +78,7 @@ Describe "update-path.bat" {
             Should -BeExactly 'C:\Windows;C:\Other;C:\Last\'
     }
 
-    It "can remove Sunshine when it is the only PATH entry" {
+    It "can remove Solstice when it is the only PATH entry" {
         $script:registryKey.SetValue('Path', $script:sunshineRoot, [Microsoft.Win32.RegistryValueKind]::ExpandString)
 
         Invoke-PathUpdate -Action "remove"
@@ -86,7 +86,7 @@ Describe "update-path.bat" {
         $script:registryKey.GetValue('Path', $null, 'DoNotExpandEnvironmentNames') | Should -BeExactly ''
     }
 
-    It "does not rewrite the value when both Sunshine directories are already present" {
+    It "does not rewrite the value when both Solstice directories are already present" {
         $original = "$script:sunshineRoot;$script:sunshineRoot\tools;C:\Last\"
         $script:registryKey.SetValue('Path', $original, [Microsoft.Win32.RegistryValueKind]::String)
 

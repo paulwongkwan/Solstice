@@ -1,6 +1,6 @@
 /**
- * @file tools/sunshinesvc.cpp
- * @brief Handles launching Sunshine.exe into user sessions as SYSTEM
+ * @file tools/solsticesvc.cpp
+ * @brief Handles launching Solstice.exe into user sessions as SYSTEM
  */
 #define WIN32_LEAN_AND_MEAN
 #include <array>
@@ -22,7 +22,7 @@ SERVICE_STATUS service_status;
 HANDLE stop_event;
 HANDLE session_change_event;
 
-constexpr auto SERVICE_NAME = "SunshineService";
+constexpr auto SERVICE_NAME = "SolsticeService";
 
 /**
  * @brief Handle service control and console-session events from the Windows service manager.
@@ -38,7 +38,7 @@ DWORD WINAPI HandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID, LPVOID) {
       return NO_ERROR;
 
     case SERVICE_CONTROL_SESSIONCHANGE:
-      // If a new session connects to the console, restart Sunshine
+      // If a new session connects to the console, restart Solstice
       // to allow it to spawn inside the new console session.
       if (dwEventType == WTS_CONSOLE_CONNECT) {
         SetEvent(session_change_event);
@@ -71,11 +71,11 @@ HANDLE CreateJobObjectForChildProcess() {
 
   JOBOBJECT_EXTENDED_LIMIT_INFORMATION job_limit_info = {};
 
-  // Kill Sunshine.exe when the final job object handle is closed (which will happen if we terminate unexpectedly).
-  // This ensures we don't leave an orphaned Sunshine.exe running with an inherited handle to our log file.
+  // Kill Solstice.exe when the final job object handle is closed (which will happen if we terminate unexpectedly).
+  // This ensures we don't leave an orphaned Solstice.exe running with an inherited handle to our log file.
   job_limit_info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 
-  // Allow Sunshine.exe to use CREATE_BREAKAWAY_FROM_JOB when spawning processes to ensure they can to live beyond
+  // Allow Solstice.exe to use CREATE_BREAKAWAY_FROM_JOB when spawning processes to ensure they can to live beyond
   // the lifetime of SunshineSvc.exe. This avoids unexpected user data loss if we crash or are killed.
   job_limit_info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_BREAKAWAY_OK;
 
@@ -131,9 +131,9 @@ HANDLE DuplicateTokenForSession(DWORD console_session_id) {
 HANDLE OpenLogFileHandle() {
   std::array<WCHAR, MAX_PATH> log_file_name;
 
-  // Create sunshine.log in the Temp folder (usually %SYSTEMROOT%\Temp)
+  // Create solstice.log in the Temp folder (usually %SYSTEMROOT%\Temp)
   GetTempPathW(log_file_name.size(), log_file_name.data());
-  wcscat_s(log_file_name.data(), log_file_name.size(), L"sunshine.log");
+  wcscat_s(log_file_name.data(), log_file_name.size(), L"solstice.log");
 
   // Preserve previous service output before opening the current log.
   logging::rotate_log_file(log_file_name.data());
@@ -141,7 +141,7 @@ HANDLE OpenLogFileHandle() {
   // The file handle must be inheritable for our child process to use it
   SECURITY_ATTRIBUTES security_attributes = {sizeof(security_attributes), nullptr, TRUE};
 
-  // Create the current sunshine.log
+  // Create the current solstice.log
   return CreateFileW(log_file_name.data(), GENERIC_WRITE, FILE_SHARE_READ, &security_attributes, CREATE_ALWAYS, 0, nullptr);
 }
 
@@ -160,7 +160,7 @@ bool RunTerminationHelper(HANDLE console_token, DWORD pid) {
   startup_info.lpDesktop = (LPWSTR) L"winsta0\\default";
 
   // Execute ourselves as a detached process in the user session with the --terminate argument.
-  // This will allow us to attach to Sunshine's console and send it a Ctrl-C event.
+  // This will allow us to attach to Solstice's console and send it a Ctrl-C event.
   PROCESS_INFORMATION process_info;
   if (!CreateProcessAsUserW(console_token, module_path.data(), command.data(), nullptr, nullptr, FALSE, CREATE_UNICODE_ENVIRONMENT | DETACHED_PROCESS, nullptr, nullptr, &startup_info, &process_info)) {
     return false;
@@ -182,10 +182,10 @@ bool RunTerminationHelper(HANDLE console_token, DWORD pid) {
 }
 
 /**
- * @brief Terminate Sunshine gracefully, forcing termination if it does not exit within 20 seconds.
+ * @brief Terminate Solstice gracefully, forcing termination if it does not exit within 20 seconds.
  *
- * @param console_token Token for the console session running Sunshine.
- * @param process_info Handles and identifier of the running Sunshine process.
+ * @param console_token Token for the console session running Solstice.
+ * @param process_info Handles and identifier of the running Solstice process.
  */
 void TerminateSunshine(HANDLE console_token, const PROCESS_INFORMATION &process_info) {
   if (!RunTerminationHelper(console_token, process_info.dwProcessId) || WaitForSingleObject(process_info.hProcess, 20000) != WAIT_OBJECT_0) {
@@ -194,7 +194,7 @@ void TerminateSunshine(HANDLE console_token, const PROCESS_INFORMATION &process_
 }
 
 /**
- * @brief Run Sunshine in the active console session until the Windows service is stopped.
+ * @brief Run Solstice in the active console session until the Windows service is stopped.
  * @details The service manager's argument count and argument vector are unused; the native signature is retained.
  */
 VOID WINAPI ServiceMain(DWORD, LPTSTR *) {
@@ -263,7 +263,7 @@ VOID WINAPI ServiceMain(DWORD, LPTSTR *) {
     return;
   }
 
-  // Only allow Sunshine.exe to inherit the log file handle, not all inheritable handles
+  // Only allow Solstice.exe to inherit the log file handle, not all inheritable handles
   UpdateProcThreadAttribute(startup_info.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, &log_file_handle, sizeof(log_file_handle), nullptr, nullptr);
 
   // Tell SCM we're running (and stoppable now)
@@ -271,7 +271,7 @@ VOID WINAPI ServiceMain(DWORD, LPTSTR *) {
   service_status.dwCurrentState = SERVICE_RUNNING;
   SetServiceStatus(service_status_handle, &service_status);
 
-  // Loop every 3 seconds until the stop event is set or Sunshine.exe is running
+  // Loop every 3 seconds until the stop event is set or Solstice.exe is running
   while (WaitForSingleObject(stop_event, 3000) != WAIT_OBJECT_0) {
     auto console_session_id = WTSGetActiveConsoleSessionId();
     if (console_session_id == 0xFFFFFFFF) {
@@ -291,11 +291,11 @@ VOID WINAPI ServiceMain(DWORD, LPTSTR *) {
       continue;
     }
 
-    // Start Sunshine.exe inside our job object
+    // Start Solstice.exe inside our job object
     UpdateProcThreadAttribute(startup_info.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_JOB_LIST, &job_handle, sizeof(job_handle), nullptr, nullptr);
 
     PROCESS_INFORMATION process_info;
-    if (!CreateProcessAsUserW(console_token, L"Sunshine.exe", nullptr, nullptr, nullptr, TRUE, CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT, nullptr, nullptr, (LPSTARTUPINFOW) &startup_info, &process_info)) {
+    if (!CreateProcessAsUserW(console_token, L"Solstice.exe", nullptr, nullptr, nullptr, TRUE, CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT, nullptr, nullptr, (LPSTARTUPINFOW) &startup_info, &process_info)) {
       CloseHandle(console_token);
       CloseHandle(job_handle);
       continue;
@@ -303,35 +303,35 @@ VOID WINAPI ServiceMain(DWORD, LPTSTR *) {
 
     bool still_running;
     do {
-      // Wait for the stop event to be set, Sunshine.exe to terminate, or the console session to change
+      // Wait for the stop event to be set, Solstice.exe to terminate, or the console session to change
       const std::array<HANDLE, 3> wait_objects = {stop_event, process_info.hProcess, session_change_event};
       switch (WaitForMultipleObjects(wait_objects.size(), wait_objects.data(), FALSE, INFINITE)) {
         case WAIT_OBJECT_0 + 2:
           if (WTSGetActiveConsoleSessionId() == console_session_id) {
-            // The active console session didn't actually change. Let Sunshine keep running.
+            // The active console session didn't actually change. Let Solstice keep running.
             still_running = true;
             continue;
           }
-          // Fall-through to terminate Sunshine.exe and start it again.
+          // Fall-through to terminate Solstice.exe and start it again.
         case WAIT_OBJECT_0:
-          // The service is shutting down, so try to gracefully terminate Sunshine.exe.
+          // The service is shutting down, so try to gracefully terminate Solstice.exe.
           TerminateSunshine(console_token, process_info);
           still_running = false;
           break;
 
         case WAIT_OBJECT_0 + 1:
           {
-            // Sunshine terminated itself.
+            // Solstice terminated itself.
 
             if (DWORD exit_code; GetExitCodeProcess(process_info.hProcess, &exit_code) && exit_code == ERROR_SHUTDOWN_IN_PROGRESS) {
-              // Sunshine is asking for us to shut down, so gracefully stop ourselves.
+              // Solstice is asking for us to shut down, so gracefully stop ourselves.
               SetEvent(stop_event);
             }
             still_running = false;
             break;
           }
         default:
-          // Stop the service rather than orphaning Sunshine after an unexpected wait failure.
+          // Stop the service rather than orphaning Solstice after an unexpected wait failure.
           SetEvent(stop_event);
           TerminateSunshine(console_token, process_info);
           still_running = false;
@@ -352,7 +352,7 @@ VOID WINAPI ServiceMain(DWORD, LPTSTR *) {
 
 // This will run in a child process in the user session
 int DoGracefulTermination(DWORD pid) {
-  // Attach to Sunshine's console
+  // Attach to Solstice's console
   if (!AttachConsole(pid)) {
     return GetLastError();
   }
@@ -360,7 +360,7 @@ int DoGracefulTermination(DWORD pid) {
   // Disable our own Ctrl-C handling
   SetConsoleCtrlHandler(nullptr, TRUE);
 
-  // Send a Ctrl-C event to Sunshine
+  // Send a Ctrl-C event to Solstice
   if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0)) {
     return GetLastError();
   }
@@ -369,13 +369,13 @@ int DoGracefulTermination(DWORD pid) {
 }
 
 int main(int argc, char *argv[]) {
-  // Check if this is a reinvocation of ourselves to send Ctrl-C to Sunshine.exe
+  // Check if this is a reinvocation of ourselves to send Ctrl-C to Solstice.exe
   if (argc == 3 && strcmp(argv[1], "--terminate") == 0) {
     return DoGracefulTermination(atol(argv[2]));
   }
 
   // By default, services have their current directory set to %SYSTEMROOT%\System32.
-  // We want to use the directory where Sunshine.exe is located instead of system32.
+  // We want to use the directory where Solstice.exe is located instead of system32.
   // This requires stripping off 2 path components: the file name and the last folder
   std::array<WCHAR, MAX_PATH> module_path;
   GetModuleFileNameW(nullptr, module_path.data(), module_path.size());

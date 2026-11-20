@@ -219,7 +219,7 @@ const virtualKeyCodeValues = new Set(virtualKeyCodes.map(option => option.code))
 const virtualKeyCodesByValue = new Map(virtualKeyCodes.map(option => [option.value, option]))
 
 /**
- * @brief Test whether a value is accepted by Sunshine's integer-list parser.
+ * @brief Test whether a value is accepted by Solstice's integer-list parser.
  *
  * @param {string} value Candidate decimal or hexadecimal key code.
  * @return {boolean} Whether the value can be serialized as a key code.

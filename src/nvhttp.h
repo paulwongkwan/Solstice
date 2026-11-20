@@ -33,7 +33,7 @@ namespace nvhttp {
   /**
    * @brief The protocol version.
    * @details The version of the GameStream protocol we are mocking.
-   * @note The negative 4th number indicates to Moonlight that this is Sunshine.
+   * @note The negative 4th number indicates to Moonlight that this is Solstice.
    */
   constexpr auto VERSION = "7.1.431.-1";
 
@@ -88,15 +88,15 @@ namespace nvhttp {
   void setup(const std::string &pkey, const std::string &cert);
 
   /**
-   * @brief Simple-Web-Server HTTPS backend configured for Sunshine certificate handling.
+   * @brief Simple-Web-Server HTTPS backend configured for Solstice certificate handling.
    */
   class SunshineHTTPS: public SimpleWeb::HTTPS {
   public:
     /**
-     * @brief Construct an HTTPS connection using Sunshine's TLS context.
+     * @brief Construct an HTTPS connection using Solstice's TLS context.
      *
      * @param io_context Boost.Asio context used for network operations.
-     * @param ctx TLS context configured with Sunshine's certificate and key.
+     * @param ctx TLS context configured with Solstice's certificate and key.
      */
     SunshineHTTPS(boost::asio::io_context &io_context, boost::asio::ssl::context &ctx):
         SimpleWeb::HTTPS(io_context, ctx) {
@@ -113,11 +113,11 @@ namespace nvhttp {
    * @brief Enumerates supported pAIR PHASE options.
    */
   enum class PAIR_PHASE {
-    NONE,  ///< Sunshine is not in a pairing phase
-    GETSERVERCERT,  ///< Sunshine is in the get server certificate phase
-    CLIENTCHALLENGE,  ///< Sunshine is in the client challenge phase
-    SERVERCHALLENGERESP,  ///< Sunshine is in the server challenge response phase
-    CLIENTPAIRINGSECRET  ///< Sunshine is in the client pairing secret phase
+    NONE,  ///< Solstice is not in a pairing phase
+    GETSERVERCERT,  ///< Solstice is in the get server certificate phase
+    CLIENTCHALLENGE,  ///< Solstice is in the client challenge phase
+    SERVERCHALLENGERESP,  ///< Solstice is in the server challenge response phase
+    CLIENTPAIRINGSECRET  ///< Solstice is in the client pairing secret phase
   };
 
   /**
@@ -187,7 +187,7 @@ namespace nvhttp {
    * @brief Validate an operator approval identifier received from the REST API.
    *
    * @param pairing_id Approval identifier to validate.
-   * @return `true` when the value has the exact hexadecimal format Sunshine generates.
+   * @return `true` when the value has the exact hexadecimal format Solstice generates.
    */
   bool is_valid_pairing_id(std::string_view pairing_id);
 
@@ -387,7 +387,7 @@ namespace nvhttp {
    */
   uint32_t get_codec_mode_flags();
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Test-only accessors for paired-client authorization state.
    */

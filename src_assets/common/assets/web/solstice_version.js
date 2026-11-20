@@ -1,7 +1,7 @@
 /**
- * @brief Parsed Sunshine release version and comparison helpers.
+ * @brief Parsed Solstice release version and comparison helpers.
  */
-class SunshineVersion {
+class SolsticeVersion {
   /**
    * @brief Construct a version from GitHub release data or a version string.
    *
@@ -29,7 +29,7 @@ class SunshineVersion {
   }
 
   /**
-   * @brief Split a Sunshine version string into numeric components.
+   * @brief Split a Solstice version string into numeric components.
    *
    * @param {string} version Version string to parse.
    * @return {?number[]} Numeric version components.
@@ -46,19 +46,19 @@ class SunshineVersion {
   }
 
   /**
-   * @brief Compare this version with another Sunshine version.
+   * @brief Compare this version with another Solstice version.
    *
-   * @param {SunshineVersion|string} otherVersion Version to compare.
+   * @param {SolsticeVersion|string} otherVersion Version to compare.
    * @return {boolean} Whether this version is greater.
    */
   isGreater(otherVersion) {
     let otherVersionParts;
-    if (otherVersion instanceof SunshineVersion) {
+    if (otherVersion instanceof SolsticeVersion) {
       otherVersionParts = otherVersion.versionParts;
     } else if (typeof otherVersion === 'string') {
       otherVersionParts = this.parseVersion(otherVersion);
     } else {
-      throw new TypeError('Invalid argument: otherVersion must be a SunshineVersion object or a version string');
+      throw new TypeError('Invalid argument: otherVersion must be a SolsticeVersion object or a version string');
     }
 
     if (!this.versionParts || !otherVersionParts) {
@@ -73,4 +73,4 @@ class SunshineVersion {
   }
 }
 
-export default SunshineVersion;
+export default SolsticeVersion;

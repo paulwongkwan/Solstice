@@ -80,7 +80,7 @@ namespace net {
   std::string_view to_enum_string(net_e net);
 
   /**
-   * @brief Convert a Boost address family to Sunshine network enum value.
+   * @brief Convert a Boost address family to Solstice network enum value.
    *
    * @param view Boost.Log record view being formatted.
    * @return Value converted from address.
@@ -129,7 +129,7 @@ namespace net {
   /**
    * @brief Get the configured bind address formatted as a URL host.
    * @details IPv6 addresses are enclosed in brackets. An empty bind address is represented as `localhost`.
-   * @return URL host for links to services bound by Sunshine.
+   * @return URL host for links to services bound by Solstice.
    */
   std::string get_bind_address_url_host();
 
@@ -167,7 +167,7 @@ namespace net {
   /**
    * @brief Returns a string for use as the instance name for mDNS.
    * @param hostname The hostname to use for instance name generation.
-   * @return Hostname-based instance name or "Sunshine" if hostname is invalid.
+   * @return Hostname-based instance name or "Solstice" if hostname is invalid.
    */
   std::string mdns_instance_name(const std::string_view &hostname);
 }  // namespace net

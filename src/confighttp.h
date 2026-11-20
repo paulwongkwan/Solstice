@@ -22,7 +22,7 @@
  * @def WEB_DIR
  * @brief Macro for WEB DIR.
  */
-#define WEB_DIR SUNSHINE_ASSETS_DIR "/web/"
+#define WEB_DIR SOLSTICE_ASSETS_DIR "/web/"
 
 namespace confighttp {
   constexpr auto PORT_HTTPS = 1;  ///< GameStream port offset for port https.
@@ -179,7 +179,7 @@ namespace confighttp {
    */
   void saveApp(const resp_https_t &response, const req_https_t &request);
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Replace native permission statuses for deterministic HTTP tests.
    *

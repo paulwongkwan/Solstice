@@ -51,7 +51,7 @@ protected:
     }
     scheme = std::format(L"sunshine-url-test-{}-{}", GetCurrentProcessId(), sequence++);
     registry_path = std::format(LR"(Software\Classes\{})", scheme);
-    output_path = std::filesystem::path {SUNSHINE_TEST_BIN_DIR} / (scheme + L".txt");
+    output_path = std::filesystem::path {SOLSTICE_TEST_BIN_DIR} / (scheme + L".txt");
 
     HKEY protocol;
     DWORD disposition;
@@ -106,7 +106,7 @@ protected:
     auto command = platf::make_url_launch_command(command_processor.wstring(), utf_utils::from_utf8(url));
 
     // CI runners prohibit the breakaway flag used by run_command(). Exercise the production URL
-    // command inside the runner's job instead of changing Sunshine's process-lifetime behavior.
+    // command inside the runner's job instead of changing Solstice's process-lifetime behavior.
     STARTUPINFOW startup_info {};
     startup_info.cb = sizeof(startup_info);
     PROCESS_INFORMATION process_info {};
@@ -185,7 +185,7 @@ TEST_F(WindowsOpenUrlTest, PreservesSpacesAndShellMetacharacters) {
  * @brief Keep environment-like URL text from expanding in the command processor.
  */
 TEST_F(WindowsOpenUrlTest, PreservesPercentAndExclamationDelimitedText) {
-  const auto name = std::format(L"SUNSHINE_URL_TEST_{}", GetCurrentProcessId());
+  const auto name = std::format(L"SOLSTICE_URL_TEST_{}", GetCurrentProcessId());
   ASSERT_EQ(GetEnvironmentVariableW(name.c_str(), nullptr, 0), 0U);
   ASSERT_EQ(GetLastError(), ERROR_ENVVAR_NOT_FOUND);
   ASSERT_TRUE(SetEnvironmentVariableW(name.c_str(), L"unexpected-expansion"));

@@ -27,7 +27,7 @@
  * @def DEFAULT_APP_IMAGE_PATH
  * @brief Macro for DEFAULT APP IMAGE PATH.
  */
-#define DEFAULT_APP_IMAGE_PATH SUNSHINE_ASSETS_DIR "/box.png"
+#define DEFAULT_APP_IMAGE_PATH SOLSTICE_ASSETS_DIR "/box.png"
 
 namespace proc {
   /**
@@ -42,7 +42,7 @@ namespace proc {
 
   /**
    * pre_cmds -- guaranteed to be executed unless any of the commands fail.
-   * detached -- commands detached from Sunshine
+   * detached -- commands detached from Solstice
    * cmd -- Runs indefinitely until:
    *    No session is running and a different set of commands it to be executed
    *    Command exits
@@ -77,7 +77,7 @@ namespace proc {
     std::string id;  ///< Stable identifier for the configured application.
     bool elevated;  ///< Whether the process should be launched elevated.
     bool auto_detach;  ///< Whether the process should detach automatically.
-    bool wait_all;  ///< Whether Sunshine waits for all child processes.
+    bool wait_all;  ///< Whether Solstice waits for all child processes.
     std::chrono::seconds exit_timeout;  ///< Exit timeout.
   };
 
@@ -160,7 +160,7 @@ namespace proc {
      */
     void update_apps_and_env(proc_t &&other);
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
     /**
      * @brief Get the current process environment (strictly for unit tests).
      */

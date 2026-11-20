@@ -6,9 +6,9 @@ body:
     attributes:
       value: >
         **THIS IS NOT THE PLACE TO ASK FOR SUPPORT!**
-        Please use our [Support Center](https://app.lizardbyte.dev/support) for support issues.
+        Please use our [Support Center](https://github.com/paulwongkwan/Sunshine/issues) for support issues.
         Before creating an issue, please review our
-        [AI Community Rules](https://docs.lizardbyte.dev/latest/community/community_rules.html#ai-generated-content).
+        [AI Community Rules](https://github.com/paulwongkwan/Sunshine).
         AI generated issues and non actionable bug reports will be LOCKED and CLOSED!
   - type: checkboxes
     attributes:
@@ -19,13 +19,13 @@ body:
   - type: checkboxes
     attributes:
       label: Is your issue described in the documentation?
-      description: Please read our [documentation](https://docs.lizardbyte.dev/projects/sunshine)
+      description: Please read our [documentation](https://github.com/paulwongkwan/Sunshine/tree/master/docs)
       options:
         - label: I have read the documentation
   - type: dropdown
     attributes:
       label: Is your issue present in the latest beta/pre-release?
-      description: Please test the latest [pre-release](https://github.com/SunshineStream/Sunshine/releases).
+      description: Please test the latest [pre-release](https://github.com/paulwongkwan/Sunshine/releases).
       options:
         - "I didn't read the issue template"
         - "I'm too lazy to test"
@@ -94,7 +94,7 @@ body:
         - Linux - Fedora Copr
         - Linux - flathub/flatpak
         - Linux - Homebrew
-        - Linux - LizardByte/pacman-repo
+        - Linux - Solstice/pacman-repo
         - Linux - nixpkgs (Third Party)
         - Linux - solus (Third Party)
         - Linux - Unraid (Third Party)

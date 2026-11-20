@@ -22,7 +22,7 @@ static_assert(std::is_same_v<decltype(&nvprefs::undo_file_t::create_new_file), s
  * @brief Input-only paths preserve creation, sharing-error, and missing-file behavior.
  */
 TEST_F(BaseTest, NvPrefsUndoFilesAcceptConstPathsAndReportOpenFailures) {
-  const auto path = std::filesystem::path {SUNSHINE_TEST_BIN_DIR} / "nvprefs_const_path_test.json";
+  const auto path = std::filesystem::path {SOLSTICE_TEST_BIN_DIR} / "nvprefs_const_path_test.json";
   std::filesystem::remove(path);
   auto cleanup = util::fail_guard([&path] {
     std::error_code ignored;

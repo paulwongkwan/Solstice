@@ -3,9 +3,9 @@
  * @brief Tests for keyboard packet handling in src/input.*.
  *
  * Moonlight always sends Windows virtual-key codes on the wire, whatever platform the client
- * runs on. Sunshine is responsible for the platform-independent half of the translation:
+ * runs on. Solstice is responsible for the platform-independent half of the translation:
  * applying the `keybindings` remap, tracking which modifiers the client holds, and injecting
- * synthetic modifier presses when the client reports a modifier Sunshine does not believe is
+ * synthetic modifier presses when the client reports a modifier Solstice does not believe is
  * held. Translating a virtual-key code into a native keycode is libvirtualhid's job, and each
  * of its backend tables is covered by that project's own per-platform test job (see
  * `TranslatesKeyboardKeys` in libvirtualhid's `tests/unit/test_*_backend.cpp`). The tables are
@@ -138,7 +138,7 @@ namespace {
   }};
 
   /**
-   * @brief Non-character keys a client can send that Sunshine must forward verbatim.
+   * @brief Non-character keys a client can send that Solstice must forward verbatim.
    */
   constexpr std::array<std::uint16_t, 43> non_character_keys {{
     VKEY_BACK,
@@ -187,7 +187,7 @@ namespace {
   }};
 
   /**
-   * @brief Every virtual-key code Sunshine recognizes as a modifier key.
+   * @brief Every virtual-key code Solstice recognizes as a modifier key.
    */
   constexpr std::array<std::uint16_t, 9> modifier_keys {{
     VKEY_SHIFT,
@@ -216,7 +216,7 @@ namespace {
     {MODIFIER_SHIFT, VKEY_LSHIFT, VKEY_RSHIFT, VKEY_SHIFT, "shift"},
     {MODIFIER_CTRL, VKEY_LCONTROL, VKEY_RCONTROL, VKEY_CONTROL, "ctrl"},
     {MODIFIER_ALT, VKEY_LMENU, VKEY_RMENU, VKEY_MENU, "alt"},
-    // Meta has no side-agnostic code and Sunshine never synthesizes it.
+    // Meta has no side-agnostic code and Solstice never synthesizes it.
     {MODIFIER_META, VKEY_LWIN, VKEY_RWIN, VKEY_LWIN, "meta"},
   }};
 
@@ -506,7 +506,7 @@ TEST_F(KeyboardPassthroughTest, CoversTheWholePrintableAsciiRange) {
   }
   EXPECT_EQ(covered.size(), 0x7Fu - 0x20u);
 
-  // A client types a shifted character by holding a real shift key, so Sunshine must forward
+  // A client types a shifted character by holding a real shift key, so Solstice must forward
   // the shift key it was given and must not add a synthetic one on top.
   for (const auto &key : qwerty_ascii_keys) {
     SCOPED_TRACE(std::string {"'"} + key.plain + "' / '" + key.shifted + "'");
@@ -533,7 +533,7 @@ TEST_F(KeyboardPassthroughTest, CoversTheWholePrintableAsciiRange) {
 
 TEST_F(KeyboardPassthroughTest, ForwardsModifierKeysWithoutSyntheticInjection) {
   // A modifier key event never injects a second modifier around itself, even when the client
-  // claims modifiers Sunshine does not think are held.
+  // claims modifiers Solstice does not think are held.
   for (const auto key_code : modifier_keys) {
     SCOPED_TRACE("modifier key " + hex(key_code));
     const std::uint8_t claimed = MODIFIER_SHIFT | MODIFIER_CTRL | MODIFIER_ALT | MODIFIER_META;
@@ -576,7 +576,7 @@ TEST_F(KeyboardPassthroughTest, HoldsEveryModifierCombinationWithoutSyntheticInj
 
 TEST_F(KeyboardPassthroughTest, InjectsSyntheticModifiersTheClientHoldsWithoutSendingKeys) {
   // Moonlight can report a modifier without ever sending its key event, for example when the
-  // client's own compositor swallowed it. Sunshine wraps the key in a real modifier press.
+  // client's own compositor swallowed it. Solstice wraps the key in a real modifier press.
   struct injectable_t {
     unsigned bit;
     std::uint16_t key_code;

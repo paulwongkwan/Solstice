@@ -1,14 +1,14 @@
 # Getting Started
 
-The recommended method for running Sunshine is to use the [binaries](#binaries) included in the
+The recommended method for running Solstice is to use the [binaries](#binaries) included in the
 [latest release][latest-release], unless otherwise specified.
 
-[Pre-releases](https://github.com/SunshineStream/Sunshine/releases) are also available. These should be considered beta,
+[Pre-releases](https://github.com/paulwongkwan/Sunshine/releases) are also available. These should be considered beta,
 and release artifacts may be missing when merging changes on a faster cadence.
 
 ## Binaries
 
-Binaries of Sunshine are created for each release. Sunshine supports Windows 11 only.
+Binaries of Solstice are created for each release. Solstice supports Windows 11 only.
 Binaries can be found in the [latest release][latest-release].
 
 > [!NOTE]
@@ -21,7 +21,7 @@ Binaries can be found in the [latest release][latest-release].
 ### Windows
 
 > [!NOTE]
-> Sunshine supports ARM64 on Windows; however, this should be considered experimental. This version does not properly
+> Solstice supports ARM64 on Windows; however, this should be considered experimental. This version does not properly
 > support GPU scheduling and any hardware acceleration.
 
 #### Installer (recommended)
@@ -34,18 +34,18 @@ Binaries can be found in the [latest release][latest-release].
 
    | Architecture          | Installer                                                                                                                                    |
    |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-   | AMD64/x64 (Intel/AMD) | [Sunshine-Windows-AMD64-installer.msi](https://github.com/SunshineStream/Sunshine/releases/latest/download/Sunshine-Windows-AMD64-installer.msi) |
-   | ARM64                 | [Sunshine-Windows-ARM64-installer.msi](https://github.com/SunshineStream/Sunshine/releases/latest/download/Sunshine-Windows-ARM64-installer.msi) |
+   | AMD64/x64 (Intel/AMD) | [Solstice-Windows-AMD64-installer.msi](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-AMD64-installer.msi) |
+   | ARM64                 | [Solstice-Windows-ARM64-installer.msi](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-ARM64-installer.msi) |
 
 > [!TIP]
 > Installer logs can be found in the following directory:
-> `%%TEMP%/Sunshine/logs/install/`
+> `%%TEMP%/Solstice/logs/install/`
 
 > [!CAUTION]
 > You should carefully select or unselect the options you want to install. Do not blindly install or
 > enable features.
 
-To uninstall, find Sunshine in the list <a href="ms-settings:installed-apps">here</a> and select "Uninstall" from the
+To uninstall, find Solstice in the list <a href="ms-settings:installed-apps">here</a> and select "Uninstall" from the
 overflow menu. Different versions of Windows may provide slightly different steps for uninstall.
 
 #### Standalone (lite version)
@@ -58,8 +58,8 @@ overflow menu. Different versions of Windows may provide slightly different step
 
    | Architecture          | Installer                                                                                                                          |
    |-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
-   | AMD64/x64 (Intel/AMD) | [Sunshine-Windows-AMD64-lite.zip](https://github.com/SunshineStream/Sunshine/releases/latest/download/Sunshine-Windows-AMD64-lite.zip) |
-   | ARM64                 | [Sunshine-Windows-ARM64-lite.zip](https://github.com/SunshineStream/Sunshine/releases/latest/download/Sunshine-Windows-ARM64lite.zip)  |
+   | AMD64/x64 (Intel/AMD) | [Solstice-Windows-AMD64-lite.zip](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-AMD64-lite.zip) |
+   | ARM64                 | [Solstice-Windows-ARM64-lite.zip](https://github.com/paulwongkwan/Sunshine/releases/latest/download/Solstice-Windows-ARM64-lite.zip)  |
 
 2. Open command prompt as administrator
 3. Firewall rules
@@ -95,8 +95,8 @@ overflow menu. Different versions of Windows may provide slightly different step
 After installation, some initial setup is required.
 
 ### Windows
-Sunshine creates virtual gamepads through [ViGEmBus](https://github.com/nefarius/ViGEmBus). Install the driver, then
-enable gamepad input in the Web UI under **Configuration > Input**. Sunshine supports the Xbox 360 and DualShock 4
+Solstice creates virtual gamepads through [ViGEmBus](https://github.com/nefarius/ViGEmBus). Install the driver, then
+enable gamepad input in the Web UI under **Configuration > Input**. Solstice supports the Xbox 360 and DualShock 4
 emulation profiles.
 
 Keyboard and mouse input is injected with the Windows `SendInput` API, and touch and pen input uses the Windows
@@ -107,20 +107,20 @@ After installing or updating ViGEmBus, restart your computer.
 ## Usage
 
 ### Basic usage
-If Sunshine is not installed/running as a service, then start Sunshine with the following command, unless a start
+If Solstice is not installed/running as a service, then start Solstice with the following command, unless a start
 command is listed in the specified package [install](#install) instructions above.
 
 > [!NOTE]
-> A service is a process that runs in the background. This is the default when installing Sunshine from the
-> Windows installer. Running multiple instances of Sunshine is not advised.
+> A service is a process that runs in the background. This is the default when installing Solstice from the
+> Windows installer. Running multiple instances of Solstice is not advised.
 
 ```bash
-sunshine
+solstice
 ```
 
 ### Specify config file
 ```bash
-sunshine <directory of conf file>/sunshine.conf
+solstice <directory of conf file>/solstice.conf
 ```
 
 > [!NOTE]
@@ -130,7 +130,7 @@ sunshine <directory of conf file>/sunshine.conf
 
 ### Configuration
 
-Sunshine is configured via the web ui, which is available on [https://localhost:47990](https://localhost:47990)
+Solstice is configured via the web ui, which is available on [https://localhost:47990](https://localhost:47990)
 by default. You may replace *localhost* with your internal ip address.
 
 > [!NOTE]
@@ -146,7 +146,7 @@ by default. You may replace *localhost* with your internal ip address.
    ![Applications](images/applications.png)
 3. Adjust any configuration settings as needed. You can search for options in the search bar.
    ![Configuration](images/configuration-search.png)
-4. Find Moonlight clients and other tools for Sunshine in the `Featured Apps` tab.
+4. Find Moonlight clients and other tools for Solstice in the `Featured Apps` tab.
    ![Featured Apps](images/featured-apps.png)
 5. In Moonlight, you may need to add the PC manually.
 6. When Moonlight requests for you insert the pin:
@@ -167,13 +167,13 @@ To get a list of available arguments, run the following command.
 
 @tabs_grouped{linux-package|:|
    @tab{ General |:| ```bash
-      sunshine --help
+      solstice --help
       ```}
    @tab{ AppImage |:| ```bash
-      ./Sunshine_{version}_{arch}.AppImage --help
+      ./Solstice_{version}_{arch}.AppImage --help
       ```}
    @tab{ Flatpak |:| ```bash
-      flatpak run --command=sunshine dev.lizardbyte.app.Sunshine --help
+      flatpak run --command=solstice dev.solstice.app.Solstice --help
       ```}
 }
 
@@ -189,11 +189,11 @@ All shortcuts start with `Ctrl+Alt+Shift`, just like Moonlight.
 * You can use Environment variables in place of values
 * `$(HOME)` will be replaced by the value of `$HOME`
 * `$$` will be replaced by `$`, e.g. `$$(HOME)` will be become `$(HOME)`
-* `env` - Adds or overwrites Environment variables for the commands/applications run by Sunshine.
+* `env` - Adds or overwrites Environment variables for the commands/applications run by Solstice.
   This can only be changed by modifying the `apps.json` file directly.
 
 ### Considerations
-* On Windows, Sunshine uses the Desktop Duplication API which only supports capturing from the GPU used for display.
+* On Windows, Solstice uses the Desktop Duplication API which only supports capturing from the GPU used for display.
   If you want to capture and encode on the eGPU, connect a display or HDMI dummy display dongle to it and run the games
   on that display.
 * When an application is started, if there is an application already running, it will be terminated.
@@ -239,4 +239,4 @@ Guides are available [here](guides.md).
 Tutorials and Guides are community generated. Want to contribute? Reach out to us on our discord server.}
 
 
-[latest-release]: https://github.com/SunshineStream/Sunshine/releases/latest
+[latest-release]: https://github.com/paulwongkwan/Sunshine/releases/latest

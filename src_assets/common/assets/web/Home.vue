@@ -131,7 +131,7 @@
   import { marked } from 'marked'
   import Navbar from './Navbar.vue'
   import ResourceCard from './ResourceCard.vue'
-  import SunshineVersion from './sunshine_version'
+  import SolsticeVersion from './solstice_version'
   import {
     AlertCircle,
     AlertTriangle,
@@ -153,7 +153,7 @@
     sanitize: false
   });
 
-  console.log("Hello, Sunshine!")
+  console.log("Hello, Solstice!")
   export default {
     components: {
       Navbar,
@@ -188,7 +188,7 @@
         this.notifyPreReleases = config.notify_pre_releases;
         this.platform = config.platform;
         this.controllerEnabled = config.controller !== "disabled";
-        this.version = new SunshineVersion(null, config.version);
+        this.version = new SolsticeVersion(null, config.version);
         try {
           const response = await fetch('./api/permissions');
           this.permissions = (await response.json()).permissions || [];
@@ -196,9 +196,9 @@
           console.error('Failed to fetch permission status:', e);
         }
         console.log("Version: ", this.version.version)
-        this.githubVersion = new SunshineVersion(await fetch("https://api.github.com/repos/SunshineStream/Sunshine/releases/latest").then((r) => r.json()), null);
+        this.githubVersion = new SolsticeVersion(await fetch("https://api.github.com/repos/paulwongkwan/Sunshine/releases/latest").then((r) => r.json()), null);
         console.log("GitHub Version: ", this.githubVersion.version)
-        this.preReleaseVersion = new SunshineVersion((await fetch("https://api.github.com/repos/SunshineStream/Sunshine/releases").then((r) => r.json())).find(release => release.prerelease), null);
+        this.preReleaseVersion = new SolsticeVersion((await fetch("https://api.github.com/repos/paulwongkwan/Sunshine/releases").then((r) => r.json())).find(release => release.prerelease), null);
         console.log("Pre-Release Version: ", this.preReleaseVersion.version)
 
         try {

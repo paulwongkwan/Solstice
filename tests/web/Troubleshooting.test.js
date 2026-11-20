@@ -6,7 +6,7 @@ vi.mock('../../src_assets/common/assets/web/Navbar.vue', () => ({
 }))
 
 import Troubleshooting from '../../src_assets/common/assets/web/Troubleshooting.vue'
-import createSunshineI18n from '../../src_assets/common/assets/web/locale.js'
+import createSolsticeI18n from '../../src_assets/common/assets/web/locale.js'
 import en from '../../src_assets/common/assets/web/public/assets/locale/en.json'
 
 /**
@@ -92,7 +92,7 @@ describe('virtual input troubleshooting', () => {
     vi.stubGlobal('fetch', vi.fn(async url => ({
       json: async () => url === './api/configLocale' ? { locale: 'de' } : catalog,
     })))
-    const i18n = await createSunshineI18n()
+    const i18n = await createSolsticeI18n()
     const wrapper = await mountTroubleshooting('linux', 'none', {}, [
       { id: 'input', status: 'granted', required: true },
     ], i18n)

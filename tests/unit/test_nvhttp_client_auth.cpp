@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 static_assert(std::is_same_v<decltype(&nvhttp::pin), bool (*)(std::string_view, const std::string &, std::string)>);
 
 /**
- * @brief Isolate paired-client authorization tests from the user's Sunshine state.
+ * @brief Isolate paired-client authorization tests from the user's Solstice state.
  */
 class ClientAuthorizationTest: public BaseTest {
 protected:
@@ -34,7 +34,7 @@ protected:
     BaseTest::SetUp();
     original_state_file = config::nvhttp.file_state;
     original_fresh_state = config::sunshine.flags[config::flag::FRESH_STATE];
-    state_file = fs::path {SUNSHINE_TEST_BIN_DIR} / "client_authorization_state.json";
+    state_file = fs::path {SOLSTICE_TEST_BIN_DIR} / "client_authorization_state.json";
 
     config::nvhttp.file_state = state_file.string();
     config::sunshine.flags[config::flag::FRESH_STATE] = false;
@@ -66,7 +66,7 @@ private:
 TEST_F(ClientAuthorizationTest, CanonicalIdentityFailsClosedAndTracksEnableState) {
   const auto paired_credentials = test_utils::certificates::generate_ca_credentials();
   const auto crlf_certificate = test_utils::certificates::to_crlf_pem(paired_credentials.x509);
-  const auto unknown_credentials = crypto::gen_creds("Sunshine Unknown Client", 2048);
+  const auto unknown_credentials = crypto::gen_creds("Solstice Unknown Client", 2048);
   const auto uuid = nvhttp::test_support::add_client("paired", crlf_certificate, true);
 
   EXPECT_TRUE(nvhttp::test_support::add_client("invalid", "not a certificate", true).empty());
@@ -98,10 +98,10 @@ TEST_F(ClientAuthorizationTest, DerivedLeafDoesNotInheritPairedAuthorization) {
 }
 
 TEST_F(ClientAuthorizationTest, MultipleClientsPersistAndUnpairIndependently) {
-  const auto enabled_credentials = test_utils::certificates::generate_ca_credentials("Sunshine Enabled Client");
-  const auto disabled_credentials = crypto::gen_creds("Sunshine Disabled Client", 2048);
+  const auto enabled_credentials = test_utils::certificates::generate_ca_credentials("Solstice Enabled Client");
+  const auto disabled_credentials = crypto::gen_creds("Solstice Disabled Client", 2048);
   const auto expired_credentials = test_utils::certificates::expire_credentials(
-    test_utils::certificates::generate_ca_credentials("Sunshine Expired Client")
+    test_utils::certificates::generate_ca_credentials("Solstice Expired Client")
   );
 
   const auto enabled_uuid = nvhttp::test_support::add_client("enabled", enabled_credentials.x509, true);
@@ -148,7 +148,7 @@ TEST_F(ClientAuthorizationTest, DuplicateCertificateIdentityFailsClosed) {
 
 TEST_F(ClientAuthorizationTest, RePairingReplacesDuplicateCertificateIdentity) {
   const auto paired_credentials = test_utils::certificates::generate_ca_credentials();
-  const auto other_credentials = test_utils::certificates::generate_ca_credentials("Sunshine Other Client");
+  const auto other_credentials = test_utils::certificates::generate_ca_credentials("Solstice Other Client");
   const auto original_uuid = nvhttp::test_support::add_client("original", paired_credentials.x509, true);
   const auto other_uuid = nvhttp::test_support::add_client("other", other_credentials.x509, true);
   ASSERT_FALSE(original_uuid.empty());

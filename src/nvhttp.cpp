@@ -45,12 +45,12 @@ using namespace std::literals;
 
 namespace nvhttp {
 
-  static constexpr std::string_view EMPTY_PROPERTY_TREE_ERROR_MSG = "Property tree is empty. Probably, control flow got interrupted by an unexpected C++ exception. This is a bug in Sunshine. Moonlight-qt will report Malformed XML (missing root element)."sv;
+  static constexpr std::string_view EMPTY_PROPERTY_TREE_ERROR_MSG = "Property tree is empty. Probably, control flow got interrupted by an unexpected C++ exception. This is a bug in Solstice. Moonlight-qt will report Malformed XML (missing root element)."sv;
 
   namespace fs = std::filesystem;
   namespace pt = boost::property_tree;
 
-  crypto::cert_chain_t cert_chain;  ///< Enabled paired-client certificates accepted by Sunshine's GameStream HTTPS server.
+  crypto::cert_chain_t cert_chain;  ///< Enabled paired-client certificates accepted by Solstice's GameStream HTTPS server.
 
   /**
    * @brief Get the mutex protecting paired-client authorization state.
@@ -63,12 +63,12 @@ namespace nvhttp {
   }
 
   /**
-   * @brief HTTPS server backend that adds Sunshine's client-certificate verification.
+   * @brief HTTPS server backend that adds Solstice's client-certificate verification.
    */
   class SunshineHTTPSServer: public SimpleWeb::ServerBase<SunshineHTTPS> {
   public:
     /**
-     * @brief Initialize the HTTPS server with Sunshine's certificate and key files.
+     * @brief Initialize the HTTPS server with Solstice's certificate and key files.
      *
      * @param certification_file Path to the server certificate file.
      * @param private_key_file Path to the matching private key file.
@@ -86,7 +86,7 @@ namespace nvhttp {
     std::function<void(std::shared_ptr<Response>, std::shared_ptr<Request>)> on_verify_failed;  ///< Handler used to return the pairing challenge when client verification fails.
 
   protected:
-    boost::asio::ssl::context context {boost::asio::ssl::context::tls_server};  ///< TLS server context configured with Sunshine's certificate and protocol policy.
+    boost::asio::ssl::context context {boost::asio::ssl::context::tls_server};  ///< TLS server context configured with Solstice's certificate and protocol policy.
 
     /**
      * @brief Enable client-certificate verification after the listening socket is bound.
@@ -174,7 +174,7 @@ namespace nvhttp {
     std::string pkey;  ///< Private key PEM string or path.
   };
 
-  conf_intern_t conf_intern;  ///< TLS credential paths loaded from Sunshine's runtime configuration.
+  conf_intern_t conf_intern;  ///< TLS credential paths loaded from Solstice's runtime configuration.
 
   /**
    * @brief Certificate entry associated with a client name and UUID.
@@ -303,7 +303,7 @@ namespace nvhttp {
   }
 
   /**
-   * @brief Convert a PEM certificate to Sunshine's canonical OpenSSL serialization.
+   * @brief Convert a PEM certificate to Solstice's canonical OpenSSL serialization.
    *
    * @param cert_pem PEM-encoded certificate to canonicalize.
    * @return Canonical PEM text, or an empty string when the certificate is invalid.
@@ -1049,7 +1049,7 @@ namespace nvhttp {
     }
 
     if (!pin_stdin) {
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
+#if defined SOLSTICE_TRAY && SOLSTICE_TRAY >= 1
       system_tray::update_tray_require_pin();
 #endif
       return true;
@@ -1850,7 +1850,7 @@ namespace nvhttp {
     return {true, {}};
   }
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   namespace test_support {
     std::unique_ptr<SimpleWeb::ServerBase<SunshineHTTPS>> make_https_server(
       const std::string &certificate_file,

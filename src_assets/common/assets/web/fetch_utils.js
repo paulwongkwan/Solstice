@@ -16,6 +16,11 @@ const CSRF_ERRORS = new Set(['Missing CSRF token', 'Invalid CSRF token', 'CSRF t
 export async function apiFetch(url, options) {
   const response = await fetch(url, options)
 
+  // An expired or missing session sends the user back to the login screen.
+  if (response.status === 401 && !window.location.pathname.endsWith('/login')) {
+    window.location.assign('/login')
+  }
+
   if (response.status === 400) {
     let body = null
     try {

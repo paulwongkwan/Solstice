@@ -31,7 +31,7 @@ namespace video {
   const char *colorspace_to_string(colorspace_e colorspace);
 
   /**
-   * @brief Sunshine colorimetry values derived from stream configuration.
+   * @brief Solstice colorimetry values derived from stream configuration.
    */
   struct sunshine_colorspace_t {
     colorspace_e colorspace;  ///< Colorspace.
@@ -40,7 +40,7 @@ namespace video {
   };
 
   /**
-   * @brief Check whether a Sunshine colorspace represents HDR video.
+   * @brief Check whether a Solstice colorspace represents HDR video.
    *
    * @param colorspace Colorimetry information used for conversion or encoding.
    * @return True when the colorspace values describe the same metadata.
@@ -51,7 +51,7 @@ namespace video {
   struct config_t;
 
   /**
-   * @brief Derive Sunshine colorspace metadata from the negotiated client config.
+   * @brief Derive Solstice colorspace metadata from the negotiated client config.
    *
    * @param config Configuration values to apply.
    * @param hdr_display HDR display.
@@ -71,15 +71,15 @@ namespace video {
   };
 
   /**
-   * @brief Convert Sunshine colorspace metadata to FFmpeg AVCodec fields.
+   * @brief Convert Solstice colorspace metadata to FFmpeg AVCodec fields.
    *
-   * @param sunshine_colorspace Sunshine colorspace.
+   * @param sunshine_colorspace Solstice colorspace.
    * @return FFmpeg color range, primaries, transfer, and software format values.
    */
   avcodec_colorspace_t avcodec_colorspace_from_sunshine_colorspace(const sunshine_colorspace_t &sunshine_colorspace);
 
   /**
-   * @brief Pair of Sunshine and AVCodec colorimetry descriptions.
+   * @brief Pair of Solstice and AVCodec colorimetry descriptions.
    */
   struct alignas(16) color_t {
     std::array<float, 4> color_vec_y;  ///< Color vec y.

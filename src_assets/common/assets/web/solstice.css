@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Sunshine UI - Modern Design System
+   Solstice UI - Modern Design System
    ========================================================================== */
 
 /**
@@ -761,7 +761,7 @@
     --navbar-text-muted: rgba(255, 255, 255, 0.9);
 }
 
-/* Sunshine Theme - Warm and bright inspired by sunlight */
+/* Solstice Theme - Warm and bright inspired by sunlight */
 [data-theme="sunshine"] {
     --color-primary: #F59E0B;
     --color-primary-hover: #D97706;
@@ -1147,7 +1147,7 @@ body {
    Navbar Styles
    ========================================================================== */
 
-.navbar-sunshine {
+.navbar-solstice {
     --bs-navbar-nav-link-padding-x: 1rem;
     background: var(--navbar-bg);
     box-shadow: var(--shadow-md);
@@ -1155,15 +1155,15 @@ body {
     transition: all var(--transition-base);
 }
 
-.navbar-sunshine .navbar-brand {
+.navbar-solstice .navbar-brand {
     transition: transform var(--transition-fast);
 }
 
-.navbar-sunshine .navbar-brand:hover {
+.navbar-solstice .navbar-brand:hover {
     transform: scale(1.05);
 }
 
-.navbar-sunshine .nav-link {
+.navbar-solstice .nav-link {
     color: var(--navbar-text-muted);
     font-weight: 500;
     padding: 0.5rem 1rem;
@@ -1175,29 +1175,29 @@ body {
     gap: 0.5rem;
 }
 
-.navbar-sunshine .nav-link:hover {
+.navbar-solstice .nav-link:hover {
     color: var(--navbar-text);
     background-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-1px);
 }
 
-.navbar-sunshine .nav-link.active {
+.navbar-solstice .nav-link.active {
     color: var(--navbar-text);
     background-color: rgba(255, 255, 255, 0.15);
     font-weight: 600;
 }
 
-.navbar-sunshine .nav-link.dropdown-toggle.show {
+.navbar-solstice .nav-link.dropdown-toggle.show {
     color: var(--navbar-text);
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-.navbar-sunshine .navbar-toggler {
+.navbar-solstice .navbar-toggler {
     color: var(--navbar-text);
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.navbar-sunshine .navbar-toggler:focus {
+.navbar-solstice .navbar-toggler:focus {
     box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.15);
 }
 
@@ -1238,7 +1238,7 @@ p {
    Card Styles
    ========================================================================== */
 
-.card-sunshine {
+.card-solstice {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -1247,16 +1247,16 @@ p {
     overflow: hidden;
 }
 
-.card-sunshine:hover {
+.card-solstice:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
-.card-sunshine .card-body {
+.card-solstice .card-body {
     padding: var(--spacing-xl);
 }
 
-.card-sunshine .card-header {
+.card-solstice .card-header {
     background-color: var(--color-bg-subtle);
     border-bottom: 1px solid var(--color-border);
     padding: var(--spacing-lg) var(--spacing-xl);
@@ -2552,7 +2552,7 @@ p {
         line-height: 2rem;
     }
 
-    .card-sunshine .card-body,
+    .card-solstice .card-body,
     .card .card-body {
         padding: var(--spacing-lg);
     }

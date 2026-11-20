@@ -14,7 +14,7 @@ if(NOT WIN32)
     list(APPEND BOOST_COMPONENTS locale)
 endif()
 
-# algorithm, preprocessor, scope, and uuid are not used by Sunshine, but by libdisplaydevice, added here for convenience
+# algorithm, preprocessor, scope, and uuid are not used by Solstice, but by libdisplaydevice, added here for convenience
 if(WIN32)
     list(APPEND BOOST_COMPONENTS
             algorithm

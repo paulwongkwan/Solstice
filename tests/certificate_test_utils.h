@@ -1,6 +1,6 @@
 /**
  * @file tests/certificate_test_utils.h
- * @brief Certificate fixtures shared by Sunshine security tests.
+ * @brief Certificate fixtures shared by Solstice security tests.
  */
 #pragma once
 
@@ -20,7 +20,7 @@ namespace test_utils::certificates {
    * @param common_name Common name for the generated certificate.
    * @return PEM-encoded certificate-authority credentials.
    */
-  inline crypto::creds_t generate_ca_credentials(const std::string_view common_name = "Sunshine Test Client CA") {
+  inline crypto::creds_t generate_ca_credentials(const std::string_view common_name = "Solstice Test Client CA") {
     auto credentials = crypto::gen_creds(common_name, 2048);
     auto certificate = crypto::x509(credentials.x509);
     auto private_key = crypto::pkey(credentials.pkey);
@@ -40,7 +40,7 @@ namespace test_utils::certificates {
    * @return PEM-encoded leaf credentials.
    */
   inline crypto::creds_t generate_derived_leaf(const crypto::creds_t &issuer_credentials) {
-    auto credentials = crypto::gen_creds("Sunshine Test Derived Client", 2048);
+    auto credentials = crypto::gen_creds("Solstice Test Derived Client", 2048);
     auto certificate = crypto::x509(credentials.x509);
     auto issuer_certificate = crypto::x509(issuer_credentials.x509);
     auto issuer_private_key = crypto::pkey(issuer_credentials.pkey);

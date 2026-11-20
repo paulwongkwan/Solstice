@@ -1,12 +1,13 @@
 /**
  * @file src/config.h
- * @brief Declarations for the configuration of Sunshine.
+ * @brief Declarations for the configuration of Solstice.
  */
 #pragma once
 
 // standard includes
 #include <bitset>
 #include <chrono>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -25,9 +26,9 @@ namespace config {
 
   namespace nv {
     /**
-     * @brief Convert Sunshine's NVENC quality preset number to FFmpeg's stable symbolic name.
+     * @brief Convert Solstice's NVENC quality preset number to FFmpeg's stable symbolic name.
      *
-     * @param quality_preset Validated Sunshine quality preset in the range 1 through 7.
+     * @param quality_preset Validated Solstice quality preset in the range 1 through 7.
      * @return FFmpeg preset name from `p1` through `p7`.
      */
     std::string ffmpeg_preset_from_quality(int quality_preset);
@@ -85,7 +86,7 @@ namespace config {
     nvenc::nvenc_config nv;  ///< NVIDIA NVENC encoder settings.
     bool nv_realtime_hags;  ///< Enable the NVIDIA realtime HAGS workaround.
     bool nv_opengl_vulkan_on_dxgi;  ///< Prefer NVIDIA OpenGL/Vulkan-on-DXGI interop.
-    bool nv_sunshine_high_power_mode;  ///< Request NVIDIA high-power mode for Sunshine.
+    bool nv_sunshine_high_power_mode;  ///< Request NVIDIA high-power mode for Solstice.
 
     struct {
       std::string preset;  ///< FFmpeg NVENC preset name shared by supported FFmpeg versions.
@@ -136,7 +137,7 @@ namespace config {
       };
 
       /**
-       * @brief Selects how Sunshine prepares the active display before streaming.
+       * @brief Selects how Solstice prepares the active display before streaming.
        */
       enum class config_option_e {
         disabled,  ///< Disable the configuration for the device.
@@ -147,7 +148,7 @@ namespace config {
       };
 
       /**
-       * @brief Selects how Sunshine chooses the stream display resolution.
+       * @brief Selects how Solstice chooses the stream display resolution.
        */
       enum class resolution_option_e {
         disabled,  ///< Do not change resolution.
@@ -156,7 +157,7 @@ namespace config {
       };
 
       /**
-       * @brief Selects how Sunshine chooses the stream display refresh rate.
+       * @brief Selects how Solstice chooses the stream display refresh rate.
        */
       enum class refresh_rate_option_e {
         disabled,  ///< Do not change refresh rate.
@@ -165,7 +166,7 @@ namespace config {
       };
 
       /**
-       * @brief Selects how Sunshine handles HDR state for the stream display.
+       * @brief Selects how Solstice handles HDR state for the stream display.
        */
       enum class hdr_option_e {
         disabled,  ///< Do not change HDR settings.
@@ -266,7 +267,7 @@ namespace config {
 
     std::string sunshine_name;  ///< Host name advertised to Moonlight clients.
 
-    std::string file_state;  ///< Path to the persisted Sunshine state file.
+    std::string file_state;  ///< Path to the persisted Solstice state file.
 
     std::string external_ip;  ///< External address advertised to clients when configured.
   };
@@ -345,10 +346,10 @@ namespace config {
   };
 
   /**
-   * @brief Top-level Sunshine configuration and credential state.
+   * @brief Top-level Solstice configuration and credential state.
    */
   struct sunshine_t {
-    std::string locale;  ///< Locale selected for Sunshine UI and log messages.
+    std::string locale;  ///< Locale selected for Solstice UI and log messages.
     int min_log_level;  ///< Minimum severity level written to the configured log sink.
     std::bitset<flag::FLAG_SIZE> flags;  ///< Runtime flags parsed from command-line options.
     std::string credentials_file;  ///< Path to the stored pairing credentials file.
@@ -357,7 +358,7 @@ namespace config {
     std::string password;  ///< Password hash or secret for the local Web UI account.
     std::string salt;  ///< Salt used when hashing the Web UI password.
 
-    std::string config_file;  ///< Path to the active Sunshine configuration file.
+    std::string config_file;  ///< Path to the active Solstice configuration file.
 
     /**
      * @brief Command-line options parsed before configuration loading.
@@ -370,9 +371,9 @@ namespace config {
 
     cmd_t cmd;  ///< Command line used to launch the application.
 
-    std::uint16_t port;  ///< TCP port used by Sunshine services.
+    std::uint16_t port;  ///< TCP port used by Solstice services.
     std::string address_family;  ///< Address family requested for listening sockets.
-    std::string bind_address;  ///< Local address Sunshine should bind to.
+    std::string bind_address;  ///< Local address Solstice should bind to.
 
     std::string log_file;  ///< Path to the configured log file.
     bool notify_pre_releases;  ///< Notify users about pre-release updates.
@@ -391,7 +392,16 @@ namespace config {
   extern input_t input;
   extern sunshine_t sunshine;
 
-#ifdef SUNSHINE_TESTS
+  /**
+   * @brief Copy configuration, applications, credentials, and pairing state from a pre-rename installation.
+   *
+   * @param target Configuration directory used by the current installation.
+   * @param legacy Configuration directory used by the pre-rename installation.
+   * @return True when at least one file or directory was copied.
+   */
+  bool migrate_legacy_config(const std::filesystem::path &target, const std::filesystem::path &legacy);
+
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Parse and apply serialized configuration text for unit tests.
    *
@@ -409,7 +419,7 @@ namespace config {
    */
   int parse(int argc, char *argv[]);
   /**
-   * @brief Parse Sunshine configuration text into key-value entries.
+   * @brief Parse Solstice configuration text into key-value entries.
    *
    * @param file_content Raw configuration file contents to parse.
    * @return Parsed configuration key-value entries.

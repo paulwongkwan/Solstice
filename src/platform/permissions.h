@@ -12,18 +12,18 @@
 
 namespace platf {
   /**
-   * @brief Access needed by the current Sunshine configuration.
+   * @brief Access needed by the current Solstice configuration.
    */
   struct permission_status_t {
     std::string id;  ///< Stable identifier used by the Web UI.
     std::string status;  ///< Granted, denied, not_determined, on_use, or unknown.
     bool required;  ///< Whether the current configuration needs this access.
     bool verifiable;  ///< Whether the OS permits a passive status check.
-    bool requestable = false;  ///< Whether Sunshine can initiate a native request or settings action.
+    bool requestable = false;  ///< Whether Solstice can initiate a native request or settings action.
   };
 
   /**
-   * @brief Query access needed by Sunshine on the current platform.
+   * @brief Query access needed by Solstice on the current platform.
    *
    * @return Permission status records for the Web UI.
    */

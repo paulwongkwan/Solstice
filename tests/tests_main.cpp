@@ -56,7 +56,7 @@ std::optional<int> record_test_url() {
 #endif
 
 /**
- * @brief Run Sunshine tests, or record a URL delivered to a test protocol handler.
+ * @brief Run Solstice tests, or record a URL delivered to a test protocol handler.
  *
  * @param argc Number of process arguments.
  * @param argv Process arguments forwarded to GoogleTest.

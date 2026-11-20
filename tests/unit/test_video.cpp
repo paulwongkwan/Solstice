@@ -355,7 +355,7 @@ struct AmfMaxAuSizeConfigTest: BaseTest, testing::WithParamInterface<AmfMaxAuSiz
   void SetUp() override {
     BaseTest::SetUp();
     config::video.amd.amd_max_au_size.reset();
-    config::stream.file_apps = SUNSHINE_SOURCE_DIR "/tests/unit/test_video.cpp";
+    config::stream.file_apps = SOLSTICE_SOURCE_DIR "/tests/unit/test_video.cpp";
   }
 
   void TearDown() override {

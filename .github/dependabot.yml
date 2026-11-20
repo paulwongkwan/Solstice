@@ -4,7 +4,7 @@
 # the above-mentioned repo.
 
 # All dependendencies, except git submodules, in this project are now managed by Renovate.
-# See https://github.com/LizardByte/.github/blob/master/renovate-config.json5 for configuration.
+# See https://github.com/paulwongkwan/.github/blob/master/renovate-config.json5 for configuration.
 
 version: 2
 updates:

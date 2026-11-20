@@ -156,7 +156,7 @@ namespace proc {
   }
 
   std::string prepare_command(const std::string &command) {
-#ifdef SUNSHINE_BUILD_FLATPAK
+#ifdef SOLSTICE_BUILD_FLATPAK
     constexpr auto host_command_prefix = "flatpak-spawn --host "sv;
     const auto stripped_command = boost::trim_copy(command);
     if (stripped_command.empty() || stripped_command.starts_with(host_command_prefix)) {
@@ -390,7 +390,7 @@ namespace proc {
     // Only show the Stopped notification if we actually have an app to stop
     // Since terminate() is always run when a new app has started
     if (proc::proc.get_last_run_app_name().length() > 0 && has_run) {
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
+#if defined SOLSTICE_TRAY && SOLSTICE_TRAY >= 1
       system_tray::update_tray_stopped(proc::proc.get_last_run_app_name());
 #endif
 
@@ -588,7 +588,7 @@ namespace proc {
     }
 
     // check if image is in assets directory
-    if (auto full_image_path = std::filesystem::path(SUNSHINE_ASSETS_DIR) / app_image_path; std::filesystem::exists(full_image_path)) {
+    if (auto full_image_path = std::filesystem::path(SOLSTICE_ASSETS_DIR) / app_image_path; std::filesystem::exists(full_image_path)) {
       // Validate PNG signature
       if (!check_valid_png(full_image_path)) {
         BOOST_LOG(warning) << "Invalid PNG file at path ["sv << full_image_path << ']';
@@ -599,7 +599,7 @@ namespace proc {
 
     if (app_image_path == "./assets/steam.png") {
       // handle old default steam image definition
-      return SUNSHINE_ASSETS_DIR "/steam.png";
+      return SOLSTICE_ASSETS_DIR "/steam.png";
     }
 
     // check if specified image exists

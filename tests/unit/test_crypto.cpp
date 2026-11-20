@@ -17,7 +17,7 @@
 #include <src/crypto.h>
 
 TEST(CryptoTest, GeneratedCredentialsExposeSubjectAndVerifySignatures) {
-  constexpr std::string_view common_name = "Sunshine Test Host";
+  constexpr std::string_view common_name = "Solstice Test Host";
   constexpr std::string_view payload = "payload";
 
   auto creds = crypto::gen_creds(common_name, 2048);
@@ -61,7 +61,7 @@ TEST(CryptoTest, GeneratedCredentialsExposeSubjectAndVerifySignatures) {
 
 TEST(CryptoTest, CertificateSignaturePreservesBinaryBytes) {
   constexpr std::uint32_t key_bits = 2048;
-  const auto creds = crypto::gen_creds("Sunshine Signature Test", key_bits);
+  const auto creds = crypto::gen_creds("Solstice Signature Test", key_bits);
   const auto cert = crypto::x509(creds.x509);
   ASSERT_NE(cert.get(), nullptr);
 

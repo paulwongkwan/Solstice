@@ -1,7 +1,7 @@
 # common compile definitions
 # this file will also load platform specific definitions
 
-list(APPEND SUNSHINE_COMPILE_OPTIONS -Wall -Wno-sign-compare)
+list(APPEND SOLSTICE_COMPILE_OPTIONS -Wall -Wno-sign-compare)
 # Wall - enable all warnings
 # Werror - treat warnings as errors
 # Wno-sign-compare - disable warnings for signed/unsigned comparisons
@@ -13,35 +13,35 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
     # GCC 12 and higher will complain about maybe-uninitialized
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12)
-        list(APPEND SUNSHINE_COMPILE_OPTIONS -Wno-maybe-uninitialized)
+        list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-maybe-uninitialized)
 
         # Disable the bogus warning that may prevent compilation (only for GCC 12).
         # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105651.
         if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13)
-            list(APPEND SUNSHINE_COMPILE_OPTIONS -Wno-restrict)
+            list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-restrict)
         endif()
     endif()
 
     # GCC 15 will complain about uninitialized variables in some cases (Simple-Web-Server)
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15)
-        list(APPEND SUNSHINE_COMPILE_OPTIONS -Wno-uninitialized)
+        list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-uninitialized)
     endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
     # Clang specific compile options
 
     # Warn for missing positional field initializers but not designated initializers
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
-        list(APPEND SUNSHINE_COMPILE_OPTIONS -Wmissing-field-initializers)
-        list(APPEND SUNSHINE_COMPILE_OPTIONS -Wno-missing-designated-field-initializers)
+        list(APPEND SOLSTICE_COMPILE_OPTIONS -Wmissing-field-initializers)
+        list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-missing-designated-field-initializers)
     endif()
 endif()
 if(BUILD_WERROR)
-    list(APPEND SUNSHINE_COMPILE_OPTIONS -Werror)
+    list(APPEND SOLSTICE_COMPILE_OPTIONS -Werror)
 endif()
 
 # setup assets directory
-if(NOT SUNSHINE_ASSETS_DIR)
-    set(SUNSHINE_ASSETS_DIR "assets")
+if(NOT SOLSTICE_ASSETS_DIR)
+    set(SOLSTICE_ASSETS_DIR "assets")
 endif()
 
 # platform specific compile definitions
@@ -78,7 +78,7 @@ function(add_nvenc_sdk_implementation target_name sdk_version sdk_include_dir)
             NVENC_NAMESPACE=nvenc_${sdk_version}
             NVENC_SDK_VERSION=${sdk_version}
     )
-    target_compile_options(${target_name} PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
+    target_compile_options(${target_name} PRIVATE ${SOLSTICE_COMPILE_OPTIONS})
 endfunction()
 
 add_nvenc_sdk_implementation(nvenc_sdk_1100 1100 "${NV_CODEC_HEADERS_11_INCLUDE_DIR}")
@@ -96,7 +96,7 @@ set(NVENC_SOURCES
 
 list(APPEND PLATFORM_TARGET_FILES ${NVENC_SOURCES})
 
-set(SUNSHINE_TARGET_FILES
+set(SOLSTICE_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/third-party/moonlight-common-c/src/Input.h"
         "${CMAKE_SOURCE_DIR}/third-party/moonlight-common-c/src/Rtsp.h"
         "${CMAKE_SOURCE_DIR}/third-party/moonlight-common-c/src/RtspParser.c"
@@ -163,15 +163,15 @@ set(SUNSHINE_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/stat_trackers.cpp"
         ${PLATFORM_TARGET_FILES})
 
-if(NOT SUNSHINE_ASSETS_DIR_DEF)
-    set(SUNSHINE_ASSETS_DIR_DEF "${SUNSHINE_ASSETS_DIR}")
+if(NOT SOLSTICE_ASSETS_DIR_DEF)
+    set(SOLSTICE_ASSETS_DIR_DEF "${SOLSTICE_ASSETS_DIR}")
 endif()
-list(APPEND SUNSHINE_DEFINITIONS SUNSHINE_ASSETS_DIR="${SUNSHINE_ASSETS_DIR_DEF}")
+list(APPEND SOLSTICE_DEFINITIONS SOLSTICE_ASSETS_DIR="${SOLSTICE_ASSETS_DIR_DEF}")
 
 # Publisher metadata
-list(APPEND SUNSHINE_DEFINITIONS SUNSHINE_PUBLISHER_NAME="${SUNSHINE_PUBLISHER_NAME}")
-list(APPEND SUNSHINE_DEFINITIONS SUNSHINE_PUBLISHER_WEBSITE="${SUNSHINE_PUBLISHER_WEBSITE}")
-list(APPEND SUNSHINE_DEFINITIONS SUNSHINE_PUBLISHER_ISSUE_URL="${SUNSHINE_PUBLISHER_ISSUE_URL}")
+list(APPEND SOLSTICE_DEFINITIONS SOLSTICE_PUBLISHER_NAME="${SOLSTICE_PUBLISHER_NAME}")
+list(APPEND SOLSTICE_DEFINITIONS SOLSTICE_PUBLISHER_WEBSITE="${SOLSTICE_PUBLISHER_WEBSITE}")
+list(APPEND SOLSTICE_DEFINITIONS SOLSTICE_PUBLISHER_ISSUE_URL="${SOLSTICE_PUBLISHER_ISSUE_URL}")
 
 include_directories(BEFORE "${CMAKE_SOURCE_DIR}")
 
@@ -190,7 +190,7 @@ include_directories(
 
 include_directories(BEFORE SYSTEM "${NV_CODEC_HEADERS_13_1_INCLUDE_DIR}")
 
-list(APPEND SUNSHINE_EXTERNAL_LIBRARIES
+list(APPEND SOLSTICE_EXTERNAL_LIBRARIES
         ${MINIUPNP_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
         enet
@@ -204,10 +204,10 @@ list(APPEND SUNSHINE_EXTERNAL_LIBRARIES
         ${PLATFORM_LIBRARIES})
 
 # tray icon
-if(SUNSHINE_ENABLE_TRAY)
-    list(APPEND SUNSHINE_EXTERNAL_LIBRARIES tray::tray)
+if(SOLSTICE_ENABLE_TRAY)
+    list(APPEND SOLSTICE_EXTERNAL_LIBRARIES tray::tray)
 else()
-    set(SUNSHINE_TRAY 0)
+    set(SOLSTICE_TRAY 0)
     message(STATUS "Tray icon disabled")
 endif()
-list(APPEND SUNSHINE_DEFINITIONS SUNSHINE_TRAY=${SUNSHINE_TRAY})
+list(APPEND SOLSTICE_DEFINITIONS SOLSTICE_TRAY=${SOLSTICE_TRAY})

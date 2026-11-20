@@ -1,308 +1,149 @@
-<div align="center">
-  <img
-    src="sunshine.svg"
-    alt="Sunshine icon"
-    width="256"
-/>
-  <h1 align="center">Sunshine</h1>
-  <h4 align="center">Self-hosted game stream host for Moonlight.</h4>
-</div>
+# Solstice
 
-<div align="center">
-  <!-- Keep whitespace outside the badge links to avoid an underlined gap. -->
-  <!-- Use raw HTML aliases to keep Doxygen's emitted comment delimiters balanced. -->
-  <!--! @htmlonly_start -->
-  <a href="https://www.star-history.com/sunshinestream/sunshine"><picture><source
-    media="(prefers-color-scheme: dark)"
-    srcset="https://api.star-history.com/badge?repo=sunshinestream/sunshine&type=rank&theme=dark"
-  /><source
-    media="(prefers-color-scheme: light)"
-    srcset="https://api.star-history.com/badge?repo=sunshinestream/sunshine&type=rank"
-  /><img
-    alt="Star History Rank"
-    src="https://api.star-history.com/badge?repo=sunshinestream/sunshine&type=rank"
-  /></picture></a>
-  <a href="https://www.star-history.com/sunshinestream/sunshine"><picture><source
-    media="(prefers-color-scheme: dark)"
-    srcset="https://api.star-history.com/badge?repo=sunshinestream/sunshine&type=trending&theme=dark"
-  /><source
-    media="(prefers-color-scheme: light)"
-    srcset="https://api.star-history.com/badge?repo=sunshinestream/sunshine&type=trending"
-  /><img
-    alt="GitHub Trending Repository of the Day"
-    src="https://api.star-history.com/badge?repo=sunshinestream/sunshine&type=trending"
-  /></picture></a><br><br>
-  <!--! @htmlonly_end -->
-  <a href="https://github.com/SunshineStream/Sunshine"><img src="https://img.shields.io/github/stars/SunshineStream/Sunshine.svg?logo=github&style=for-the-badge" alt="GitHub stars"></a>
-  <a href="https://github.com/SunshineStream/Sunshine/releases/latest"><img src="https://img.shields.io/github/downloads/SunshineStream/Sunshine/total.svg?style=for-the-badge&logo=github" alt="GitHub Releases"></a>
-  <a href="https://github.com/microsoft/winget-pkgs/tree/master/manifests/l/LizardByte/Sunshine"><img src="https://img.shields.io/winget/v/LizardByte.Sunshine.svg?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHuSURBVFhH7ZfNTtRQGIYZiMDwN/IrCAqIhMSNKxcmymVwG+5dcDVsWHgDrtxwCYQVl+BChzDEwSnPY+eQ0sxoOz1mQuBNnpyvTdvz9jun5/SrjfxnJUkyQbMEz2ELduF1l0YUA3QyTrMAa2AnPtyOXsELeAYNyKtV2EC3k3lYgTOwg09ghy/BTp7CKBRV844BOpmmMV2+ySb4BmInG7AKY7AHH+EYqqhZo9PPBG/BVDlOizAD/XQFmnoPXzxRQX8M/CCYS48L6RIc4ygGHK9WGg9HZSZMUNRPVwNJGg5Hg2Qgqh4N3FsDsb6EmgYm07iwwvUxstdxJTwgmILf4CfZ6bb5OHANX8GN5x20IVxnG8ge94pt2xpwU3GnCwayF4Q2G2vgFLzHndFzQdk4q77nNfCdwL28qNyMtmEf3A1/QV5FjDiPWo5jrwf8TWZChTlgJvL4F9QL50/A43qVidTvLcuoM2wDQ1+IkgefgUpLcYwMVBqCKNJA2b0gKNocOIITOIef8C/F/CdMbh/GklynsSawKLHS8d9/B1x2LUqsfFyy3TMsWj5A1cLkotDbYO4JjWWZlZEGv8EbOIR1CAVN2eG8W5oNKgxaeC6DmTJjZs7ixUxpznLPLT+v4sXpoMLcLI3mzFSonDXIEI/M3QCIO4YuimBJ/gAAAABJRU5ErkJggg==" alt="Winget Version"></a>
-  <a href="https://github.com/SunshineStream/Sunshine/actions/workflows/ci.yml?query=branch%3Amaster"><img src="https://img.shields.io/github/actions/workflow/status/SunshineStream/Sunshine/ci.yml.svg?branch=master&label=CI%20build&logo=github&style=for-the-badge" alt="GitHub Workflow Status (CI)"></a>
-  <a href="https://github.com/SunshineStream/Sunshine/actions/workflows/localize.yml?query=branch%3Amaster"><img src="https://img.shields.io/github/actions/workflow/status/SunshineStream/Sunshine/localize.yml.svg?branch=master&label=localize%20build&logo=github&style=for-the-badge" alt="GitHub Workflow Status (localize)"></a>
-  <a href="https://codecov.io/gh/SunshineStream/Sunshine"><img src="https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fapp.lizardbyte.dev%2Fdashboard%2Fshields%2Fcodecov%2FSunshine.json&style=for-the-badge&logo=codecov" alt="Codecov"></a>
-  <a href="https://sonarcloud.io/project/overview?id=SunshineStream_Sunshine"><img src="https://img.shields.io/sonar/quality_gate/SunshineStream_Sunshine.svg?server=https%3A%2F%2Fsonarcloud.io&style=for-the-badge&logo=sonarqubecloud&label=sonarcloud" alt="SonarCloud"></a>
-</div>
+![Solstice](solstice.svg)
 
-## ℹ️ About
+Solstice is a self-hosted game stream host for [Moonlight](https://moonlight-stream.org). It captures your Windows
+desktop or a single application, encodes it in hardware, and streams it with low latency to any Moonlight client —
+phone, tablet, TV, or another computer. A web UI handles pairing, configuration, and logging from any browser on your
+network.
 
-Sunshine is a self-hosted game stream host for Moonlight.
-Offering low-latency, cloud gaming server capabilities with support for AMD, Intel, and Nvidia GPUs for hardware
-encoding. Software encoding is also available. You can connect to Sunshine from any Moonlight client on a variety of
-devices. A web UI is provided to allow configuration, and client pairing, from your favorite web browser. Pair from
-the local server or any mobile device.
+[![GitHub stars](https://img.shields.io/github/stars/paulwongkwan/Sunshine.svg?logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Sunshine)
+[![Latest release](https://img.shields.io/github/v/release/paulwongkwan/Sunshine.svg?style=for-the-badge&logo=github)](https://github.com/paulwongkwan/Sunshine/releases/latest)
+[![CI build](https://img.shields.io/github/actions/workflow/status/paulwongkwan/Sunshine/ci.yml.svg?branch=master&label=CI%20build&logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Sunshine/actions/workflows/ci.yml?query=branch%3Amaster)
 
-Visit the [Sunshine website](https://sunshine.lizardbyte.dev/) for downloads and an overview.
+## Highlights
 
-LizardByte has the full documentation hosted on [Read the Docs](https://docs.lizardbyte.dev/projects/sunshine)
+- **Windows 11 only.** x64 and ARM64 builds; Windows 11 build 22000 or newer is required, and older versions exit at
+  startup with an explanatory message.
+- **Hardware encoding.** NVENC on NVIDIA, AMF on AMD, QuickSync on Intel, Media Foundation on Qualcomm, with a software
+  encoder as a fallback.
+- **Desktop capture.** DXGI Desktop Duplication in both portable and service mode, Windows.Graphics.Capture in portable
+  mode.
+- **Virtual gamepads.** Xbox 360, Xbox One, Xbox Series, DualShock 4, DualSense, Switch Pro, and a generic gamepad through
+  the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver.
+- **Web UI with sign-in.** Pair clients, change settings, and read logs from `https://localhost:47990`, protected by a
+  login screen with an optional "remember me" session.
+- **Sunshine-compatible.** Existing Sunshine configuration is picked up automatically, and the client, application, and
+  state file formats are unchanged.
 
-* [Stable Docs](https://docs.lizardbyte.dev/projects/sunshine/latest/)
-* [Beta Docs](https://docs.lizardbyte.dev/projects/sunshine/master/)
+## Requirements
 
-## 🪟 Platform Support
+| Component | Requirement |
+|:----------|:------------|
+| OS | Windows 11 (build 22000) or newer, x64 or ARM64 |
+| GPU | NVIDIA: NVENC-capable GPU ([support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)) |
+| | AMD: VCE 1.0 or newer ([supported hardware](https://github.com/obsproject/obs-amd-encoder/wiki/Hardware-Support)) |
+| | Intel: Skylake or newer with QuickSync |
+| | Qualcomm: Media Foundation encoding |
+| CPU | AMD Ryzen 3 / Intel Core i3 or better |
+| RAM | 4 GB or more |
+| Network | 5 GHz 802.11ac or wired Ethernet on both host and client |
 
-Sunshine supports **Windows 11 (build 22000) or newer** on x64 and ARM64 only. Older Windows versions are detected at
-startup and Sunshine exits with an explanatory message.
-
-Virtual gamepads are provided by the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver, which the installer
-offers to download. Keyboard, mouse, touch, and pen input are injected through the native Windows input APIs.
-
-## 🎮 Feature Compatibility
-
-<table>
-    <caption id="gamepad_emulation">Gamepad Emulation</caption>
-    <tr>
-        <th>Feature</th>
-        <th>Windows</th>
-    </tr>
-    <tr>
-        <td colspan="2" align="center">
-        What type of gamepads can be emulated on the host.<br>
-        Clients may support other gamepads.
-        </td>
-    </tr>
-    <tr>
-        <td>Generic</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>DualShock / DS4 (PlayStation 4)</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>DualSense / DS5 (PlayStation 5)</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Nintendo Switch Pro</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Xbox 360</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Xbox One</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Xbox Series</td>
-        <td>✅</td>
-    </tr>
-</table>
+A 4K or HDR stream benefits from a modern mid-range GPU (GTX 1080 / VCE 3.1 / HD Graphics 730 or better), a Ryzen 5 or
+Core i5, and wired Ethernet on both ends. These recommendations are a work in progress — do not buy hardware based on
+them alone.
 
 > [!NOTE]
-> Virtual gamepads are provided by the installed ViGEmBus driver.
+> Virtual gamepads require the ViGEmBus driver. The installer offers to download and install it; without the driver,
+> keyboard, mouse, touch, and pen input still work.
 
-<table>
-    <caption id="encoding_api">Encoding API</caption>
-    <tr>
-        <th>Encoding API</th>
-        <th>GPU Vendor</th>
-        <th>Windows</th>
-    </tr>
-    <tr>
-        <td>AMF</td>
-        <td>AMD</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Media Foundation</td>
-        <td>Qualcomm</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>NVENC</td>
-        <td>NVIDIA</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>QuickSync</td>
-        <td>Intel</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Software</td>
-        <td>Any</td>
-        <td>✅</td>
-    </tr>
-</table>
+## Install
 
-<table>
-    <caption id="screen_capture">Screen Capture</caption>
-    <tr>
-        <th>Capture Method</th>
-        <th>Windows</th>
-    </tr>
-    <tr>
-        <td>DXGI Desktop Duplication</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>Windows.Graphics.Capture</td>
-        <td>🟡</td>
-    </tr>
-    <tr>
-        <td>&nbsp;&nbsp;↳ Portable</td>
-        <td>✅</td>
-    </tr>
-    <tr>
-        <td>&nbsp;&nbsp;↳ Service</td>
-        <td>❌</td>
-    </tr>
-</table>
+1. Download the latest installer or portable archive from the
+   [releases page](https://github.com/paulwongkwan/Sunshine/releases/latest).
+2. Run the installer, or extract the portable archive to a folder of your choice.
+3. Start Solstice. The installed build runs as a service so it keeps streaming after you sign out of Windows.
+4. Open <https://localhost:47990> and create your Web UI credentials on first launch.
 
-**Legend:** ✅ Supported | 🟡 Partial Support | ❌ Not Yet Supported
+## Pair a client
 
-## 🖥️ System Requirements
+1. In Moonlight, add a host and enter the address of the machine running Solstice.
+2. Moonlight shows a four-digit PIN.
+3. Enter that PIN in the Solstice Web UI, or from the Solstice tray icon, and accept the pairing request.
 
-> [!WARNING]
-> These tables are a work in progress. Do not purchase hardware based on this information.
+## Configuration
 
-<table>
-    <caption id="minimum_requirements">Minimum Requirements</caption>
-    <tr>
-        <th>Component</th>
-        <th>Requirement</th>
-    </tr>
-    <tr>
-        <td rowspan="3">GPU</td>
-        <td>AMD: VCE 1.0 or higher, see: <a href="https://github.com/obsproject/obs-amd-encoder/wiki/Hardware-Support">obs-amd hardware support</a></td>
-    </tr>
-    <tr>
-        <td>Intel: Skylake or newer with QuickSync encoding support</td>
-    </tr>
-    <tr>
-        <td>Nvidia: NVENC enabled cards, see: <a href="https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new">nvenc support matrix</a></td>
-    </tr>
-    <tr>
-        <td rowspan="2">CPU</td>
-        <td>AMD: Ryzen 3 or higher</td>
-    </tr>
-    <tr>
-        <td>Intel: Core i3 or higher</td>
-    </tr>
-    <tr>
-        <td>RAM</td>
-        <td>4GB or more</td>
-    </tr>
-    <tr>
-        <td>OS</td>
-        <td>Windows: 11+ (build 22000)</td>
-    </tr>
-    <tr>
-        <td rowspan="2">Network</td>
-        <td>Host: 5GHz, 802.11ac</td>
-    </tr>
-    <tr>
-        <td>Client: 5GHz, 802.11ac</td>
-    </tr>
-</table>
+Solstice keeps its state in a `config` directory beside the executable:
 
-<table>
-    <caption id="4k_suggestions">4k Suggestions</caption>
-    <tr>
-        <th>Component</th>
-        <th>Requirement</th>
-    </tr>
-    <tr>
-        <td rowspan="3">GPU</td>
-        <td>AMD: Video Coding Engine 3.1 or higher</td>
-    </tr>
-    <tr>
-        <td>Intel: Skylake or newer with QuickSync encoding support</td>
-    </tr>
-    <tr>
-        <td>Nvidia: GeForce GTX 1080 or higher</td>
-    </tr>
-    <tr>
-        <td rowspan="2">CPU</td>
-        <td>AMD: Ryzen 5 or higher</td>
-    </tr>
-    <tr>
-        <td>Intel: Core i5 or higher</td>
-    </tr>
-    <tr>
-        <td rowspan="2">Network</td>
-        <td>Host: CAT5e ethernet or better</td>
-    </tr>
-    <tr>
-        <td>Client: CAT5e ethernet or better</td>
-    </tr>
-</table>
+| File | Purpose |
+|:-----|:--------|
+| `solstice.conf` | Host settings, including encoder, resolution, and audio configuration |
+| `apps.json` | Applications and desktop entries shown in Moonlight |
+| `solstice_state.json` | Persistent runtime state such as the unique host ID |
+| `solstice.log` | Log output, also viewable in the Web UI |
+| `credentials/` | TLS key and certificate used by the Web UI |
 
-<table>
-    <caption id="hdr_suggestions">HDR Suggestions</caption>
-    <tr>
-        <th>Component</th>
-        <th>Requirement</th>
-    </tr>
-    <tr>
-        <td rowspan="3">GPU</td>
-        <td>AMD: Video Coding Engine 3.4 or higher</td>
-    </tr>
-    <tr>
-        <td>Intel: HD Graphics 730 or higher</td>
-    </tr>
-    <tr>
-        <td>Nvidia: Pascal-based GPU (GTX 10-series) or higher</td>
-    </tr>
-    <tr>
-        <td rowspan="2">CPU</td>
-        <td>AMD: Ryzen 5 or higher</td>
-    </tr>
-    <tr>
-        <td>Intel: Core i5 or higher</td>
-    </tr>
-    <tr>
-        <td rowspan="2">Network</td>
-        <td>Host: CAT5e ethernet or better</td>
-    </tr>
-    <tr>
-        <td>Client: CAT5e ethernet or better</td>
-    </tr>
-</table>
+The Web UI username and password hash are stored in `solstice.conf`.
 
-## ❓ Support
+The installed build uses `%ProgramFiles%\Solstice\config`. On first start Solstice copies any configuration it finds in
+`%ProgramFiles%\Sunshine\config`, so an existing Sunshine installation can be replaced without redoing the setup.
 
-Our support methods are listed in our [LizardByte Docs](https://docs.lizardbyte.dev/latest/about/support.html).
+See [configuration.md](docs/configuration.md) for every option, and [getting_started.md](docs/getting_started.md) for a
+guided setup.
 
-## 💲 Sponsors and Supporters
+## Web UI sign-in
 
-<p align="center">
-  <img src='https://cdn.jsdelivr.net/gh/LizardByte/contributors@dist/sponsors.svg' alt="Sponsors"/>
-</p>
+- The first visit redirects to a welcome page where you set the username and password.
+- Later visits show a login screen. Select **Remember me** to stay signed in on that browser for 30 days; otherwise the
+  session ends when the browser closes.
+- Changing the password invalidates every remembered session, and **Log out** clears the cookie on the current browser.
+- Scripted clients can keep using HTTP basic authentication against the same credentials; see [api.md](docs/api.md).
 
-## 👥 Contributors
+## Build from source
 
-Thank you to all the contributors who have helped make Sunshine better!
+Solstice builds on Windows with MSYS2 UCRT64 (or CLANGARM64 on ARM64); cross-compilation is not supported. The full
+prerequisites, including Boost, Qt, and Node.js, are listed in [building.md](docs/building.md).
 
-### GitHub
+```bash
+cmake -B cmake-build-release -G Ninja -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build cmake-build-release
+```
 
-<p align="center">
-  <img src='https://cdn.jsdelivr.net/gh/LizardByte/contributors@dist/github.Sunshine.svg' alt="GitHub contributors"/>
-</p>
+The resulting binaries are `cmake-build-release/solstice.exe` and `cmake-build-release/tools/solsticesvc.exe`. The
+Windows installer and portable archive are produced by CPack:
 
-### CrowdIn
+```bash
+cpack --config cmake-build-release/CPackConfig.cmake
+```
 
-<p align="center">
-  <img src='https://cdn.jsdelivr.net/gh/LizardByte/contributors@dist/crowdin.606145.svg' alt="CrowdIn contributors"/>
-</p>
+### Tests
+
+The test suite uses GoogleTest and is built by default. Run it with:
+
+```bash
+cmake -B cmake-build-release -G Ninja -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build cmake-build-release
+cmake-build-release/tests/test_sunshine
+```
+
+Pass `-DBUILD_TESTS=OFF` to skip building the tests, and `-DBUILD_DOCS=OFF` to skip the documentation target.
+
+The tests cover configuration parsing, legacy configuration migration, and the web assets; see
+[contributing.md](docs/contributing.md) for the layout and conventions.
+
+## Documentation
+
+- [Getting started](docs/getting_started.md)
+- [Configuration reference](docs/configuration.md)
+- [API reference](docs/api.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Performance tuning](docs/performance_tuning.md)
+- [Building](docs/building.md)
+- [Contributing](docs/contributing.md)
+
+## Contributing
+
+Bug reports and pull requests are welcome. Please open an issue with the observed behavior, the expected behavior, and
+the relevant log lines before sending a change, and read [contributing.md](docs/contributing.md) for the code style,
+localization, and testing rules.
+
+## Credits
+
+Solstice is built on [Moonlight](https://moonlight-stream.org) for the client side, [ViGEmBus](https://github.com/nefarius/ViGEmBus)
+for virtual gamepads, and [FFmpeg](https://ffmpeg.org) for media handling. Thank you to everyone who maintains those
+projects.
+
+## License
+
+Solstice is distributed under the terms in [LICENSE](LICENSE). Third-party components and their licenses are listed in
+[NOTICE](NOTICE).

@@ -2192,7 +2192,7 @@ if (encoder.name == "nvenc" && config::video.nv_legacy.vbv_percentage_increase >
     // This will move expensive processing off the encoder thread to allow us
     // to restart encoding as soon as possible. For cases where the NVENC driver
     // hang occurs, this thread may probably never exit, but it will allow
-    // streaming to continue without requiring a full restart of Sunshine.
+    // streaming to continue without requiring a full restart of Solstice.
     auto fail_guard = util::fail_guard([&encoder, &session] {
       if (encoder.flags & ASYNC_TEARDOWN) {
         std::jthread encoder_teardown_thread {[session = std::move(session)]() mutable {
@@ -2260,7 +2260,7 @@ if (encoder.name == "nvenc" && config::video.nv_legacy.vbv_percentage_increase >
 
       // Break out of the encoding loop if any of the following are true:
       // a) The stream is ending
-      // b) Sunshine is quitting
+      // b) Solstice is quitting
       // c) The capture side is waiting to reinit and we've encoded at least one frame
       //
       // If we have to reinit before we have received any captured frames, we will encode
@@ -3304,7 +3304,7 @@ void do_nothing(void *) {  // NOSONAR(cpp:S5008): FFmpeg's D3D11VA lock callback
 
 namespace video {
   /**
-   * @brief Create an FFmpeg D3D11VA hardware device from Sunshine's DXGI device.
+   * @brief Create an FFmpeg D3D11VA hardware device from Solstice's DXGI device.
    */
   util::Either<avcodec_buffer_t, int> dxgi_init_avcodec_hardware_input_buffer(platf::avcodec_encode_device_t *encode_device) {
     avcodec_buffer_t ctx_buf {av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA)};
@@ -3378,7 +3378,7 @@ namespace video {
   }
 
   /**
-   * @brief Map an FFmpeg hardware device type to Sunshine's capture memory type.
+   * @brief Map an FFmpeg hardware device type to Solstice's capture memory type.
    */
   platf::mem_type_e map_base_dev_type(AVHWDeviceType type) {
     using enum platf::mem_type_e;
@@ -3395,7 +3395,7 @@ namespace video {
   }
 
   /**
-   * @brief Map an FFmpeg pixel format to Sunshine's pixel format.
+   * @brief Map an FFmpeg pixel format to Solstice's pixel format.
    */
   platf::pix_fmt_e map_pix_fmt(AVPixelFormat fmt) {
     using enum platf::pix_fmt_e;

@@ -24,18 +24,18 @@ namespace NVENC_NAMESPACE {
   DXGI_FORMAT dxgi_format_from_nvenc_format(NV_ENC_BUFFER_FORMAT format);
 
   /**
-   * @brief Convert a Sunshine pixel format to the matching NVENC buffer format.
+   * @brief Convert a Solstice pixel format to the matching NVENC buffer format.
    *
    * @param format Pixel, audio, or protocol format being converted.
-   * @return NVENC buffer format compatible with the Sunshine pixel format.
+   * @return NVENC buffer format compatible with the Solstice pixel format.
    */
   NV_ENC_BUFFER_FORMAT nvenc_format_from_sunshine_format(platf::pix_fmt_e format);
 
   /**
-   * @brief Convert Sunshine colorspace metadata to NVENC VUI metadata.
+   * @brief Convert Solstice colorspace metadata to NVENC VUI metadata.
    *
-   * @param sunshine_colorspace Sunshine colorspace.
-   * @return NVENC colorspace and VUI fields for the Sunshine metadata.
+   * @param sunshine_colorspace Solstice colorspace.
+   * @return NVENC colorspace and VUI fields for the Solstice metadata.
    */
   nvenc_colorspace_t nvenc_colorspace_from_sunshine_colorspace(const video::sunshine_colorspace_t &sunshine_colorspace);
 

@@ -1,6 +1,6 @@
 /**
  * @file tests/unit/platform/windows/test_display_abi.cpp
- * @brief Verify the Windows kernel ABI of Sunshine's D3DKMT declarations.
+ * @brief Verify the Windows kernel ABI of Solstice's D3DKMT declarations.
  */
 
 // test includes

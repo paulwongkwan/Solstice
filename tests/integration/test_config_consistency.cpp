@@ -54,7 +54,7 @@ protected:
    * @return Contents of the fixture, or an empty string when it cannot be read.
    */
   static std::string readFixture(const std::string_view relativePath) {
-    const auto fixturePath = std::format("{}/{}", SUNSHINE_TEST_BIN_DIR, relativePath);
+    const auto fixturePath = std::format("{}/{}", SOLSTICE_TEST_BIN_DIR, relativePath);
     return file_handler::read_file(fixturePath.c_str());
   }
 

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <cstdint>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -59,7 +60,7 @@ namespace confighttp {
   namespace fs = std::filesystem;
 
   /**
-   * @brief HTTPS server type used for Sunshine's configuration UI.
+   * @brief HTTPS server type used for Solstice's configuration UI.
    */
   using https_server_t = SimpleWeb::Server<SimpleWeb::HTTPS>;
 
@@ -110,7 +111,168 @@ namespace confighttp {
    */
   constexpr auto CSRF_TOKEN_LIFETIME = std::chrono::hours(1);  // Tokens valid for 1 hour
 
+  /**
+   * @brief Name of the cookie that carries a Web UI login session.
+   */
+  constexpr auto SESSION_COOKIE_NAME = "solstice_session"sv;
+  /**
+   * @brief Lifetime of a session created with "remember me" selected.
+   */
+  constexpr auto SESSION_REMEMBER_LIFETIME = std::chrono::hours(24 * 30);
+  /**
+   * @brief Lifetime of a session created without "remember me" selected.
+   */
+  constexpr auto SESSION_LIFETIME = std::chrono::hours(12);
+
   constexpr auto VIGEMBUS_MINIMUM_VERSION = "1.17.0.0"sv;  ///< Minimum supported ViGEmBus fallback driver version.  // NOSONAR(cpp:S1313): not an IP address
+
+  /**
+   * @brief Read one cookie value from the request headers.
+   *
+   * @param request HTTP request to inspect.
+   * @param name Cookie name to look up.
+   * @return Cookie value, or an empty optional when the cookie is absent.
+   */
+  std::optional<std::string> get_cookie(const req_https_t &request, const std::string_view name) {
+    const auto cookie_header = request->header.find("cookie");
+    if (cookie_header == request->header.end()) {
+      return std::nullopt;
+    }
+
+    const std::string_view cookies {cookie_header->second};
+    std::size_t pos = 0;
+    while (pos < cookies.size()) {
+      auto end = cookies.find(';', pos);
+      if (end == std::string_view::npos) {
+        end = cookies.size();
+      }
+
+      auto item = cookies.substr(pos, end - pos);
+      while (!item.empty() && (item.front() == ' ' || item.front() == '\t')) {
+        item.remove_prefix(1);
+      }
+      while (!item.empty() && (item.back() == ' ' || item.back() == '\t')) {
+        item.remove_suffix(1);
+      }
+
+      if (const auto separator = item.find('='); separator != std::string_view::npos && item.substr(0, separator) == name) {
+        return std::string {item.substr(separator + 1)};
+      }
+
+      pos = end + 1;
+    }
+
+    return std::nullopt;
+  }
+
+  /**
+   * @brief Sign a session payload with the configured Web UI credentials.
+   *
+   * @details The signature changes whenever the password or salt changes, which invalidates older sessions.
+   *
+   * @param payload Session payload to sign.
+   * @return Hexadecimal signature for the payload.
+   */
+  std::string session_signature(const std::string_view payload) {
+    const std::string secret = "solstice-session:"s + config::sunshine.password + config::sunshine.salt;
+    return util::hex(crypto::hash(secret + std::string {payload})).to_string();
+  }
+
+  /**
+   * @brief Create a signed session token for the configured user.
+   *
+   * @param remember Whether the session should last for the remembered-session lifetime.
+   * @return Signed session token.
+   */
+  std::string create_session_token(const bool remember) {
+    const auto lifetime = remember ? SESSION_REMEMBER_LIFETIME : SESSION_LIFETIME;
+    const auto expiry = std::chrono::duration_cast<std::chrono::seconds>(
+                          std::chrono::system_clock::now().time_since_epoch() + lifetime)
+                          .count();
+    const auto payload = std::format("{}.{}", expiry, SimpleWeb::Crypto::Base64::encode(config::sunshine.username));
+    return payload + "." + session_signature(payload);
+  }
+
+  /**
+   * @brief Validate a signed session token.
+   *
+   * @param token Session token from the request cookie.
+   * @return True when the token is authentic, unexpired, and issued for the configured user.
+   */
+  bool validate_session_token(const std::string_view token) {
+    const auto signature_separator = token.rfind('.');
+    if (signature_separator == std::string_view::npos) {
+      return false;
+    }
+
+    const auto payload = token.substr(0, signature_separator);
+    if (!boost::iequals(std::string {token.substr(signature_separator + 1)}, session_signature(payload))) {
+      return false;
+    }
+
+    const auto expiry_separator = payload.find('.');
+    if (expiry_separator == std::string_view::npos) {
+      return false;
+    }
+
+    const auto expiry_text = payload.substr(0, expiry_separator);
+    std::int64_t expiry = 0;
+    if (const auto result = std::from_chars(expiry_text.data(), expiry_text.data() + expiry_text.size(), expiry); result.ec != std::errc {}) {
+      return false;
+    }
+
+    const auto now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    if (expiry <= now) {
+      return false;
+    }
+
+    const auto user = SimpleWeb::Crypto::Base64::decode(std::string {payload.substr(expiry_separator + 1)});
+    return boost::iequals(user, config::sunshine.username);
+  }
+
+  /**
+   * @brief Check whether a request carries valid Web UI credentials.
+   *
+   * @details Accepts either a login session cookie or HTTP basic authentication.
+   *
+   * @param request HTTP request to inspect.
+   * @return True when the request is authenticated.
+   */
+  bool is_authenticated(const req_https_t &request) {
+    if (config::sunshine.username.empty()) {
+      return false;
+    }
+
+    if (const auto token = get_cookie(request, SESSION_COOKIE_NAME); token && validate_session_token(*token)) {
+      return true;
+    }
+
+    const auto auth = request->header.find("authorization");
+    if (auth == request->header.end()) {
+      return false;
+    }
+
+    const auto &raw_auth = auth->second;
+    if (raw_auth.rfind("Basic "sv, 0) != 0) {
+      return false;
+    }
+
+    const auto auth_data = SimpleWeb::Crypto::Base64::decode(raw_auth.substr("Basic "sv.length()));
+    if (auth_data.empty()) {
+      return false;
+    }
+
+    const auto index = static_cast<int>(auth_data.find(':'));
+    if (index >= auth_data.size() - 1) {
+      return false;
+    }
+
+    const auto username = auth_data.substr(0, index);
+    const auto password = auth_data.substr(index + 1);
+    const auto hash = util::hex(crypto::hash(password + config::sunshine.salt)).to_string();
+
+    return boost::iequals(username, config::sunshine.username) && hash == config::sunshine.password;
+  }
 
   /**
    * @brief Parse one dotted driver-version component.
@@ -259,7 +421,6 @@ namespace confighttp {
 
     const SimpleWeb::CaseInsensitiveMultimap headers {
       {"Content-Type", "application/json"},
-      {"WWW-Authenticate", R"(Basic realm="Sunshine Gamestream Host", charset="UTF-8")"},
       {"X-Frame-Options", "DENY"},
       {"Content-Security-Policy", "frame-ancestors 'none';"}
     };
@@ -305,32 +466,12 @@ namespace confighttp {
       return false;
     }
 
-    auto fg = util::fail_guard([&]() {
-      send_unauthorized(response, request);
-    });
-
-    const auto auth = request->header.find("authorization");
-    if (auth == request->header.end()) {
-      return false;
+    if (is_authenticated(request)) {
+      return true;
     }
 
-    const auto &rawAuth = auth->second;
-    auto authData = SimpleWeb::Crypto::Base64::decode(rawAuth.substr("Basic "sv.length()));
-
-    const auto index = static_cast<int>(authData.find(':'));
-    if (index >= authData.size() - 1) {
-      return false;
-    }
-
-    const auto username = authData.substr(0, index);
-    const auto password = authData.substr(index + 1);
-
-    if (const auto hash = util::hex(crypto::hash(password + config::sunshine.salt)).to_string(); !boost::iequals(username, config::sunshine.username) || hash != config::sunshine.password) {
-      return false;
-    }
-
-    fg.disable();
-    return true;
+    send_unauthorized(response, request);
+    return false;
   }
 
   /**
@@ -538,7 +679,7 @@ namespace confighttp {
       if (query_it == query_params.end()) {
         auto address = net::addr_to_normalized_string(request->remote_endpoint().address());
         BOOST_LOG(error) << "Web UI: ["sv << address << "] -- CSRF protection blocked request from origin: "sv << blocked_origin;
-        BOOST_LOG(error) << "Web UI: To allow this origin, add it to the 'csrf_allowed_origins' option in your Sunshine configuration"sv;
+        BOOST_LOG(error) << "Web UI: To allow this origin, add it to the 'csrf_allowed_origins' option in your Solstice configuration"sv;
         bad_request(response, "Missing CSRF token");
         return false;
       }
@@ -576,8 +717,23 @@ namespace confighttp {
       return;
     }
 
-    if (require_auth && !authenticate(response, request)) {
-      return;
+    if (require_auth) {
+      if (const auto address = net::addr_to_normalized_string(request->remote_endpoint().address()); net::from_address(address) > http::origin_web_ui_allowed) {
+        BOOST_LOG(info) << "Web UI: ["sv << address << "] -- denied"sv;
+        response->write(SimpleWeb::StatusCode::client_error_forbidden);
+        return;
+      }
+
+      if (config::sunshine.username.empty()) {
+        send_redirect(response, request, "/welcome");
+        return;
+      }
+
+      // Send the user to the login screen instead of triggering the browser's basic authentication dialog.
+      if (!is_authenticated(request)) {
+        send_redirect(response, request, "/login");
+        return;
+      }
     }
 
     print_req(request);
@@ -611,13 +767,13 @@ namespace confighttp {
    * @brief Get the favicon image.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
-   * @todo combine function with getSunshineLogoImage and possibly getNodeModules
+   * @todo combine function with getSolsticeLogoImage and possibly getNodeModules
    * @todo use mime_types map
    */
   void getFaviconImage(const resp_https_t &response, const req_https_t &request) {
     print_req(request);
 
-    std::ifstream in(WEB_DIR "images/sunshine.ico", std::ios::binary);
+    std::ifstream in(WEB_DIR "images/solstice.ico", std::ios::binary);
     SimpleWeb::CaseInsensitiveMultimap headers;
     headers.emplace("Content-Type", "image/x-icon");
     headers.emplace("X-Frame-Options", "DENY");
@@ -626,16 +782,16 @@ namespace confighttp {
   }
 
   /**
-   * @brief Get the Sunshine logo image.
+   * @brief Get the Solstice logo image.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
    * @todo combine function with getFaviconImage and possibly getNodeModules
    * @todo use mime_types map
    */
-  void getSunshineLogoImage(const resp_https_t &response, const req_https_t &request) {
+  void getSolsticeLogoImage(const resp_https_t &response, const req_https_t &request) {
     print_req(request);
 
-    std::ifstream in(WEB_DIR "images/logo-sunshine-45.png", std::ios::binary);
+    std::ifstream in(WEB_DIR "images/logo-solstice-45.png", std::ios::binary);
     SimpleWeb::CaseInsensitiveMultimap headers;
     headers.emplace("Content-Type", "image/png");
     headers.emplace("X-Frame-Options", "DENY");
@@ -737,7 +893,7 @@ namespace confighttp {
       std::string content = file_handler::read_file(config::stream.file_apps.c_str());
       nlohmann::json file_tree = nlohmann::json::parse(content);
 
-      // Legacy versions of Sunshine used strings for boolean and integers, let's convert them
+      // Legacy versions of Solstice used strings for boolean and integers, let's convert them
       // List of keys to convert to boolean
       const std::vector<std::string> boolean_keys = {
         "exclude-global-prep-cmd",
@@ -1221,7 +1377,7 @@ namespace confighttp {
 
     nlohmann::json output_tree;
     output_tree["status"] = true;
-    output_tree["platform"] = SUNSHINE_PLATFORM;
+    output_tree["platform"] = SOLSTICE_PLATFORM;
     output_tree["version"] = PROJECT_VERSION;
 
     auto vars = config::parse_config(file_handler::read_file(config::sunshine.config_file.c_str()));
@@ -1692,7 +1848,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief Authenticate a Web UI request and restart the Sunshine process.
+   * @brief Authenticate a Web UI request and restart the Solstice process.
    *
    * @param response HTTP response used for authentication or CSRF failures.
    * @param request HTTP request carrying the client identity and CSRF token.
@@ -1727,7 +1883,7 @@ namespace confighttp {
 
     nlohmann::json output_tree;
     output_tree["permissions"] = nlohmann::json::array();
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
     if (permission_status_override) {
       output_tree["permissions"] = *permission_status_override;
       send_response(response, output_tree);
@@ -1746,7 +1902,7 @@ namespace confighttp {
     send_response(response, output_tree);
   }
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   void set_permission_statuses_for_testing(nlohmann::json permissions) {
     permission_status_override = std::move(permissions);
   }
@@ -2002,6 +2158,90 @@ namespace confighttp {
   }
 
   /**
+   * @brief Handle a login attempt and set a session cookie on success.
+   *
+   * @param response HTTP response object to populate.
+   * @param request HTTP request containing the JSON credentials.
+   */
+  void login(const resp_https_t &response, const req_https_t &request) {
+    if (!check_content_type(response, request, "application/json")) {
+      return;
+    }
+
+    auto address = net::addr_to_normalized_string(request->remote_endpoint().address());
+    if (net::from_address(address) > http::origin_web_ui_allowed) {
+      BOOST_LOG(info) << "Web UI: ["sv << address << "] -- denied"sv;
+      response->write(SimpleWeb::StatusCode::client_error_forbidden);
+      return;
+    }
+
+    if (config::sunshine.username.empty()) {
+      bad_request(response, "No Web UI credentials are configured");
+      return;
+    }
+
+    nlohmann::json input_tree;
+    try {
+      std::stringstream ss;
+      ss << request->content.rdbuf();
+      input_tree = nlohmann::json::parse(ss);
+    } catch (const std::exception &e) {
+      bad_request(response, e.what());
+      return;
+    }
+
+    const auto username = input_tree.value("username", "");
+    const auto password = input_tree.value("password", "");
+    const auto remember = input_tree.value("remember", false);
+
+    const auto hash = util::hex(crypto::hash(password + config::sunshine.salt)).to_string();
+    if (!boost::iequals(username, config::sunshine.username) || hash != config::sunshine.password) {
+      BOOST_LOG(warning) << "Web UI: ["sv << address << "] -- login failed"sv;
+      send_unauthorized(response, request);
+      return;
+    }
+
+    BOOST_LOG(info) << "Web UI: ["sv << address << "] -- login succeeded"sv;
+
+    // A remembered session leaves a persistent cookie; otherwise the cookie ends with the browser session.
+    std::string cookie = std::format("{}={}; Path=/; HttpOnly; Secure; SameSite=Strict",
+                                     SESSION_COOKIE_NAME,
+                                     create_session_token(remember));
+    if (remember) {
+      const auto max_age = std::chrono::duration_cast<std::chrono::seconds>(SESSION_REMEMBER_LIFETIME).count();
+      cookie += std::format("; Max-Age={}", max_age);
+    }
+
+    const SimpleWeb::CaseInsensitiveMultimap headers {
+      {"Content-Type", "application/json"},
+      {"Set-Cookie", cookie},
+    };
+
+    nlohmann::json tree;
+    tree["status"] = true;
+    response->write(tree.dump(), headers);
+  }
+
+  /**
+   * @brief Clear the Web UI session cookie.
+   *
+   * @param response HTTP response object to populate.
+   * @param request HTTP request object.
+   */
+  void logout(const resp_https_t &response, const req_https_t &request) {
+    print_req(request);
+
+    const SimpleWeb::CaseInsensitiveMultimap headers {
+      {"Content-Type", "application/json"},
+      {"Set-Cookie", std::format("{}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0", SESSION_COOKIE_NAME)},
+    };
+
+    nlohmann::json tree;
+    tree["status"] = true;
+    response->write(tree.dump(), headers);
+  }
+
+  /**
    * @brief Start the HTTPS configuration server.
    */
   void start() {
@@ -2032,8 +2272,13 @@ namespace confighttp {
     server.default_resource["GET"] = getFallbackPage;
 
     // Public SPA routes with authentication behavior that differs from the default fallback
+    server.resource["^/login/?$"]["GET"] = page_handler(false);
     server.resource["^/logout/?$"]["GET"] = page_handler(false);
     server.resource["^/welcome/?$"]["GET"] = page_handler(false, true);
+
+    // session endpoints
+    server.resource["^/api/login$"]["POST"] = login;
+    server.resource["^/api/logout$"]["POST"] = logout;
 
     // rest api
     server.resource["^/api/browse$"]["GET"] = browseDirectory;
@@ -2063,8 +2308,8 @@ namespace confighttp {
     server.resource["^/api/virtual-input/status$"]["GET"] = getVirtualInputStatus;
 
     // static/dynamic resources
-    server.resource["^/images/sunshine.ico$"]["GET"] = getFaviconImage;
-    server.resource["^/images/logo-sunshine-45.png$"]["GET"] = getSunshineLogoImage;
+    server.resource["^/images/solstice.ico$"]["GET"] = getFaviconImage;
+    server.resource["^/images/logo-solstice-45.png$"]["GET"] = getSolsticeLogoImage;
     server.resource["^/assets\\/.+$"]["GET"] = getAsset;
 
     server.config.reuse_address = true;

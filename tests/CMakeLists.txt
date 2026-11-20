@@ -21,8 +21,8 @@ include_directories("${GTEST_SOURCE_DIR}/googletest/include" "${GTEST_SOURCE_DIR
 
 # coverage
 # https://gcovr.com/en/stable/guide/compiling.html#compiler-options
-option(SUNSHINE_LLVM_COVERAGE "Use LLVM source-based coverage" OFF)
-if(SUNSHINE_LLVM_COVERAGE)
+option(SOLSTICE_LLVM_COVERAGE "Use LLVM source-based coverage" OFF)
+if(SOLSTICE_LLVM_COVERAGE)
     add_compile_options(-fprofile-instr-generate -fcoverage-mapping -ggdb -O0)
     add_link_options(-fprofile-instr-generate)
 else()
@@ -30,100 +30,100 @@ else()
     set(CMAKE_C_FLAGS "-fprofile-arcs -ftest-coverage -ggdb -O0")
 endif()
 
-set(SUNSHINE_TEST_GCOV_ROOT
+set(SOLSTICE_TEST_GCOV_ROOT
         ""
         CACHE PATH "Relocated source and build root used to process gcov data")
-if(SUNSHINE_TEST_GCOV_ROOT AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+if(SOLSTICE_TEST_GCOV_ROOT AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
     add_compile_options(
-            "-fprofile-prefix-map=${CMAKE_SOURCE_DIR}=${SUNSHINE_TEST_GCOV_ROOT}")
+            "-fprofile-prefix-map=${CMAKE_SOURCE_DIR}=${SOLSTICE_TEST_GCOV_ROOT}")
 endif()
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # cmake-lint: disable=C0103
 
-# modify SUNSHINE_DEFINITIONS
+# modify SOLSTICE_DEFINITIONS
 list(APPEND
-        SUNSHINE_DEFINITIONS SUNSHINE_SHADERS_DIR="${CMAKE_SOURCE_DIR}/src_assets/windows/assets/shaders/directx")
+        SOLSTICE_DEFINITIONS SOLSTICE_SHADERS_DIR="${CMAKE_SOURCE_DIR}/src_assets/windows/assets/shaders/directx")
 
 set(TEST_DEFINITIONS)  # list will be appended as needed
-set(SUNSHINE_TEST_SOURCE_DIR
+set(SOLSTICE_TEST_SOURCE_DIR
         "${CMAKE_SOURCE_DIR}"
         CACHE PATH "Source fixture directory used by tests")
-set(SUNSHINE_TEST_RUNTIME_DIR
+set(SOLSTICE_TEST_RUNTIME_DIR
         "${CMAKE_CURRENT_BINARY_DIR}"
         CACHE PATH "Writable runtime fixture directory used by tests")
 
 # this indicates we're building tests in case sunshine needs to adjust some code or add private tests
-list(APPEND TEST_DEFINITIONS SUNSHINE_TESTS)
-list(APPEND TEST_DEFINITIONS SUNSHINE_SOURCE_DIR="${SUNSHINE_TEST_SOURCE_DIR}")
-list(APPEND TEST_DEFINITIONS SUNSHINE_TEST_BIN_DIR="${SUNSHINE_TEST_RUNTIME_DIR}")
-if(SUNSHINE_ENABLE_TRAY)
+list(APPEND TEST_DEFINITIONS SOLSTICE_TESTS)
+list(APPEND TEST_DEFINITIONS SOLSTICE_SOURCE_DIR="${SOLSTICE_TEST_SOURCE_DIR}")
+list(APPEND TEST_DEFINITIONS SOLSTICE_TEST_BIN_DIR="${SOLSTICE_TEST_RUNTIME_DIR}")
+if(SOLSTICE_ENABLE_TRAY)
     list(APPEND TEST_DEFINITIONS TRAY_ENABLE_TEST_HOOKS)
 endif()
 
-# Override SUNSHINE_ASSETS_DIR to use a writable temp directory for tests
-# Remove the existing definition from SUNSHINE_DEFINITIONS to avoid redefinition error
-list(FILTER SUNSHINE_DEFINITIONS EXCLUDE REGEX "^SUNSHINE_ASSETS_DIR=")
-list(APPEND TEST_DEFINITIONS SUNSHINE_ASSETS_DIR="${SUNSHINE_TEST_RUNTIME_DIR}/test_assets")
+# Override SOLSTICE_ASSETS_DIR to use a writable temp directory for tests
+# Remove the existing definition from SOLSTICE_DEFINITIONS to avoid redefinition error
+list(FILTER SOLSTICE_DEFINITIONS EXCLUDE REGEX "^SOLSTICE_ASSETS_DIR=")
+list(APPEND TEST_DEFINITIONS SOLSTICE_ASSETS_DIR="${SOLSTICE_TEST_RUNTIME_DIR}/test_assets")
 
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
         ${CMAKE_SOURCE_DIR}/tests/*.h
         ${CMAKE_SOURCE_DIR}/tests/*.cpp)
 
-if(SUNSHINE_ENABLE_TRAY)
-    set(SUNSHINE_TRAY_TEST_ICON_SOURCE_DIR
+if(SOLSTICE_ENABLE_TRAY)
+    set(SOLSTICE_TRAY_TEST_ICON_SOURCE_DIR
             "${CMAKE_SOURCE_DIR}/src_assets/common/assets/web/public/images")
-    set(SUNSHINE_TRAY_TEST_ICON_DESTINATION_DIR
+    set(SOLSTICE_TRAY_TEST_ICON_DESTINATION_DIR
             "${CMAKE_CURRENT_BINARY_DIR}/test_assets/web/images")
-    file(MAKE_DIRECTORY "${SUNSHINE_TRAY_TEST_ICON_DESTINATION_DIR}")
+    file(MAKE_DIRECTORY "${SOLSTICE_TRAY_TEST_ICON_DESTINATION_DIR}")
 
     configure_file(
-            "${CMAKE_SOURCE_DIR}/sunshine.svg"
-            "${SUNSHINE_TRAY_TEST_ICON_DESTINATION_DIR}/logo-sunshine.svg"
+            "${CMAKE_SOURCE_DIR}/solstice.svg"
+            "${SOLSTICE_TRAY_TEST_ICON_DESTINATION_DIR}/solstice.svg"
             COPYONLY)
 
-    set(SUNSHINE_TRAY_TEST_ICONS
-            sunshine-locked.svg
-            sunshine-playing.svg
-            sunshine-pausing.svg)
+    set(SOLSTICE_TRAY_TEST_ICONS
+            solstice-locked.svg
+            solstice-playing.svg
+            solstice-pausing.svg)
 
-    foreach(icon IN LISTS SUNSHINE_TRAY_TEST_ICONS)
+    foreach(icon IN LISTS SOLSTICE_TRAY_TEST_ICONS)
         configure_file(
-                "${SUNSHINE_TRAY_TEST_ICON_SOURCE_DIR}/${icon}"
-                "${SUNSHINE_TRAY_TEST_ICON_DESTINATION_DIR}/${icon}"
+                "${SOLSTICE_TRAY_TEST_ICON_SOURCE_DIR}/${icon}"
+                "${SOLSTICE_TRAY_TEST_ICON_DESTINATION_DIR}/${icon}"
                 COPYONLY)
     endforeach()
 
-    add_library(sunshine_tray_test_helpers STATIC
+    add_library(solstice_tray_test_helpers STATIC
             ${CMAKE_SOURCE_DIR}/third-party/tray/tests/notification_utils.cpp
             ${CMAKE_SOURCE_DIR}/third-party/tray/tests/screenshot_utils.cpp)
-    set_target_properties(sunshine_tray_test_helpers PROPERTIES
+    set_target_properties(solstice_tray_test_helpers PROPERTIES
             CXX_STANDARD 17
             CXX_STANDARD_REQUIRED ON)
-    target_include_directories(sunshine_tray_test_helpers PRIVATE
+    target_include_directories(solstice_tray_test_helpers PRIVATE
             ${CMAKE_SOURCE_DIR}/third-party/tray)
-    target_link_libraries(sunshine_tray_test_helpers PRIVATE
+    target_link_libraries(solstice_tray_test_helpers PRIVATE
             lizardbyte::common
             gdi32
             gdiplus)
 endif()
 
-set(SUNSHINE_SOURCES
-        ${SUNSHINE_TARGET_FILES})
+set(SOLSTICE_SOURCES
+        ${SOLSTICE_TARGET_FILES})
 
 # remove main.cpp from the list of sources
-list(REMOVE_ITEM SUNSHINE_SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
+list(REMOVE_ITEM SOLSTICE_SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 add_executable(${PROJECT_NAME}
         ${TEST_SOURCES}
-        ${SUNSHINE_SOURCES})
+        ${SOLSTICE_SOURCES})
 
 # Copy integration-test fixtures to the build directory.
 # Preserve repository-relative paths for source and installed-test layouts.
 # Using configure_file ensures files are copied when they change between builds
 set(INTEGRATION_TEST_FILES
     "cmake/compile_definitions/windows.cmake"
-    "cmake/dependencies/Boost_Sunshine.cmake"
+    "cmake/dependencies/Boost_Solstice.cmake"
     "cmake/macros/common.cmake"
     "cmake/prep/options.cmake"
     "package-lock.cmake"
@@ -162,7 +162,7 @@ add_custom_target(sync_locale_files ALL
     VERBATIM
 )
 
-foreach(dep ${SUNSHINE_TARGET_DEPENDENCIES})
+foreach(dep ${SOLSTICE_TARGET_DEPENDENCIES})
     add_dependencies(${PROJECT_NAME} ${dep})  # compile these before sunshine
 endforeach()
 
@@ -171,20 +171,20 @@ add_dependencies(${PROJECT_NAME} sync_locale_files)
 
 # Build the list of libraries to link
 set(TEST_LINK_LIBRARIES
-    ${SUNSHINE_EXTERNAL_LIBRARIES}
+    ${SOLSTICE_EXTERNAL_LIBRARIES}
     lizardbyte::test_support
     ${PLATFORM_LIBRARIES}
 )
 
-if(SUNSHINE_ENABLE_TRAY)
+if(SOLSTICE_ENABLE_TRAY)
     list(APPEND TEST_LINK_LIBRARIES
-            sunshine_tray_test_helpers)
+            solstice_tray_test_helpers)
 endif()
 
 target_link_libraries(${PROJECT_NAME} ${TEST_LINK_LIBRARIES})
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${SUNSHINE_DEFINITIONS} ${TEST_DEFINITIONS})
-target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${SUNSHINE_COMPILE_OPTIONS}>)
-target_link_options(${PROJECT_NAME} PRIVATE ${SUNSHINE_LINK_OPTIONS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${SOLSTICE_DEFINITIONS} ${TEST_DEFINITIONS})
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${SOLSTICE_COMPILE_OPTIONS}>)
+target_link_options(${PROJECT_NAME} PRIVATE ${SOLSTICE_LINK_OPTIONS})
 
 # Compile the utility test with the SDK 13.1 implementation namespace and headers.
 set_source_files_properties(unit/test_nvenc_utils.cpp PROPERTIES

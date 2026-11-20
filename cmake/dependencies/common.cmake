@@ -6,7 +6,7 @@
 find_package(OpenSSL REQUIRED)
 
 # boost, this should be before Simple-Web-Server as it also depends on boost
-include(dependencies/Boost_Sunshine)
+include(dependencies/Boost_Solstice)
 
 # submodules
 # moonlight common library
@@ -24,8 +24,8 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/third-party/lizardbyte-common")
 # libdisplaydevice
 add_subdirectory("${CMAKE_SOURCE_DIR}/third-party/libdisplaydevice")
 
-if(SUNSHINE_ENABLE_TRAY)
-    if(SUNSHINE_USE_STATIC_QT)
+if(SOLSTICE_ENABLE_TRAY)
+    if(SOLSTICE_USE_STATIC_QT)
         set(_sunshine_find_library_suffixes "${CMAKE_FIND_LIBRARY_SUFFIXES}")
         set(_sunshine_import_library_suffix "${CMAKE_IMPORT_LIBRARY_SUFFIX}")
         set(_sunshine_pkg_config_argn "${PKG_CONFIG_ARGN}")
@@ -41,15 +41,15 @@ if(SUNSHINE_ENABLE_TRAY)
         # CMake's FindTIFF module does not propagate dependencies of the static archive.
         # Provide its standard target from pkg-config before Qt imports the TIFF plugin.
         find_package(PkgConfig REQUIRED)
-        pkg_check_modules(SUNSHINE_STATIC_TIFF REQUIRED IMPORTED_TARGET libtiff-4)
+        pkg_check_modules(SOLSTICE_STATIC_TIFF REQUIRED IMPORTED_TARGET libtiff-4)
         add_library(TIFF::TIFF INTERFACE IMPORTED)
-        target_link_libraries(TIFF::TIFF INTERFACE PkgConfig::SUNSHINE_STATIC_TIFF)
+        target_link_libraries(TIFF::TIFF INTERFACE PkgConfig::SOLSTICE_STATIC_TIFF)
 
         set(_sunshine_module_path "${CMAKE_MODULE_PATH}")
         find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
         get_target_property(_sunshine_qt_core_type Qt6::Core TYPE)
         if(NOT _sunshine_qt_core_type STREQUAL "STATIC_LIBRARY")
-            message(FATAL_ERROR "SUNSHINE_USE_STATIC_QT requires a static Qt 6 installation.")
+            message(FATAL_ERROR "SOLSTICE_USE_STATIC_QT requires a static Qt 6 installation.")
         endif()
         set(CMAKE_MODULE_PATH "${_sunshine_module_path}")
     endif()
@@ -59,9 +59,9 @@ if(SUNSHINE_ENABLE_TRAY)
     # TRAY_QT_VERSION is scoped to the tray subdirectory, so inspect the target's actual dependencies.
     get_target_property(_sunshine_tray_link_libraries tray LINK_LIBRARIES)
     if("Qt6::Widgets" IN_LIST _sunshine_tray_link_libraries)
-        set(SUNSHINE_TRAY_QT_VERSION 6)
+        set(SOLSTICE_TRAY_QT_VERSION 6)
     elseif("Qt5::Widgets" IN_LIST _sunshine_tray_link_libraries)
-        set(SUNSHINE_TRAY_QT_VERSION 5)
+        set(SOLSTICE_TRAY_QT_VERSION 5)
     else()
         message(FATAL_ERROR "Could not determine the Qt version used by the tray target.")
     endif()
@@ -71,7 +71,7 @@ if(SUNSHINE_ENABLE_TRAY)
         target_compile_definitions(tray PRIVATE TRAY_ENABLE_TEST_HOOKS)
     endif()
 
-    if(SUNSHINE_USE_STATIC_QT)
+    if(SOLSTICE_USE_STATIC_QT)
         set(CMAKE_FIND_LIBRARY_SUFFIXES "${_sunshine_find_library_suffixes}")
         set(CMAKE_IMPORT_LIBRARY_SUFFIX "${_sunshine_import_library_suffix}")
         set(PKG_CONFIG_ARGN "${_sunshine_pkg_config_argn}")
@@ -100,9 +100,9 @@ include_directories(SYSTEM ${MINIUPNP_INCLUDE_DIRS})
 include("${CMAKE_MODULE_PATH}/dependencies/ffmpeg.cmake")
 
 # Opus
-if(TARGET PkgConfig::SUNSHINE_BUNDLED_OPUS)
+if(TARGET PkgConfig::SOLSTICE_BUNDLED_OPUS)
     # Match the Opus version linked by the shared FFmpeg package.
-    set(Opus_LIBRARY PkgConfig::SUNSHINE_BUNDLED_OPUS)  # cmake-lint: disable=C0103
+    set(Opus_LIBRARY PkgConfig::SOLSTICE_BUNDLED_OPUS)  # cmake-lint: disable=C0103
     set(Opus_INCLUDE_DIR "${FFMPEG_INCLUDE_DIRS}")  # cmake-lint: disable=C0103
 else()
     set(OPUS_USE_STATIC ON CACHE BOOL "Static linking for libopus")

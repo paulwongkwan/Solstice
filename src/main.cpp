@@ -1,6 +1,6 @@
 /**
  * @file src/main.cpp
- * @brief Definitions for the main entry point for Sunshine.
+ * @brief Definitions for the main entry point for Solstice.
  */
 // standard includes
 #include <array>
@@ -67,7 +67,7 @@ DWORD windows_build_number() {
 }
 
 /**
- * @brief Forward a POSIX signal to the registered Sunshine handler.
+ * @brief Forward a POSIX signal to the registered Solstice handler.
  *
  * @param sig Native signal number being handled.
  */
@@ -149,14 +149,14 @@ WINAPI BOOL ConsoleCtrlHandler(DWORD type) {
   return FALSE;
 }
 
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
+#if defined SOLSTICE_TRAY && SOLSTICE_TRAY >= 1
 constexpr bool tray_is_enabled = true;  ///< Compile-time flag indicating tray support is enabled.
 #else
 constexpr bool tray_is_enabled = false;
 #endif
 
 /**
- * @brief Run the main event loop until Sunshine is asked to exit.
+ * @brief Run the main event loop until Solstice is asked to exit.
  *
  * @param shutdown_event Shutdown event.
  */
@@ -184,9 +184,9 @@ int main(int argc, char *argv[]) {
 
   setlocale(LC_ALL, "C");
 
-  // Sunshine requires Windows 11 (build 22000) or newer.
+  // Solstice requires Windows 11 (build 22000) or newer.
   if (const auto build_number = windows_build_number(); build_number != 0 && build_number < 22000) {
-    BOOST_LOG(fatal) << "Sunshine requires Windows 11 or newer. Detected Windows build "sv << build_number << '.';
+    BOOST_LOG(fatal) << "Solstice requires Windows 11 or newer. Detected Windows build "sv << build_number << '.';
     return 1;
   }
 
@@ -246,9 +246,9 @@ int main(int argc, char *argv[]) {
 
   // Modify relevant NVIDIA control panel settings if the system has corresponding gpu
   if (nvprefs_instance.load()) {
-    // Restore global settings to the undo file left by improper termination of sunshine.exe
+    // Restore global settings to the undo file left by improper termination of solstice.exe
     nvprefs_instance.restore_from_and_delete_undo_file_if_exists();
-    // Modify application settings for sunshine.exe
+    // Modify application settings for solstice.exe
     nvprefs_instance.modify_application_profile();
     // Modify global settings, undo file is produced in the process to restore after improper termination
     nvprefs_instance.modify_global_profile();
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     nvprefs_instance.unload();
   }
 
-  // Wait as long as possible to terminate Sunshine.exe during logoff/shutdown
+  // Wait as long as possible to terminate Solstice.exe during logoff/shutdown
   SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY);
 
   // We must create a hidden window to receive shutdown notifications since we load gdi32.dll
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
     auto wnd = CreateWindowExA(
       0,
       wnd_class.lpszClassName,
-      "Sunshine Session Monitor Window",
+      "Solstice Session Monitor Window",
       0,
       CW_USEDEFAULT,
       CW_USEDEFAULT,
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG(info) << "Interrupt handler called"sv;
 
     auto task = []() {
-      BOOST_LOG(fatal) << "10 seconds passed, yet Sunshine's still running: Forcing shutdown"sv;
+      BOOST_LOG(fatal) << "10 seconds passed, yet Solstice's still running: Forcing shutdown"sv;
       logging::log_flush();
       lifetime::debug_trap();
     };
@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG(info) << "Terminate handler called"sv;
 
     auto task = []() {
-      BOOST_LOG(fatal) << "10 seconds passed, yet Sunshine's still running: Forcing shutdown"sv;
+      BOOST_LOG(fatal) << "10 seconds passed, yet Solstice's still running: Forcing shutdown"sv;
       logging::log_flush();
       lifetime::debug_trap();
     };
@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
   if (http::init()) {
     BOOST_LOG(fatal) << "HTTP interface failed to initialize"sv;
 
-    BOOST_LOG(fatal) << "To relaunch Sunshine successfully, use the shortcut in the Start Menu. Do not run Sunshine.exe manually."sv;
+    BOOST_LOG(fatal) << "To relaunch Solstice successfully, use the shortcut in the Start Menu. Do not run Solstice.exe manually."sv;
     std::this_thread::sleep_for(10s);
 
     return -1;
@@ -436,15 +436,15 @@ int main(int argc, char *argv[]) {
 
   // If we're using the default port and GameStream is enabled, warn the user
   if (config::sunshine.port == 47989 && is_gamestream_enabled()) {
-    BOOST_LOG(fatal) << "GameStream is still enabled in GeForce Experience! This *will* cause streaming problems with Sunshine!"sv;
-    BOOST_LOG(fatal) << "Disable GameStream on the SHIELD tab in GeForce Experience or change the Port setting on the Advanced tab in the Sunshine Web UI."sv;
+    BOOST_LOG(fatal) << "GameStream is still enabled in GeForce Experience! This *will* cause streaming problems with Solstice!"sv;
+    BOOST_LOG(fatal) << "Disable GameStream on the SHIELD tab in GeForce Experience or change the Port setting on the Advanced tab in the Solstice Web UI."sv;
   }
 
   if (tray_is_enabled && config::sunshine.system_tray) {
     BOOST_LOG(info) << "Starting system tray"sv;
     system_tray::prepare_tray_vigembus_driver();
     // TODO: Windows has a weird bug where when running as a service and on the first Windows boot,
-    // the tray icon would not appear even though Sunshine is running correctly otherwise.
+    // the tray icon would not appear even though Solstice is running correctly otherwise.
     // Restarting the service would allow the icon to appear normally.
     // For now we will keep the Windows tray icon on a separate thread.
     system_tray::init_tray_threaded();
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
     permission_watcher = std::jthread([](std::stop_token stop) {
       while (!stop.stop_requested()) {
         if (platf::required_permissions_granted(platf::get_permission_statuses())) {
-          BOOST_LOG(info) << "Required permissions granted; restarting Sunshine"sv;
+          BOOST_LOG(info) << "Required permissions granted; restarting Solstice"sv;
           platf::restart();
           return;
         }

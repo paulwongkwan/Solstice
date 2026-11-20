@@ -1,21 +1,21 @@
 # common target definitions
 # this file will also load platform specific macros
 
-add_executable(sunshine ${SUNSHINE_TARGET_FILES})
-foreach(dep ${SUNSHINE_TARGET_DEPENDENCIES})
-    add_dependencies(sunshine ${dep})  # compile these before sunshine
+add_executable(solstice ${SOLSTICE_TARGET_FILES})
+foreach(dep ${SOLSTICE_TARGET_DEPENDENCIES})
+    add_dependencies(solstice ${dep})  # compile these before solstice
 endforeach()
 
 # platform specific target definitions
 include(${CMAKE_MODULE_PATH}/targets/windows.cmake)
 
-target_link_libraries(sunshine ${SUNSHINE_EXTERNAL_LIBRARIES} ${EXTRA_LIBS})
-target_compile_definitions(sunshine PUBLIC ${SUNSHINE_DEFINITIONS})
+target_link_libraries(solstice ${SOLSTICE_EXTERNAL_LIBRARIES} ${EXTRA_LIBS})
+target_compile_definitions(solstice PUBLIC ${SOLSTICE_DEFINITIONS})
 
-target_compile_options(sunshine PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${SUNSHINE_COMPILE_OPTIONS}>)
-target_link_options(sunshine PRIVATE ${SUNSHINE_LINK_OPTIONS})
+target_compile_options(solstice PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${SOLSTICE_COMPILE_OPTIONS}>)
+target_link_options(solstice PRIVATE ${SOLSTICE_LINK_OPTIONS})
 
-set(NPM_SOURCE_ASSETS_DIR ${SUNSHINE_SOURCE_ASSETS_DIR})
+set(NPM_SOURCE_ASSETS_DIR ${SOLSTICE_SOURCE_ASSETS_DIR})
 set(NPM_ASSETS_DIR ${CMAKE_BINARY_DIR})
 
 #WebUI build
@@ -58,7 +58,7 @@ add_custom_target(web-ui ALL
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Installing NPM Dependencies and Building the Web UI"
         COMMAND "${CMAKE_COMMAND}" -E env "${NPM_PATH}" ${NPM_COMMAND} "${NPM}" ci ${NPM_INSTALL_FLAGS}
-        COMMAND "${CMAKE_COMMAND}" -E env "${NPM_PATH}" "SUNSHINE_SOURCE_ASSETS_DIR=${NPM_SOURCE_ASSETS_DIR}" "SUNSHINE_ASSETS_DIR=${NPM_ASSETS_DIR}" ${NPM_COMMAND} "${NPM}" run build  # cmake-lint: disable=C0301
+        COMMAND "${CMAKE_COMMAND}" -E env "${NPM_PATH}" "SOLSTICE_SOURCE_ASSETS_DIR=${NPM_SOURCE_ASSETS_DIR}" "SOLSTICE_ASSETS_DIR=${NPM_ASSETS_DIR}" ${NPM_COMMAND} "${NPM}" run build  # cmake-lint: disable=C0301
         VERBATIM)
 
 # docs

@@ -6,14 +6,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Discussions
-    url: https://github.com/orgs/LizardByte/discussions
+    url: https://github.com/paulwongkwan/Sunshine/discussions
     about: Community discussions
   - name: Questions
-    url: https://github.com/orgs/LizardByte/discussions
+    url: https://github.com/paulwongkwan/Sunshine/discussions
     about: Ask questions
   - name: Feature Requests
-    url: https://github.com/orgs/LizardByte/discussions
+    url: https://github.com/paulwongkwan/Sunshine/discussions
     about: Request new features
   - name: Support Center
-    url: https://app.lizardbyte.dev/support
-    about: Official LizardByte support
+    url: https://github.com/paulwongkwan/Sunshine/issues
+    about: Official Solstice support

@@ -13,7 +13,7 @@
 
 namespace {
 
-  const auto sunshine_program_data_folder = "Sunshine";
+  const auto sunshine_program_data_folder = "Solstice";
   const auto nvprefs_undo_file_name = "nvprefs_undo.json";
 
 }  // namespace
@@ -144,7 +144,7 @@ namespace nvprefs {
     auto make_undo_and_commit = [&]() {
       // Create and lock undo file if it hasn't been done yet
       if (!pimpl->undo_file) {
-        // Prepare Sunshine folder in ProgramData if it doesn't exist
+        // Prepare Solstice folder in ProgramData if it doesn't exist
         if (!CreateDirectoryW(pimpl->undo_folder_path.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
           error_message("Couldn't create undo folder");
           return false;

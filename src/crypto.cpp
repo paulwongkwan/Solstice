@@ -462,7 +462,7 @@ namespace crypto {
   }
 
   /**
-   * @brief Generate a self-signed certificate and private key for Sunshine pairing.
+   * @brief Generate a self-signed certificate and private key for Solstice pairing.
    */
   creds_t gen_creds(const std::string_view &cn, std::uint32_t key_bits) {
     x509_t x509 {X509_new()};

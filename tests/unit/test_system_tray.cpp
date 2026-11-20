@@ -1,11 +1,11 @@
 /**
  * @file tests/unit/test_system_tray.cpp
- * @brief Tests for Sunshine's system tray integration.
+ * @brief Tests for Solstice's system tray integration.
  */
 
 // test includes
 #include "../tests_common.h"
-#if defined(SUNSHINE_TRAY) && SUNSHINE_TRAY >= 1
+#if defined(SOLSTICE_TRAY) && SOLSTICE_TRAY >= 1
   #if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
     #include "third-party/tray/tests/notification_utils.h"
     #include "third-party/tray/tests/screenshot_utils.h"
@@ -25,7 +25,7 @@
 #include <tuple>
 
 // Only test the system tray if it is enabled.
-#if defined(SUNSHINE_TRAY) && SUNSHINE_TRAY >= 1
+#if defined(SOLSTICE_TRAY) && SOLSTICE_TRAY >= 1
 
   // lib includes
   #include <tray.h>
@@ -93,7 +93,7 @@ namespace {
     EXPECT_EQ(benefits_menu[1].disabled, 1);
     EXPECT_STREQ(benefits_menu[2].text, "Motion, touchpads, LEDs, and adaptive triggers where supported");
     EXPECT_EQ(benefits_menu[2].disabled, 1);
-    EXPECT_STREQ(benefits_menu[3].text, "Actively developed and supported by LizardByte");
+    EXPECT_STREQ(benefits_menu[3].text, "Actively developed and supported by Solstice");
     EXPECT_EQ(benefits_menu[3].disabled, 1);
     EXPECT_EQ(benefits_menu[4].text, nullptr);
   }
@@ -118,13 +118,13 @@ namespace {
   #endif
 
   /**
-   * @brief Verify the persistent menu exposed by Sunshine.
+   * @brief Verify the persistent menu exposed by Solstice.
    */
   void verify_menu() {
     const auto &tray_data = system_tray::tray_data_for_testing();
     ASSERT_NE(tray_data.menu, nullptr);
 
-    EXPECT_STREQ(tray_data.menu[0].text, "Open Sunshine");
+    EXPECT_STREQ(tray_data.menu[0].text, "Open Solstice");
     EXPECT_NE(tray_data.menu[0].cb, nullptr);
     EXPECT_STREQ(tray_data.menu[1].text, "-");
     EXPECT_EQ(tray_data.menu[1].cb, nullptr);
@@ -150,41 +150,27 @@ namespace {
     EXPECT_EQ(tray_data.menu[2].submenu[4].text, nullptr);
     #endif
     EXPECT_STREQ(tray_data.menu[3].text, "-");
-    EXPECT_STREQ(tray_data.menu[4].text, "Donate");
-    ASSERT_NE(tray_data.menu[4].submenu, nullptr);
-    EXPECT_STREQ(tray_data.menu[4].submenu[0].text, "GitHub Sponsors");
-    EXPECT_STREQ(tray_data.menu[4].submenu[1].text, "Patreon");
-    EXPECT_STREQ(tray_data.menu[4].submenu[2].text, "PayPal");
-    EXPECT_EQ(tray_data.menu[4].submenu[3].text, nullptr);
-    EXPECT_STREQ(tray_data.menu[5].text, "-");
     #ifdef _WIN32
-    EXPECT_STREQ(tray_data.menu[6].text, "Reset Display Device Config");
+    EXPECT_STREQ(tray_data.menu[4].text, "Reset Display Device Config");
+    EXPECT_NE(tray_data.menu[4].cb, nullptr);
+    EXPECT_STREQ(tray_data.menu[5].text, "Restart");
+    EXPECT_NE(tray_data.menu[5].cb, nullptr);
+    EXPECT_STREQ(tray_data.menu[6].text, "Quit");
     EXPECT_NE(tray_data.menu[6].cb, nullptr);
-    EXPECT_STREQ(tray_data.menu[7].text, "Restart");
-    EXPECT_NE(tray_data.menu[7].cb, nullptr);
-    EXPECT_STREQ(tray_data.menu[8].text, "Quit");
-    EXPECT_NE(tray_data.menu[8].cb, nullptr);
-    EXPECT_EQ(tray_data.menu[9].text, nullptr);
+    EXPECT_EQ(tray_data.menu[7].text, nullptr);
     #else
-    EXPECT_STREQ(tray_data.menu[6].text, "Restart");
-    EXPECT_NE(tray_data.menu[6].cb, nullptr);
-    EXPECT_STREQ(tray_data.menu[7].text, "Quit");
-    EXPECT_NE(tray_data.menu[7].cb, nullptr);
-    EXPECT_EQ(tray_data.menu[8].text, nullptr);
-    #endif
-  #else
-    EXPECT_STREQ(tray_data.menu[2].text, "Donate");
-    ASSERT_NE(tray_data.menu[2].submenu, nullptr);
-    EXPECT_STREQ(tray_data.menu[2].submenu[0].text, "GitHub Sponsors");
-    EXPECT_STREQ(tray_data.menu[2].submenu[1].text, "Patreon");
-    EXPECT_STREQ(tray_data.menu[2].submenu[2].text, "PayPal");
-    EXPECT_EQ(tray_data.menu[2].submenu[3].text, nullptr);
-    EXPECT_STREQ(tray_data.menu[3].text, "-");
     EXPECT_STREQ(tray_data.menu[4].text, "Restart");
     EXPECT_NE(tray_data.menu[4].cb, nullptr);
     EXPECT_STREQ(tray_data.menu[5].text, "Quit");
     EXPECT_NE(tray_data.menu[5].cb, nullptr);
     EXPECT_EQ(tray_data.menu[6].text, nullptr);
+    #endif
+  #else
+    EXPECT_STREQ(tray_data.menu[2].text, "Restart");
+    EXPECT_NE(tray_data.menu[2].cb, nullptr);
+    EXPECT_STREQ(tray_data.menu[3].text, "Quit");
+    EXPECT_NE(tray_data.menu[3].cb, nullptr);
+    EXPECT_EQ(tray_data.menu[4].text, nullptr);
   #endif
   }
 
@@ -348,7 +334,7 @@ TEST_F(SystemTrayTest, LeftClickUsesNativeMacOSMenu) {
 
   tray_data.cb(nullptr);
 
-  EXPECT_STREQ(tray_data.menu[0].text, "Open Sunshine");
+  EXPECT_STREQ(tray_data.menu[0].text, "Open Solstice");
   EXPECT_FALSE(system_tray::tray_initialized_for_testing());
 }
   #endif
@@ -358,11 +344,11 @@ TEST_F(SystemTrayTest, ResolvesDevelopmentTrayIconsFromExecutableDirectory) {
   EXPECT_EQ(system_tray::resource_path_for_testing(nullptr), nullptr);
   EXPECT_EQ(system_tray::resource_path_for_testing(""), nullptr);
 
-  const auto *sunshine_icon = system_tray::resource_path_for_testing("test_assets/web/images/logo-sunshine.svg");
-  ASSERT_NE(sunshine_icon, nullptr);
-  EXPECT_TRUE(std::filesystem::path {sunshine_icon}.is_absolute());
-  EXPECT_TRUE(std::filesystem::exists(sunshine_icon));
-  EXPECT_EQ(system_tray::resource_path_for_testing("test_assets/web/images/logo-sunshine.svg"), sunshine_icon);
+  const auto *solstice_icon = system_tray::resource_path_for_testing("test_assets/web/images/solstice.svg");
+  ASSERT_NE(solstice_icon, nullptr);
+  EXPECT_TRUE(std::filesystem::path {solstice_icon}.is_absolute());
+  EXPECT_TRUE(std::filesystem::exists(solstice_icon));
+  EXPECT_EQ(system_tray::resource_path_for_testing("test_assets/web/images/solstice.svg"), solstice_icon);
 
   const auto *virtualhid_icon = system_tray::resource_path_for_testing("test_assets/web/images/logo-libvirtualhid.svg");
   ASSERT_NE(virtualhid_icon, nullptr);
@@ -440,7 +426,7 @@ TEST_F(SystemTrayTest, NotifiesWhenVirtualHidDriverIsUnsupported) {
 
   const auto &tray_data = system_tray::tray_data_for_testing();
   const auto expected_notification = std::format(
-    "Installed Virtual HID Broker v2026.829.2338.54 is not supported by this version of Sunshine. Supported versions: {}. Restart Sunshine after updating. Click for instructions.",
+    "Installed Virtual HID Broker v2026.829.2338.54 is not supported by this version of Solstice. Supported versions: {}. Restart Solstice after updating. Click for instructions.",
     supported_versions
   );
   EXPECT_STREQ(tray_data.notification_title, "Update Virtual HID Broker");
@@ -574,7 +560,7 @@ TEST_F(SystemTrayTest, NotifiesWhenMacBrokerVersionIsUnsupported) {
 
   const auto &tray_data = system_tray::tray_data_for_testing();
   const auto expected_notification = std::format(
-    "Installed Virtual HID Broker v2026.829.2338 is not supported by this version of Sunshine. Supported versions: {}. Restart Sunshine after updating. Click for instructions.",
+    "Installed Virtual HID Broker v2026.829.2338 is not supported by this version of Solstice. Supported versions: {}. Restart Solstice after updating. Click for instructions.",
     supported_versions
   );
   EXPECT_STREQ(tray_data.notification_title, "Update Virtual HID Broker");
@@ -731,7 +717,7 @@ TEST_F(SystemTrayTest, LifecycleMenuAndStateTransitions) {
   #ifdef _WIN32
 TEST_F(SystemTrayTest, InitializesTrayForWorkflowConfiguration) {
   std::string configure_tray_icons;
-  if (!lizardbyte::common::get_env("SUNSHINE_CONFIGURE_TRAY_ICONS", configure_tray_icons)) {
+  if (!lizardbyte::common::get_env("SOLSTICE_CONFIGURE_TRAY_ICONS", configure_tray_icons)) {
     GTEST_SKIP() << "Only required while configuring Windows runner tray icon visibility";
   }
 
@@ -752,7 +738,7 @@ protected:
    * @brief Initialize a clean screenshot output directory for this test suite.
    */
   static void SetUpTestSuite() {
-    const std::filesystem::path test_binary_dir {SUNSHINE_TEST_BIN_DIR};
+    const std::filesystem::path test_binary_dir {SOLSTICE_TEST_BIN_DIR};
     std::error_code remove_error;
     std::filesystem::remove_all(test_binary_dir / "screenshots", remove_error);
     screenshot::initialize(test_binary_dir);

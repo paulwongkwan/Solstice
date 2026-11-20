@@ -1,6 +1,6 @@
 /**
  * @file tests/unit/test_resource_ownership.cpp
- * @brief Tests for resource lifetime through Sunshine's owning pointer aliases.
+ * @brief Tests for resource lifetime through Solstice's owning pointer aliases.
  */
 
 // test includes

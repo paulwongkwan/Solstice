@@ -207,14 +207,14 @@ function Invoke-ScriptIfExist {
         -FailureTarget $ScriptPath
 }
 
-# Execute sunshine.exe with arguments if it exists.
-function Invoke-SunshineIfExist {
+# Execute solstice.exe with arguments if it exists.
+function Invoke-SolsticeIfExist {
     <#
     .SYNOPSIS
-    Runs the packaged Sunshine executable when it exists.
+    Runs the packaged Solstice executable when it exists.
 
     .PARAMETER Arguments
-    Arguments passed to Sunshine.
+    Arguments passed to Solstice.
 
     .PARAMETER Description
     An optional description logged before execution.
@@ -228,12 +228,12 @@ function Invoke-SunshineIfExist {
         [string]$Emoji = "🔧"
     )
 
-    $SunshinePath = Join-Path $RootDir "sunshine.exe"
+    $SolsticePath = Join-Path $RootDir "solstice.exe"
     return Invoke-ExecutableIfExist `
-        -ExecutablePath $SunshinePath `
+        -ExecutablePath $SolsticePath `
         -Arguments $Arguments `
         -Description $Description `
         -Emoji $Emoji `
-        -ExecutableName "Sunshine" `
+        -ExecutableName "Solstice" `
         -MissingTarget "executable"
 }

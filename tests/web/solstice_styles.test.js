@@ -15,7 +15,7 @@ import Featured from '../../src_assets/common/assets/web/Featured.vue'
 const navbarCss = parse(navbarSource).descriptor.styles[0].content
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const bootstrapCss = readFileSync(resolve(projectRoot, 'node_modules/bootstrap/dist/css/bootstrap.css'), 'utf8')
-const sunshineCss = readFileSync(resolve(projectRoot, 'src_assets/common/assets/web/sunshine.css'), 'utf8')
+const sunshineCss = readFileSync(resolve(projectRoot, 'src_assets/common/assets/web/solstice.css'), 'utf8')
 let stylesheet
 let wrapper
 
@@ -39,7 +39,7 @@ afterAll(() => {
 })
 
 /**
- * @brief Read the winning style with Bootstrap and the Sunshine theme loaded.
+ * @brief Read the winning style with Bootstrap and the Solstice theme loaded.
  *
  * @param {string} markup Component markup to insert into the document.
  * @param {string} selector Element whose computed styles should be returned.
@@ -132,11 +132,11 @@ function componentCases(colors) {
     ['breadcrumb link', '<ol class="breadcrumb"><li class="breadcrumb-item"><a href="#">Page</a></li></ol>', 'a', { color: colors.primary }],
     ['active breadcrumb', '<ol class="breadcrumb"><li class="breadcrumb-item active">Page</li></ol>', '.breadcrumb-item', { color: colors.textMuted }],
     ['page link', '<ul class="pagination"><li class="page-item"><a class="page-link">1</a></li></ul>', '.page-link', { color: colors.text }],
-    ['navbar link', '<nav class="navbar navbar-expand-lg navbar-sunshine"><ul class="navbar-nav"><li><a class="nav-link">Page</a></li></ul></nav>', '.nav-link', { color: colors.navbarTextMuted, paddingTop: '8px', paddingRight: '16px', paddingBottom: '8px', paddingLeft: '16px' }],
-    ['simple navbar theme control', '<nav class="navbar navbar-sunshine"><button class="nav-link">Theme</button></nav>', 'button', { color: colors.navbarTextMuted, paddingTop: '8px', paddingRight: '16px', paddingBottom: '8px', paddingLeft: '16px' }],
-    ['active navbar link', '<nav class="navbar-sunshine"><ul class="navbar-nav"><li><a class="nav-link active">Page</a></li></ul></nav>', '.nav-link', { color: colors.navbarText }],
-    ['open navbar dropdown', '<nav class="navbar-sunshine"><ul class="navbar-nav"><li><button class="nav-link dropdown-toggle show">Menu</button></li></ul></nav>', 'button', { color: colors.navbarText }],
-    ['navbar toggler', '<nav class="navbar-sunshine"><button class="navbar-toggler"></button></nav>', 'button', { color: colors.navbarText, borderTopColor: 'rgba(255, 255, 255, 0.2)' }],
+    ['navbar link', '<nav class="navbar navbar-expand-lg navbar-solstice"><ul class="navbar-nav"><li><a class="nav-link">Page</a></li></ul></nav>', '.nav-link', { color: colors.navbarTextMuted, paddingTop: '8px', paddingRight: '16px', paddingBottom: '8px', paddingLeft: '16px' }],
+    ['simple navbar theme control', '<nav class="navbar navbar-solstice"><button class="nav-link">Theme</button></nav>', 'button', { color: colors.navbarTextMuted, paddingTop: '8px', paddingRight: '16px', paddingBottom: '8px', paddingLeft: '16px' }],
+    ['active navbar link', '<nav class="navbar-solstice"><ul class="navbar-nav"><li><a class="nav-link active">Page</a></li></ul></nav>', '.nav-link', { color: colors.navbarText }],
+    ['open navbar dropdown', '<nav class="navbar-solstice"><ul class="navbar-nav"><li><button class="nav-link dropdown-toggle show">Menu</button></li></ul></nav>', 'button', { color: colors.navbarText }],
+    ['navbar toggler', '<nav class="navbar-solstice"><button class="navbar-toggler"></button></nav>', 'button', { color: colors.navbarText, borderTopColor: 'rgba(255, 255, 255, 0.2)' }],
     ['disabled button', '<button class="btn btn-primary" disabled>Save</button>', 'button', { transform: 'none' }],
     ['busy cover', '<div class="cover-finder"><div class="cover-results busy"><button class="cover-container result"></button></div></div>', 'button', { cursor: 'wait', pointerEvents: 'none' }],
     ['release notes', '<div class="markdown-body release-notes"></div>', '.release-notes', { columnCount: '1', display: 'block' }],

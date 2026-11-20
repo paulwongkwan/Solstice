@@ -948,7 +948,7 @@ namespace util {
     }
 
     /**
-     * @brief Transfer compatible Sunshine unique-pointer ownership implicitly.
+     * @brief Transfer compatible Solstice unique-pointer ownership implicitly.
      *
      * @param other Source object whose state is copied or moved into this object.
      */
@@ -1121,7 +1121,7 @@ namespace util {
   };
 
   /**
-   * @brief Compare two Sunshine unique pointers by their stored addresses.
+   * @brief Compare two Solstice unique pointers by their stored addresses.
    *
    * @param x Left-hand pointer or value being compared.
    * @param y Right-hand pointer or value being compared.
@@ -1133,7 +1133,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare two Sunshine unique pointers by their stored addresses.
+   * @brief Compare two Solstice unique pointers by their stored addresses.
    *
    * @param x Left-hand pointer or value being compared.
    * @param y Right-hand pointer or value being compared.
@@ -1145,7 +1145,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare a standard unique pointer with a Sunshine unique pointer.
+   * @brief Compare a standard unique pointer with a Solstice unique pointer.
    *
    * @param x Left-hand pointer or value being compared.
    * @param y Right-hand pointer or value being compared.
@@ -1157,7 +1157,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare a standard unique pointer with a Sunshine unique pointer.
+   * @brief Compare a standard unique pointer with a Solstice unique pointer.
    *
    * @param x Left-hand pointer or value being compared.
    * @param y Right-hand pointer or value being compared.
@@ -1169,7 +1169,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare a Sunshine unique pointer with a standard unique pointer.
+   * @brief Compare a Solstice unique pointer with a standard unique pointer.
    *
    * @param x Left-hand pointer or value being compared.
    * @param y Right-hand pointer or value being compared.
@@ -1181,7 +1181,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare a Sunshine unique pointer with a standard unique pointer.
+   * @brief Compare a Solstice unique pointer with a standard unique pointer.
    *
    * @param x Left-hand pointer or value being compared.
    * @param y Right-hand pointer or value being compared.
@@ -1193,7 +1193,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare a Sunshine unique pointer with null.
+   * @brief Compare a Solstice unique pointer with null.
    *
    * @param x Left-hand pointer or value being compared.
    * @return True when the wrapper does not own a pointer.
@@ -1204,7 +1204,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare a Sunshine unique pointer with null.
+   * @brief Compare a Solstice unique pointer with null.
    *
    * @param x Left-hand pointer or value being compared.
    * @return True when the wrapper owns a pointer.
@@ -1215,7 +1215,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare null with a Sunshine unique pointer.
+   * @brief Compare null with a Solstice unique pointer.
    *
    * @param y Right-hand pointer or value being compared.
    * @return True when the wrapper does not own a pointer.
@@ -1226,7 +1226,7 @@ namespace util {
   }
 
   /**
-   * @brief Compare null with a Sunshine unique pointer.
+   * @brief Compare null with a Solstice unique pointer.
    *
    * @param y Right-hand pointer or value being compared.
    * @return True when the wrapper owns a pointer.

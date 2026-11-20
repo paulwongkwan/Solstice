@@ -41,7 +41,7 @@ extern void *__cdecl nvapi_QueryInterface(NvU32 id);
 NvAPI_Status __cdecl
 
   /**
-   * @brief Load NVAPI and resolve the subset of interfaces used by Sunshine.
+   * @brief Load NVAPI and resolve the subset of interfaces used by Solstice.
    *
    * @return NVAPI_OK on success, or NVAPI_LIBRARY_NOT_FOUND when the DLL cannot be loaded.
    */

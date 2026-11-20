@@ -28,7 +28,7 @@ target_link_libraries(dxgi-info
         libdisplaydevice::display_device  # this is included only for logging
         ${PLATFORM_LIBRARIES}
 )
-target_compile_options(dxgi-info PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
+target_compile_options(dxgi-info PRIVATE ${SOLSTICE_COMPILE_OPTIONS})
 
 add_executable(audio-info audio.cpp ${TOOL_SOURCES})
 target_link_libraries(audio-info
@@ -39,11 +39,11 @@ target_link_libraries(audio-info
         ksuser
         ${PLATFORM_LIBRARIES}
 )
-target_compile_options(audio-info PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
+target_compile_options(audio-info PRIVATE ${SOLSTICE_COMPILE_OPTIONS})
 
-add_executable(sunshinesvc sunshinesvc.cpp)
-target_link_libraries(sunshinesvc
+add_executable(solsticesvc solsticesvc.cpp)
+target_link_libraries(solsticesvc
         ${CMAKE_THREAD_LIBS_INIT}
         wtsapi32
         ${PLATFORM_LIBRARIES})
-target_compile_options(sunshinesvc PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
+target_compile_options(solsticesvc PRIVATE ${SOLSTICE_COMPILE_OPTIONS})

@@ -3,28 +3,28 @@
  * @brief Definitions for the system tray icon and notification system.
  */
 // macros
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
+#if defined SOLSTICE_TRAY && SOLSTICE_TRAY >= 1
 
   /**
    * @def TRAY_ICON
    * @brief Path to the default system tray icon.
    */
-  #define TRAY_ICON WEB_DIR "images/logo-sunshine.svg"
+  #define TRAY_ICON WEB_DIR "images/solstice.svg"
   /**
    * @def TRAY_ICON_PLAYING
    * @brief Path to the system tray icon used while streaming.
    */
-  #define TRAY_ICON_PLAYING WEB_DIR "images/sunshine-playing.svg"
+  #define TRAY_ICON_PLAYING WEB_DIR "images/solstice-playing.svg"
   /**
    * @def TRAY_ICON_PAUSING
    * @brief Path to the system tray icon used while streaming is paused.
    */
-  #define TRAY_ICON_PAUSING WEB_DIR "images/sunshine-pausing.svg"
+  #define TRAY_ICON_PAUSING WEB_DIR "images/solstice-pausing.svg"
   /**
    * @def TRAY_ICON_LOCKED
    * @brief Path to the system tray icon used for pairing requests.
    */
-  #define TRAY_ICON_LOCKED WEB_DIR "images/sunshine-locked.svg"
+  #define TRAY_ICON_LOCKED WEB_DIR "images/solstice-locked.svg"
   /**
    * @def WIN32_LEAN_AND_MEAN
    * @brief Macro for WIN32 LEAN AND MEAN.
@@ -120,20 +120,8 @@ namespace system_tray {
     launch_ui();
   }
 
-  void tray_donate_github_cb([[maybe_unused]] struct tray_menu *item) {
-    platf::open_url("https://github.com/sponsors/LizardByte");
-  }
-
-  void tray_donate_patreon_cb([[maybe_unused]] struct tray_menu *item) {
-    platf::open_url("https://www.patreon.com/LizardByte");
-  }
-
-  void tray_donate_paypal_cb([[maybe_unused]] struct tray_menu *item) {
-    platf::open_url("https://www.paypal.com/paypalme/ReenigneArcher");
-  }
-
   /**
-   * @brief Forwards Qt log messages to Sunshine's BOOST_LOG logger.
+   * @brief Forwards Qt log messages to Solstice's BOOST_LOG logger.
    * @param level Log level: 0=debug, 1=info, 2=warning, 3=error.
    * @param msg The message string from Qt.
    */
@@ -189,16 +177,7 @@ namespace system_tray {
     .menu =
       (struct tray_menu[]) {
         // Tray menu labels currently use the project's English source strings.
-        {.text = "Open Sunshine", .cb = tray_open_ui_cb},
-        {.text = "-"},
-        {.text = "Donate",
-         .submenu =
-           (struct tray_menu[]) {
-             {.text = "GitHub Sponsors", .cb = tray_donate_github_cb},
-             {.text = "Patreon", .cb = tray_donate_patreon_cb},
-             {.text = "PayPal", .cb = tray_donate_paypal_cb},
-             {.text = nullptr}
-           }},
+        {.text = "Open Solstice", .cb = tray_open_ui_cb},
         {.text = "-"},
   // Currently display device settings are only supported on Windows
         {.text = "Reset Display Device Config", .cb = tray_reset_display_device_config_cb},
@@ -210,7 +189,7 @@ namespace system_tray {
   .allIconPaths = {TRAY_ICON, TRAY_ICON_LOCKED, TRAY_ICON_PLAYING, TRAY_ICON_PAUSING},
   };
 
-  #ifdef SUNSHINE_TESTS
+  #ifdef SOLSTICE_TESTS
   const struct tray &tray_data_for_testing() {
     return tray;
   }
@@ -245,7 +224,7 @@ namespace system_tray {
    *
    * @param installed Whether ViGEmBus is installed.
    * @param version Installed ViGEmBus version.
-   * @param version_compatible Whether Sunshine supports the installed version.
+   * @param version_compatible Whether Solstice supports the installed version.
    * @param supported_versions User-visible supported version range.
    */
   void update_tray_vigembus_driver(
@@ -264,7 +243,7 @@ namespace system_tray {
     const auto displayed_version = version.empty() ? "unknown" : std::format("v{}", version);
     auto &notification_text = vigembus_driver_notification_text_storage();
     notification_text = std::format(
-      "Installed ViGEmBus {} is not supported by this version of Sunshine. Supported versions: {}. Restart Sunshine after updating. Click for instructions.",
+      "Installed ViGEmBus {} is not supported by this version of Solstice. Supported versions: {}. Restart Solstice after updating. Click for instructions.",
       displayed_version,
       supported_versions
     );
@@ -355,7 +334,7 @@ namespace system_tray {
   }
   }
 
-  #ifdef SUNSHINE_TESTS
+  #ifdef SOLSTICE_TESTS
   const char *resource_path_for_testing(const char *relative_path) {
     return GetResourcePath(relative_path);
   }

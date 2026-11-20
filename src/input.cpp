@@ -186,7 +186,7 @@ namespace input {
   static std::array<std::uint8_t, 5> mouse_press {};
 
   static platf::input_t platf_input;
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Recorder that unit tests install in place of the platform keyboard.
    *
@@ -261,8 +261,8 @@ namespace input {
 
     // When emulating the HOME button, we may need to artificially release the back button.
     // Afterwards, the gamepad state on sunshine won't match the state on Moonlight.
-    // To prevent Sunshine from sending erroneous input data to the active application,
-    // Sunshine forces the button to be in a specific state until the gamepad state matches that of
+    // To prevent Solstice from sending erroneous input data to the active application,
+    // Solstice forces the button to be in a specific state until the gamepad state matches that of
     // Moonlight once more.
     button_state_e back_button_state {button_state_e::NONE};  ///< Back button state.
   };
@@ -946,10 +946,10 @@ namespace input {
     /**
      * When Moonlight sends mouse input through absolute coordinates,
      * it's possible that BUTTON_RIGHT is pressed down immediately after releasing BUTTON_LEFT.
-     * As a result, Sunshine will left-click on hyperlinks in the browser before right-clicking
+     * As a result, Solstice will left-click on hyperlinks in the browser before right-clicking
      *
      * This can be solved by delaying BUTTON_LEFT, however, any delay on input is undesirable during gaming
-     * As a compromise, Sunshine will only put delays on BUTTON_LEFT when
+     * As a compromise, Solstice will only put delays on BUTTON_LEFT when
      * absolute mouse coordinates have been sent.
      *
      * Try to make sure BUTTON_RIGHT gets called before BUTTON_LEFT is released.
@@ -1127,7 +1127,7 @@ namespace input {
    * @param extended Whether the client identified an extended key.
    */
   void emit_keyboard_update(uint16_t key_code, bool release, uint8_t flags, bool extended = false) {
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
     if (keyboard_sink()) {
       keyboard_sink()(testing::keyboard_event_t {key_code, release, flags, extended});
       return;
@@ -2137,7 +2137,7 @@ namespace input {
    * @param input Retained stream input state.
    */
   void schedule_input_packet_task(const std::shared_ptr<input_t> &input) {
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
     if (const auto &sink = input_task_sink(); sink) {
       sink(input);
       return;
@@ -2197,7 +2197,7 @@ namespace input {
     // Print the final input packet
     input::print(payload);
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
     if (const auto &hook = input_packet_hook(); hook) {
       hook(util::endian::little(payload->magic));
     }
@@ -2312,7 +2312,7 @@ namespace input {
   }
 
   /**
-   * @brief Release every pressed mouse button tracked by Sunshine.
+   * @brief Release every pressed mouse button tracked by Solstice.
    */
   void reset_mouse_buttons() {
     for (int button = 0; button < mouse_press.size(); ++button) {
@@ -2324,7 +2324,7 @@ namespace input {
   }
 
   /**
-   * @brief Release every pressed keyboard key tracked by Sunshine.
+   * @brief Release every pressed keyboard key tracked by Solstice.
    */
   void reset_keyboard_keys() {
     for (auto &[key, state] : key_press) {
@@ -2497,7 +2497,7 @@ namespace input {
     return input;
   }
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   namespace testing {
     void set_platform_input(platf::input_t input) {
       terminate_gamepads();

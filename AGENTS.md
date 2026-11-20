@@ -64,8 +64,8 @@ test names and code structure to show the grouping instead.
 
 ## Issues and pull requests
 
-When asked to create an issue or pull request, use the templates provided by the LizardByte/.github repo or
-SunshineStream/Sunshine repo, with the Sunshine templates taking precedence if both exist. At the end of the issue
+When asked to create an issue or pull request, use the templates provided by the Solstice/.github repo or
+paulwongkwan/Sunshine repo, with the Sunshine templates taking precedence if both exist. At the end of the issue
 or pull request body, add an attribution naming the AI agent, model, and thinking level used to generate it.
 Repeat that attribution in a separate comment on the created issue or pull request. For example:
 

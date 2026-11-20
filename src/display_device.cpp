@@ -109,7 +109,7 @@ namespace display_device {
       std::chrono::milliseconds config_revert_delay {0};
       std::unique_ptr<RetryScheduler<SettingsManagerInterface>> sm_instance {nullptr};
       std::shared_ptr<watched_settings_persistence_t> persistence_watch {};  ///< Observes whether revert left settings stored.
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
       std::optional<std::chrono::milliseconds> test_retry_interval {};  ///< Override for the revert retry delay.
 #endif
     } DD_DATA;
@@ -407,7 +407,7 @@ namespace display_device {
         case resolution_option_e::automatic:
           {
             if (!session.enable_sops) {
-              BOOST_LOG(warning) << R"(Sunshine is configured to change resolution automatically, but the "Optimize game settings" is not set in the client! Resolution will not be changed.)";
+              BOOST_LOG(warning) << R"(Solstice is configured to change resolution automatically, but the "Optimize game settings" is not set in the client! Resolution will not be changed.)";
             } else if (session.width >= 0 && session.height >= 0) {
               config.m_resolution = Resolution {
                 static_cast<unsigned int>(session.width),
@@ -422,7 +422,7 @@ namespace display_device {
         case resolution_option_e::manual:
           {
             if (!session.enable_sops) {
-              BOOST_LOG(warning) << R"(Sunshine is configured to change resolution manually, but the "Optimize game settings" is not set in the client! Resolution will not be changed.)";
+              BOOST_LOG(warning) << R"(Solstice is configured to change resolution manually, but the "Optimize game settings" is not set in the client! Resolution will not be changed.)";
             } else {
               if (!parse_resolution_string(video_config.dd.manual_resolution, config.m_resolution)) {
                 BOOST_LOG(error) << "Failed to parse manual resolution string!";
@@ -814,7 +814,7 @@ namespace display_device {
       }
 
       // Note: by default the executor function is immediately executed in the calling thread. With delay, we want to avoid that.
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
       const auto retry_interval {DD_DATA.test_retry_interval.value_or(DEFAULT_RETRY_INTERVAL)};
 #else
       const auto retry_interval {DEFAULT_RETRY_INTERVAL};
@@ -1021,7 +1021,7 @@ namespace display_device {
     return config;
   }
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   namespace {
     /**
      * @brief In-memory persistence used by revert tests.

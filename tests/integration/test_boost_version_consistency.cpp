@@ -23,7 +23,7 @@ namespace {
    * @return File contents.
    */
   std::string read_project_file(const std::string_view path) {
-    const auto path_string = std::format("{}/{}", SUNSHINE_TEST_BIN_DIR, path);
+    const auto path_string = std::format("{}/{}", SOLSTICE_TEST_BIN_DIR, path);
     auto content = file_handler::read_file(path_string.c_str());
     EXPECT_FALSE(content.empty()) << "Unable to read " << path;
     return content;
@@ -44,7 +44,7 @@ namespace {
 }  // namespace
 
 TEST(BoostVersionConsistencyTest, SystemPackageAllowsCompatibleVersions) {
-  const auto dependency = read_project_file("cmake/dependencies/Boost_Sunshine.cmake");
+  const auto dependency = read_project_file("cmake/dependencies/Boost_Solstice.cmake");
   const auto documentation = read_project_file("docs/building.md");
   const auto macos_definitions = read_project_file("cmake/compile_definitions/macos.cmake");
   const auto common_macros = read_project_file("cmake/macros/common.cmake");
@@ -96,9 +96,9 @@ TEST(BoostVersionConsistencyTest, SupportedBuildsInstallStaticSystemPackages) {
   const auto documentation = read_project_file("docs/building.md");
   const auto linux_script = read_project_file("scripts/linux_build.sh");
   const auto arch_package = read_project_file("packaging/linux/Arch/PKGBUILD");
-#ifdef SUNSHINE_COPR_SPEC_FIXTURE_AVAILABLE
-  const auto dependency = read_project_file("cmake/dependencies/Boost_Sunshine.cmake");
-  const auto copr_spec = read_project_file("packaging/linux/copr/Sunshine.spec");
+#ifdef SOLSTICE_COPR_SPEC_FIXTURE_AVAILABLE
+  const auto dependency = read_project_file("cmake/dependencies/Boost_Solstice.cmake");
+  const auto copr_spec = read_project_file("packaging/linux/copr/Solstice.spec");
   const auto minimum_version = extract_value(
     dependency,
     std::regex {R"regex(set\(BOOST_MINIMUM_VERSION "([0-9]+\.[0-9]+\.[0-9]+)"\))regex"}
@@ -118,7 +118,7 @@ TEST(BoostVersionConsistencyTest, SupportedBuildsInstallStaticSystemPackages) {
   EXPECT_NE(linux_script.find("version >= 44"), std::string::npos);
   EXPECT_NE(arch_package.find("'boost'"), std::string::npos);
   EXPECT_NE(arch_package.find("'boost-libs'"), std::string::npos);
-#ifdef SUNSHINE_COPR_SPEC_FIXTURE_AVAILABLE
+#ifdef SOLSTICE_COPR_SPEC_FIXTURE_AVAILABLE
   EXPECT_NE(copr_spec.find("%if 0%{fedora} > 43"), std::string::npos);
   EXPECT_NE(
     copr_spec.find(std::format("BuildRequires: boost-devel >= {}", minimum_version)),

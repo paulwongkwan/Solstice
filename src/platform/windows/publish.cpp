@@ -216,30 +216,30 @@ namespace platf::publish {
   }
 
   /**
-   * @brief Windows DNS-SD registration lifetime for the advertised Sunshine service.
+   * @brief Windows DNS-SD registration lifetime for the advertised Solstice service.
    */
   class mdns_registration_t: public ::platf::deinit_t {
   public:
     /**
-     * @brief Register Sunshine's DNS-SD service with no existing registration.
+     * @brief Register Solstice's DNS-SD service with no existing registration.
      */
     mdns_registration_t() {
       if (service(true, existing_instance)) {
-        BOOST_LOG(error) << "Unable to register Sunshine mDNS service"sv;
+        BOOST_LOG(error) << "Unable to register Solstice mDNS service"sv;
         return;
       }
 
-      BOOST_LOG(info) << "Registered Sunshine mDNS service"sv;
+      BOOST_LOG(info) << "Registered Solstice mDNS service"sv;
     }
 
     ~mdns_registration_t() override {
       if (existing_instance) {
         if (service(false, existing_instance)) {
-          BOOST_LOG(error) << "Unable to unregister Sunshine mDNS service"sv;
+          BOOST_LOG(error) << "Unable to unregister Solstice mDNS service"sv;
           return;
         }
 
-        BOOST_LOG(info) << "Unregistered Sunshine mDNS service"sv;
+        BOOST_LOG(info) << "Unregistered Solstice mDNS service"sv;
       }
     }
 

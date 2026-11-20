@@ -1,6 +1,6 @@
 # Contributing
 Read our contribution guide in our organization level
-[docs](https://docs.lizardbyte.dev/latest/developers/contributing.html).
+[docs](https://github.com/paulwongkwan/Sunshine).
 
 ## Recommended Tools
 
@@ -14,7 +14,7 @@ Read our contribution guide in our organization level
 * The Web UI uses [Vite](https://vitejs.dev) as its build system.
 * The Web UI is a [Vue Router](https://router.vuejs.org) single-page application. Vite builds one `index.html` entry
   document, and the route implementations remain split into Vue components in `./src_assets/common/assets/web`.
-* Browser routes use history mode. Sunshine serves the same `index.html` entry document for every Web UI route,
+* Browser routes use history mode. Solstice serves the same `index.html` entry document for every Web UI route,
   while API and static asset routes continue to be handled independently by the configuration server.
 * The Style System is provided by [Bootstrap](https://getbootstrap.com).
 * Icons are provided by [Lucide](https://lucide.dev) and [Simple Icons](https://simpleicons.org).
@@ -41,44 +41,36 @@ npm test
 ```
 
 ### Localization
-Sunshine and related LizardByte projects are being localized into various languages.
+Solstice and related Solstice projects are being localized into various languages.
 The default language is `en` (English).
 
-![](https://app.lizardbyte.dev/dashboard/crowdin/LizardByte_graph.svg)
 
 @admonition{Community |:| We are looking for language coordinators to help approve translations.
 The goal is to have the bars above filled with green!
 If you are interested, please reach out to us on our Discord server.}
 
-#### CrowdIn
-The translations occur on [CrowdIn][crowdin-url].
-Anyone is free to contribute to the localization there.
+#### Translation Files
+Translations live in `src_assets/common/assets/web/public/assets/locale` and are updated directly in this repository.
 
 ##### Translation Basics
-* The brand names *LizardByte* and *Sunshine* should never be translated.
+* The brand names *Solstice* and *Solstice* should never be translated.
 * Other brand names should never be translated. Examples include *AMD*, *Intel*, and *NVIDIA*.
 
-##### CrowdIn Integration
-How does it work?
-
-When a change is made to Sunshine source code, a workflow generates new translation templates
-that get pushed to CrowdIn automatically.
-
-When translations are updated on CrowdIn, a push gets made to the *l10n_master* branch and a PR is made against the
-*master* branch. Once the PR is merged, all updated translations are part of the project and will be included in the
-next release.
+##### Adding or Updating a Language
+Copy `en.json` to the locale file for the language, translate the values, and open a pull request. Keep the keys
+unchanged so the Web UI can fall back to English for anything that is not translated yet.
 
 #### Extraction
 
 ##### Web UI
-Sunshine uses [Vue I18n](https://vue-i18n.intlify.dev) for localizing the UI.
+Solstice uses [Vue I18n](https://vue-i18n.intlify.dev) for localizing the UI.
 The following is a simple example of how to use it.
 
 * Add the string to the `./src_assets/common/assets/web/public/assets/locale/en.json` file, in English.
   ```json
   {
    "index": {
-     "welcome": "Hello, Sunshine!"
+     "welcome": "Hello, Solstice!"
    }
   }
   ```
@@ -91,7 +83,7 @@ The following is a simple example of how to use it.
   > Due to the integration with Crowdin, it is important to only add strings to the *en.json* file,
   > and to not modify any other language files. After the PR is merged, the translations can take place
   > on [CrowdIn][crowdin-url]. Once the translations are complete, a PR will be made
-  > to merge the translations into Sunshine.
+  > to merge the translations into Solstice.
 
 * Use the string in the Vue component.
   ```html
@@ -137,7 +129,7 @@ any of the following paths are modified.
 ```
 
 When testing locally, it may be desirable to manually extract, initialize, update, and compile strings. Python and
-uv are required for this, along with the Python dependencies in the Sunshine `pyproject.toml`. From the repository
+uv are required for this, along with the Python dependencies in the Solstice `pyproject.toml`. From the repository
 root, install these with the following command.
 
 ```bash
@@ -160,7 +152,7 @@ Additionally, [xgettext](https://www.gnu.org/software/gettext) must be installed
 > Due to the integration with CrowdIn, it is important to not include any extracted or compiled files in
 > Pull Requests. The files are automatically generated and updated by the workflow. Once the PR is merged, the
 > translations can take place on [CrowdIn][crowdin-url]. Once the translations are
-> complete, a PR will be made to merge the translations into Sunshine.
+> complete, a PR will be made to merge the translations into Solstice.
 
 ### Testing
 
@@ -176,7 +168,7 @@ uv run --locked --no-sync lb-update-clang-format
 ```
 
 #### Unit Testing
-Sunshine uses [Google Test](https://github.com/google/googletest) for unit testing. Google Test is included in the
+Solstice uses [Google Test](https://github.com/google/googletest) for unit testing. Google Test is included in the
 repo as a submodule. The test sources are located in the `./tests` directory.
 
 The tests need to be compiled into an executable, and then run. The tests are built using the normal build process, but
@@ -209,4 +201,3 @@ more information.
 Even if your changes cannot be covered in the CI, we still encourage you to write the tests for them. This will allow
 maintainers to run the tests locally.
 
-[crowdin-url]: https://translate.lizardbyte.dev

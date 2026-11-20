@@ -117,7 +117,7 @@ namespace platf {
   };
 
   /**
-   * @brief Feedback command sent from Sunshine to a virtual gamepad.
+   * @brief Feedback command sent from Solstice to a virtual gamepad.
    */
   struct gamepad_feedback_msg_t {
     /**
@@ -340,9 +340,9 @@ namespace platf {
   };
 
   /**
-   * @brief Convert a Sunshine pixel format enum to its string name.
+   * @brief Convert a Solstice pixel format enum to its string name.
    *
-   * @param pix_fmt Sunshine pixel format to convert or allocate for.
+   * @param pix_fmt Solstice pixel format to convert or allocate for.
    * @return Value converted from pix fmt.
    */
   inline std::string_view from_pix_fmt(pix_fmt_e pix_fmt) {
@@ -771,7 +771,7 @@ namespace platf {
     /**
      * @brief Create AVCodec encode device.
      *
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return Constructed AVCodec encode device object.
      */
     virtual std::unique_ptr<avcodec_encode_device_t> make_avcodec_encode_device(pix_fmt_e pix_fmt) {
@@ -781,7 +781,7 @@ namespace platf {
     /**
      * @brief Create NVENC encode device.
      *
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return Constructed NVENC encode device object.
      */
     virtual std::unique_ptr<nvenc_encode_device_t> make_nvenc_encode_device(pix_fmt_e pix_fmt) {
@@ -791,7 +791,7 @@ namespace platf {
     /**
      * @brief Create a native VideoToolbox encode device.
      *
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return Constructed VideoToolbox encode device object.
      */
     virtual std::unique_ptr<vt_encode_device_t> make_vt_encode_device(pix_fmt_e pix_fmt) {
@@ -856,7 +856,7 @@ namespace platf {
   class mic_t {
   public:
     /**
-     * @brief Deliver a captured audio sample to Sunshine's audio pipeline.
+     * @brief Deliver a captured audio sample to Solstice's audio pipeline.
      *
      * @param frame_buffer Destination for captured floating-point PCM samples.
      * @return Capture status reported to the streaming pipeline.
@@ -900,7 +900,7 @@ namespace platf {
     virtual bool is_sink_available(const std::string &sink) = 0;
 
     /**
-     * @brief Query host and virtual sink names available to Sunshine.
+     * @brief Query host and virtual sink names available to Solstice.
      *
      * @return Host and virtual sink names when the backend can report them.
      */
@@ -928,6 +928,13 @@ namespace platf {
    * @brief Owning pointer for a platform input backend.
    */
   using input_t = util::safe_ptr<input_raw_t, &freeInput>;
+
+  /**
+   * @brief Get the configuration directory used before the application was renamed to Solstice.
+   *
+   * @return Legacy configuration directory, or an empty path when the program directory is unknown.
+   */
+  std::filesystem::path legacy_appdata();
 
   std::filesystem::path appdata();
 
@@ -1348,7 +1355,7 @@ namespace platf {
    */
   platform_caps::caps_t get_capabilities();
 
-  constexpr auto SERVICE_NAME = "Sunshine";  ///< mDNS service instance name advertised for GameStream discovery.
+  constexpr auto SERVICE_NAME = "Solstice";  ///< mDNS service instance name advertised for GameStream discovery.
   constexpr auto SERVICE_TYPE = "_nvstream._tcp";  ///< mDNS service type advertised for GameStream discovery.
 
   namespace publish {

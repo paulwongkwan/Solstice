@@ -10,7 +10,7 @@ const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 let assetsSrcPath = 'src_assets/common/assets/web';
 let assetsDstPath = 'build/assets/web';
 
-if (process.env.SUNSHINE_BUILD_HOMEBREW) {
+if (process.env.SOLSTICE_BUILD_HOMEBREW) {
     console.log("Building for homebrew, using default paths")
 }
 else {
@@ -21,13 +21,13 @@ else {
     //     must be strings that are neither absolute nor relative paths.
     // To avoid this, we resolve the potential symlinks using `fs.realpathSync` before
     // doing anything else with the paths.
-    if (process.env.SUNSHINE_SOURCE_ASSETS_DIR) {
-        let path = resolve(fs.realpathSync(process.env.SUNSHINE_SOURCE_ASSETS_DIR), "common/assets/web");
+    if (process.env.SOLSTICE_SOURCE_ASSETS_DIR) {
+        let path = resolve(fs.realpathSync(process.env.SOLSTICE_SOURCE_ASSETS_DIR), "common/assets/web");
         console.log("Using srcdir from Cmake: " + path);
         assetsSrcPath = path;
     }
-    if (process.env.SUNSHINE_ASSETS_DIR) {
-        let path = resolve(fs.realpathSync(process.env.SUNSHINE_ASSETS_DIR), "assets/web");
+    if (process.env.SOLSTICE_ASSETS_DIR) {
+        let path = resolve(fs.realpathSync(process.env.SOLSTICE_ASSETS_DIR), "assets/web");
         console.log("Using destdir from Cmake: " + path);
         assetsDstPath = path;
     }
@@ -38,8 +38,8 @@ const emitTrayIconsPlugin = {
     buildStart() {
         this.emitFile({
             type: 'asset',
-            fileName: 'images/logo-sunshine.svg',
-            source: fs.readFileSync(resolve(projectRoot, 'sunshine.svg')),
+            fileName: 'images/solstice.svg',
+            source: fs.readFileSync(resolve(projectRoot, 'solstice.svg')),
         });
 
         const virtualHidIcon = resolve(projectRoot, 'third-party/libvirtualhid/libvirtualhid.svg');
@@ -70,8 +70,8 @@ export default defineConfig({
             bundleName: "sunshine",
             uploadToken: process.env.CODECOV_TOKEN,
             gitService: "github",
-            dryRun: process.env.GITHUB_REPOSITORY !== 'SunshineStream/Sunshine',
-            telemetry: process.env.GITHUB_REPOSITORY === 'SunshineStream/Sunshine',
+            dryRun: process.env.GITHUB_REPOSITORY !== 'paulwongkwan/Sunshine',
+            telemetry: process.env.GITHUB_REPOSITORY === 'paulwongkwan/Sunshine',
         }),
     ],
     root: resolve(assetsSrcPath),

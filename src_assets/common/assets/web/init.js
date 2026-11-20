@@ -1,9 +1,9 @@
 import i18n from './locale'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
-// Load Sunshine.css after bootstrap to override some of the styles.
+// Load Solstice.css after bootstrap to override some of the styles.
 // Makes themes load and style correctly.
-import './sunshine.css'
+import './solstice.css'
 
 // must import even if not implicitly using here
 // https://github.com/aurelia/skeleton-navigation/issues/894
@@ -26,6 +26,6 @@ export function initApp(app, config) {
             config(app)
         }
     }).catch(error => {
-        console.error('Failed to initialize Sunshine', error);
+        console.error('Failed to initialize Solstice', error);
     });
 }

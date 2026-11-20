@@ -1,8 +1,8 @@
 <template>
-  <nav class="navbar navbar-sunshine">
+  <nav class="navbar navbar-solstice">
     <div class="container-fluid">
-      <span class="navbar-brand" title="Sunshine">
-        <img src="/images/logo-sunshine-45.png" height="45" alt="Sunshine">
+      <span class="navbar-brand" title="Solstice">
+        <img src="/images/logo-solstice-45.png" height="45" alt="Solstice">
       </span>
       <ThemeToggle/>
     </div>

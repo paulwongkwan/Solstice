@@ -18,11 +18,11 @@ SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
         IfSilent +3 0
         nsExec::ExecToLog \
           'powershell -ExecutionPolicy Bypass \
-          -File \\\"$INSTDIR\\\\scripts\\\\sunshine-setup.ps1\\\" -Action install'
+          -File \\\"$INSTDIR\\\\scripts\\\\solstice-setup.ps1\\\" -Action install'
         Goto +2
         nsExec::ExecToLog \
           'powershell -ExecutionPolicy Bypass \
-          -File \\\"$INSTDIR\\\\scripts\\\\sunshine-setup.ps1\\\" -Action install -Silent'
+          -File \\\"$INSTDIR\\\\scripts\\\\solstice-setup.ps1\\\" -Action install -Silent'
         install_done:
         ")
 
@@ -33,7 +33,7 @@ set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
         ${NSIS_LOGSET_COMMAND}
         nsExec::ExecToLog \
           'powershell -ExecutionPolicy Bypass \
-          -File \\\"$INSTDIR\\\\scripts\\\\sunshine-setup.ps1\\\" -Action uninstall'
+          -File \\\"$INSTDIR\\\\scripts\\\\solstice-setup.ps1\\\" -Action uninstall'
         MessageBox MB_YESNO|MB_ICONQUESTION \
           'Do you want to remove $INSTDIR (this includes the configuration, cover images, and settings)?' \
           /SD IDNO IDNO no_delete
@@ -60,12 +60,12 @@ set(CPACK_NSIS_DELETE_ICONS_EXTRA
 # Checking for previous installed versions
 set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL "ON")
 
-set(CPACK_NSIS_HELP_LINK "https://docs.lizardbyte.dev/projects/sunshine/latest/md_docs_2getting__started.html")
+set(CPACK_NSIS_HELP_LINK "https://github.com/paulwongkwan/Sunshine/tree/master/docs")
 set(CPACK_NSIS_URL_INFO_ABOUT "${CMAKE_PROJECT_HOMEPAGE_URL}")
 set(CPACK_NSIS_CONTACT "${CMAKE_PROJECT_HOMEPAGE_URL}/support")
 
 set(CPACK_NSIS_MENU_LINKS
-        "https://docs.lizardbyte.dev/projects/sunshine" "Sunshine documentation"
-        "https://app.lizardbyte.dev" "LizardByte Web Site"
-        "https://app.lizardbyte.dev/support" "LizardByte Support")
+        "https://github.com/paulwongkwan/Sunshine/tree/master/docs" "Solstice documentation"
+        "https://github.com/paulwongkwan/Sunshine" "Solstice Web Site"
+        "https://github.com/paulwongkwan/Sunshine/issues" "Solstice Support")
 set(CPACK_NSIS_MANIFEST_DPI_AWARE true)

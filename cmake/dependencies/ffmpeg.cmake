@@ -52,7 +52,7 @@ if(NOT DEFINED FFMPEG_PREPARED_BINARIES)
     endif()
 
     # Set GitHub release URL
-    set(FFMPEG_GITHUB_REPO "LizardByte/build-deps")
+    set(FFMPEG_GITHUB_REPO "Solstice/build-deps")
     if(FFMPEG_RELEASE_TAG)
         set(FFMPEG_RELEASE_URL "https://github.com/${FFMPEG_GITHUB_REPO}/releases/download/${FFMPEG_RELEASE_TAG}")
         set(FFMPEG_VERSION_DIR "${FFMPEG_DOWNLOAD_DIR}/ffmpeg-${FFMPEG_RELEASE_TAG}")
@@ -188,7 +188,7 @@ if(_sunshine_ffmpeg_relocatable GREATER_EQUAL 0)
     # Refresh cached paths when the package or system library search policy changes.
     get_cmake_property(_sunshine_cache_variables CACHE_VARIABLES)
     foreach(variable IN LISTS _sunshine_cache_variables)
-        if(variable MATCHES "^(pkgcfg_lib_|__pkg_config_checked_)?SUNSHINE_BUNDLED_(FFMPEG|OPUS)")
+        if(variable MATCHES "^(pkgcfg_lib_|__pkg_config_checked_)?SOLSTICE_BUNDLED_(FFMPEG|OPUS)")
             unset(${variable} CACHE)
         endif()
     endforeach()
@@ -210,19 +210,19 @@ if(_sunshine_ffmpeg_relocatable GREATER_EQUAL 0)
         set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
     endif()
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(SUNSHINE_BUNDLED_FFMPEG REQUIRED IMPORTED_TARGET libcbs libavcodec libswscale libavutil)
+    pkg_check_modules(SOLSTICE_BUNDLED_FFMPEG REQUIRED IMPORTED_TARGET libcbs libavcodec libswscale libavutil)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         # Explicit shared compiler runtimes bypass -static-libstdc++/-static-libgcc.
-        # Let the C++ driver apply Sunshine's runtime policy from targets/linux.cmake.
+        # Let the C++ driver apply Solstice's runtime policy from targets/linux.cmake.
         get_target_property(_sunshine_ffmpeg_link_libraries
-                PkgConfig::SUNSHINE_BUNDLED_FFMPEG INTERFACE_LINK_LIBRARIES)
+                PkgConfig::SOLSTICE_BUNDLED_FFMPEG INTERFACE_LINK_LIBRARIES)
         list(FILTER _sunshine_ffmpeg_link_libraries EXCLUDE
                 REGEX "(^|/)(lib)?(stdc\\+\\+|gcc_s)(\\.[^/]*)?$")
-        set_property(TARGET PkgConfig::SUNSHINE_BUNDLED_FFMPEG PROPERTY
+        set_property(TARGET PkgConfig::SOLSTICE_BUNDLED_FFMPEG PROPERTY
                 INTERFACE_LINK_LIBRARIES "${_sunshine_ffmpeg_link_libraries}")
     endif()
     if(EXISTS "${FFMPEG_PREPARED_BINARIES}/lib/libopus.a")
-        pkg_check_modules(SUNSHINE_BUNDLED_OPUS REQUIRED IMPORTED_TARGET opus)
+        pkg_check_modules(SOLSTICE_BUNDLED_OPUS REQUIRED IMPORTED_TARGET opus)
     endif()
     foreach(variable PKG_CONFIG_PATH PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR)
         if(DEFINED _sunshine_saved_${variable})
@@ -235,7 +235,7 @@ if(_sunshine_ffmpeg_relocatable GREATER_EQUAL 0)
     if(WIN32)
         set(CMAKE_FIND_LIBRARY_SUFFIXES "${_sunshine_saved_library_suffixes}")
     endif()
-    set(FFMPEG_LIBRARIES PkgConfig::SUNSHINE_BUNDLED_FFMPEG)
+    set(FFMPEG_LIBRARIES PkgConfig::SOLSTICE_BUNDLED_FFMPEG)
 endif()
 
 set(FFMPEG_INCLUDE_DIRS "${FFMPEG_PREPARED_BINARIES}/include")
@@ -250,9 +250,9 @@ if(UNIX AND NOT APPLE)
     list(APPEND CMAKE_IGNORE_PREFIX_PATH "${FFMPEG_PREPARED_BINARIES}")
     set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_SHARED_LIBRARY_SUFFIX}")
     set(_sunshine_ffmpeg_library_lists FFMPEG_LIBRARIES)
-    if(TARGET PkgConfig::SUNSHINE_BUNDLED_FFMPEG)
+    if(TARGET PkgConfig::SOLSTICE_BUNDLED_FFMPEG)
         get_target_property(_sunshine_ffmpeg_link_libraries
-                PkgConfig::SUNSHINE_BUNDLED_FFMPEG INTERFACE_LINK_LIBRARIES)
+                PkgConfig::SOLSTICE_BUNDLED_FFMPEG INTERFACE_LINK_LIBRARIES)
         list(APPEND _sunshine_ffmpeg_library_lists _sunshine_ffmpeg_link_libraries)
     endif()
     foreach(library_list IN LISTS _sunshine_ffmpeg_library_lists)
@@ -279,8 +279,8 @@ if(UNIX AND NOT APPLE)
         endforeach()
         set(${library_list} "${_sunshine_system_libraries}")
     endforeach()
-    if(TARGET PkgConfig::SUNSHINE_BUNDLED_FFMPEG)
-        set_property(TARGET PkgConfig::SUNSHINE_BUNDLED_FFMPEG PROPERTY
+    if(TARGET PkgConfig::SOLSTICE_BUNDLED_FFMPEG)
+        set_property(TARGET PkgConfig::SOLSTICE_BUNDLED_FFMPEG PROPERTY
                 INTERFACE_LINK_LIBRARIES "${_sunshine_ffmpeg_link_libraries}")
     endif()
     set(CMAKE_IGNORE_PREFIX_PATH "${_sunshine_saved_ignore_prefix_path}")
@@ -288,7 +288,7 @@ if(UNIX AND NOT APPLE)
 
     # /usr/include is a compiler default: putting it before the bundled include
     # directory cannot override bundled VA headers. Expose a header tree without
-    # va/ so Sunshine's compatibility shims follow the host libva version.
+    # va/ so Solstice's compatibility shims follow the host libva version.
     if(IS_DIRECTORY "${FFMPEG_INCLUDE_DIRS}/va")
         set(FFMPEG_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/_deps/ffmpeg-system-includes")
         file(COPY "${FFMPEG_PREPARED_BINARIES}/include/" DESTINATION "${FFMPEG_INCLUDE_DIRS}" PATTERN "va" EXCLUDE)
@@ -298,9 +298,9 @@ if(UNIX AND NOT APPLE)
         set(NV_CODEC_HEADERS_13_1_INCLUDE_DIR "${FFMPEG_INCLUDE_DIRS}")
     endif()
     foreach(dependency FFMPEG OPUS)
-        if(TARGET PkgConfig::SUNSHINE_BUNDLED_${dependency})
+        if(TARGET PkgConfig::SOLSTICE_BUNDLED_${dependency})
             get_target_property(_sunshine_include_dirs
-                    PkgConfig::SUNSHINE_BUNDLED_${dependency} INTERFACE_INCLUDE_DIRECTORIES)
+                    PkgConfig::SOLSTICE_BUNDLED_${dependency} INTERFACE_INCLUDE_DIRECTORIES)
             set(_sunshine_system_include_dirs)
             foreach(_sunshine_include_dir IN LISTS _sunshine_include_dirs)  # cmake-lint: disable=C0103
                 cmake_path(NORMAL_PATH _sunshine_include_dir)
@@ -312,7 +312,7 @@ if(UNIX AND NOT APPLE)
                 endif()
                 list(APPEND _sunshine_system_include_dirs "${_sunshine_include_dir}")
             endforeach()
-            set_property(TARGET PkgConfig::SUNSHINE_BUNDLED_${dependency} PROPERTY
+            set_property(TARGET PkgConfig::SOLSTICE_BUNDLED_${dependency} PROPERTY
                     INTERFACE_INCLUDE_DIRECTORIES "${_sunshine_system_include_dirs}")
         endif()
     endforeach()

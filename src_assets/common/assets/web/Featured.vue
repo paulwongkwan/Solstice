@@ -342,8 +342,8 @@
           this.loading = true;
           this.error = null;
 
-          // Fetch the app directory for Sunshine
-          const indexUrl = 'https://app.lizardbyte.dev/app-directory/sunshine.json';
+          // Fetch the app directory for Solstice
+          const indexUrl = 'https://github.com/paulwongkwan/Sunshine/app-directory/sunshine.json';
 
           const response = await fetch(indexUrl);
           if (!response.ok) {

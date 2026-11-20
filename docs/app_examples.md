@@ -1,6 +1,6 @@
 # App Examples
 Since not all applications behave the same, we decided to create some examples to help you get started adding games
-and applications to Sunshine.
+and applications to Solstice.
 
 > [!TIP]
 > Throughout these examples, any fields not shown are left blank. You can enhance your experience by
@@ -115,7 +115,7 @@ and applications to Sunshine.
 #### Changing Resolution and Refresh Rate
 
 ##### Windows
-Sunshine has built-in support for changing the resolution and refresh rate on Windows. If you prefer to use a
+Solstice has built-in support for changing the resolution and refresh rate on Windows. If you prefer to use a
 third-party tool, you can use *QRes* as an example.
 
 ###### QRes
@@ -134,7 +134,7 @@ third-party tool, you can use *QRes* as an example.
 #### Windows
 **Elevating Commands (Windows)**
 
-If you've installed Sunshine as a service (default), you can specify if a command should be elevated with
+If you've installed Solstice as a service (default), you can specify if a command should be elevated with
 administrative privileges. Simply enable the elevated option in the WEB UI, or add it to the JSON configuration.
 This is an option for both prep-cmd and regular commands and will launch the process with the current user without a
 UAC prompt.

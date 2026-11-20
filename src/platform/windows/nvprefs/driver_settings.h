@@ -73,7 +73,7 @@ namespace nvprefs {
      * @brief Restore global NVIDIA profile settings from undo data.
      * @details A saved value of zero is restored; only an absent value removes the setting.
      *
-     * @param undo_data Driver settings captured before Sunshine modified them.
+     * @param undo_data Driver settings captured before Solstice modified them.
      * @return True when the NVIDIA driver-settings operation succeeds.
      */
     bool restore_global_profile_to_undo(const undo_data_t &undo_data);
@@ -81,13 +81,13 @@ namespace nvprefs {
     /**
      * @brief Compare and update global NVIDIA profile settings.
      *
-     * @param undo_data Driver settings captured before Sunshine modified them.
+     * @param undo_data Driver settings captured before Solstice modified them.
      * @return True when the NVIDIA driver-settings operation succeeds.
      */
     bool check_and_modify_global_profile(std::optional<undo_data_t> &undo_data);
 
     /**
-     * @brief Compare and update Sunshine NVIDIA application profile settings.
+     * @brief Compare and update Solstice NVIDIA application profile settings.
      *
      * @param modified Whether NVIDIA driver settings were changed and need saving.
      * @return True when the NVIDIA driver-settings operation succeeds.

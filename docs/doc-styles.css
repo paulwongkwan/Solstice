@@ -1,4 +1,4 @@
-/* Link generated configuration actions to Sunshine's web UI. */
+/* Link generated configuration actions to Solstice's web UI. */
 .open-button {
   background: var(--dockle-primary);
   border: 1px solid color-mix(in srgb, var(--dockle-primary) 75%, black);

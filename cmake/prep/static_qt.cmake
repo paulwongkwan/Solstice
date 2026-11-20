@@ -1,6 +1,6 @@
 # Configure the standard MSYS2 static Qt prefix automatically for Windows builds.
 
-if(WIN32 AND SUNSHINE_ENABLE_TRAY AND SUNSHINE_USE_STATIC_QT AND NOT Qt6_DIR)
+if(WIN32 AND SOLSTICE_ENABLE_TRAY AND SOLSTICE_USE_STATIC_QT AND NOT Qt6_DIR)
     set(_sunshine_static_qt_prefix "")
 
     # Prefer the prefix exported by an interactive MSYS2 environment.

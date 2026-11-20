@@ -1,6 +1,6 @@
 /**
  * @file tests/unit/test_config.cpp
- * @brief Tests for Sunshine configuration parsing, range validation, and persistence helpers.
+ * @brief Tests for Solstice configuration parsing, range validation, and persistence helpers.
  */
 
 // test includes

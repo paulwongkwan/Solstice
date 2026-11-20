@@ -566,7 +566,7 @@ namespace platf::dxgi {
     /**
      * @brief Create AVCodec encode device.
      *
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return Constructed AVCodec encode device object.
      */
     std::unique_ptr<avcodec_encode_device_t> make_avcodec_encode_device(pix_fmt_e pix_fmt) override;
@@ -613,7 +613,7 @@ namespace platf::dxgi {
     /**
      * @brief Create AVCodec encode device.
      *
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return Constructed AVCodec encode device object.
      */
     std::unique_ptr<avcodec_encode_device_t> make_avcodec_encode_device(pix_fmt_e pix_fmt) override;
@@ -621,7 +621,7 @@ namespace platf::dxgi {
     /**
      * @brief Create NVENC encode device.
      *
-     * @param pix_fmt Sunshine pixel format to convert or allocate for.
+     * @param pix_fmt Solstice pixel format to convert or allocate for.
      * @return Constructed NVENC encode device object.
      */
     std::unique_ptr<nvenc_encode_device_t> make_nvenc_encode_device(pix_fmt_e pix_fmt) override;

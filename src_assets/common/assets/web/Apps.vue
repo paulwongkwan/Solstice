@@ -571,7 +571,7 @@
   import Navbar from './Navbar.vue'
   import Checkbox from './Checkbox.vue'
   import { apiFetch } from './fetch_utils'
-  import SunshineVersion from './sunshine_version'
+  import SolsticeVersion from './solstice_version'
   import { Modal } from 'bootstrap/dist/js/bootstrap'
   import {
     ArrowDown,
@@ -621,7 +621,7 @@
     let searchName = name.replaceAll(/\s+/g, '.').toLowerCase();
 
     // Use raw.githubusercontent.com to avoid CORS issues as we migrate the CNAME
-    let dbUrl = "https://raw.githubusercontent.com/LizardByte/GameDB/gh-pages";
+    let dbUrl = "https://raw.githubusercontent.com/Solstice/GameDB/gh-pages";
     let bucket = getSearchBucket(name);
     return fetch(`${dbUrl}/buckets/${bucket}.json`).then(function (r) {
       if (!r.ok) throw new Error("Failed to search covers");
@@ -718,7 +718,7 @@
       },
       documentationBaseUrl() {
         const docsVersion = this.installedVersionNotStable ? 'master' : 'latest'
-        return `https://docs.lizardbyte.dev/projects/sunshine/${docsVersion}`
+        return `https://github.com/paulwongkwan/Sunshine/blob/${docsVersion}/docs/`
       },
       displayedApps() {
         let list = this.apps.map((app, index) => ({ app, index }));
@@ -782,12 +782,12 @@
         .then(r => r.json())
         .then(r => {
           this.platform = r.platform;
-          this.version = new SunshineVersion(null, r.version);
+          this.version = new SolsticeVersion(null, r.version);
         });
 
-      fetch("https://api.github.com/repos/SunshineStream/Sunshine/releases/latest")
+      fetch("https://api.github.com/repos/paulwongkwan/Sunshine/releases/latest")
         .then((r) => r.json())
-        .then((r) => this.githubVersion = new SunshineVersion(r, null))
+        .then((r) => this.githubVersion = new SolsticeVersion(r, null))
         .catch((e) => console.error(e));
     },
     methods: {

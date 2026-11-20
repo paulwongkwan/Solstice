@@ -1,6 +1,6 @@
 @echo off
 
-rem Get sunshine root directory
+rem Get solstice root directory
 for %%I in ("%~dp0\..") do set "OLD_DIR=%%~fI"
 
 rem Create the config directory if it didn't already exist
@@ -8,23 +8,39 @@ set "NEW_DIR=%OLD_DIR%\config"
 if not exist "%NEW_DIR%\" mkdir "%NEW_DIR%"
 icacls "%NEW_DIR%" /reset
 
-rem Migrate all files that aren't already present in the config dir
+rem Migrate apps.json
 if exist "%OLD_DIR%\apps.json" (
     if not exist "%NEW_DIR%\apps.json" (
         move "%OLD_DIR%\apps.json" "%NEW_DIR%\apps.json"
         icacls "%NEW_DIR%\apps.json" /reset
     )
 )
+
+rem Migrate the configuration file, which was renamed with the application
 if exist "%OLD_DIR%\sunshine.conf" (
-    if not exist "%NEW_DIR%\sunshine.conf" (
-        move "%OLD_DIR%\sunshine.conf" "%NEW_DIR%\sunshine.conf"
-        icacls "%NEW_DIR%\sunshine.conf" /reset
+    if not exist "%NEW_DIR%\solstice.conf" (
+        move "%OLD_DIR%\sunshine.conf" "%NEW_DIR%\solstice.conf"
+        icacls "%NEW_DIR%\solstice.conf" /reset
     )
 )
+if exist "%OLD_DIR%\solstice.conf" (
+    if not exist "%NEW_DIR%\solstice.conf" (
+        move "%OLD_DIR%\solstice.conf" "%NEW_DIR%\solstice.conf"
+        icacls "%NEW_DIR%\solstice.conf" /reset
+    )
+)
+
+rem Migrate the pairing state file, which was renamed with the application
 if exist "%OLD_DIR%\sunshine_state.json" (
-    if not exist "%NEW_DIR%\sunshine_state.json" (
-        move "%OLD_DIR%\sunshine_state.json" "%NEW_DIR%\sunshine_state.json"
-        icacls "%NEW_DIR%\sunshine_state.json" /reset
+    if not exist "%NEW_DIR%\solstice_state.json" (
+        move "%OLD_DIR%\sunshine_state.json" "%NEW_DIR%\solstice_state.json"
+        icacls "%NEW_DIR%\solstice_state.json" /reset
+    )
+)
+if exist "%OLD_DIR%\solstice_state.json" (
+    if not exist "%NEW_DIR%\solstice_state.json" (
+        move "%OLD_DIR%\solstice_state.json" "%NEW_DIR%\solstice_state.json"
+        icacls "%NEW_DIR%\solstice_state.json" /reset
     )
 )
 

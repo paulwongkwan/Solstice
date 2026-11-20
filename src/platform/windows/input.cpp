@@ -527,7 +527,7 @@ namespace platf {
   /**
    * @brief Return the gamepad choices supported by ViGEmBus.
    *
-   * @param available Whether Sunshine can connect to ViGEmBus.
+   * @param available Whether Solstice can connect to ViGEmBus.
    * @return Automatic, Xbox 360, and DualShock 4 choices with availability metadata.
    */
   std::vector<supported_gamepad_t> vigembus_supported_gamepads(const bool available) {
@@ -797,7 +797,7 @@ namespace platf {
   }
 
   /**
-   * @brief Update an X360 report from Sunshine gamepad state.
+   * @brief Update an X360 report from Solstice gamepad state.
    * @param gamepad The gamepad to update.
    * @param gamepad_state The gamepad button/axis state sent from the client.
    */
@@ -926,7 +926,7 @@ namespace platf {
   }
 
   /**
-   * @brief Update a DS4 report from Sunshine gamepad state.
+   * @brief Update a DS4 report from Solstice gamepad state.
    * @param gamepad The gamepad to update.
    * @param gamepad_state The gamepad button/axis state sent from the client.
    */
@@ -982,7 +982,7 @@ namespace platf {
   }
 
   /**
-   * @brief Submit updated Sunshine gamepad state to the virtual device.
+   * @brief Submit updated Solstice gamepad state to the virtual device.
    * @param input The input context.
    * @param nr The gamepad index to update.
    * @param gamepad_state The gamepad button/axis state sent from the client.

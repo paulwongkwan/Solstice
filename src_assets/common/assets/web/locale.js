@@ -101,7 +101,7 @@ export async function loadLocaleMessages(
  *
  * @return {Promise<import('vue-i18n').I18n>} Configured internationalization instance.
  */
-export default async function createSunshineI18n() {
+export default async function createSolsticeI18n() {
     const localeConfig = await (await fetch("./api/configLocale")).json();
     const configuredLocale = resolveLocale(localeConfig.locale);
     const { locale, messages } = await loadLocaleMessages(configuredLocale);

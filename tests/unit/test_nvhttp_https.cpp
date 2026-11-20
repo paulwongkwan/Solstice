@@ -30,9 +30,9 @@ namespace {
      */
     void SetUp() override {
       BaseTest::SetUp();
-      const auto credentials = crypto::gen_creds("Sunshine HTTPS lifetime test", 2048);
-      certificate_file = std::filesystem::path {SUNSHINE_TEST_BIN_DIR} / "https_lifetime_cert.pem";
-      private_key_file = std::filesystem::path {SUNSHINE_TEST_BIN_DIR} / "https_lifetime_key.pem";
+      const auto credentials = crypto::gen_creds("Solstice HTTPS lifetime test", 2048);
+      certificate_file = std::filesystem::path {SOLSTICE_TEST_BIN_DIR} / "https_lifetime_cert.pem";
+      private_key_file = std::filesystem::path {SOLSTICE_TEST_BIN_DIR} / "https_lifetime_key.pem";
       std::ofstream {certificate_file} << credentials.x509;
       std::ofstream {private_key_file} << credentials.pkey;
 

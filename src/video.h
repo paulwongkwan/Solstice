@@ -94,17 +94,17 @@ namespace video {
   bool allow_encoder_probing(const std::vector<display_device::EnumeratedDevice> &devices);
 
   /**
-   * @brief Map an FFmpeg hardware device type to Sunshine's memory type.
+   * @brief Map an FFmpeg hardware device type to Solstice's memory type.
    *
    * @param type FFmpeg hardware device type reported by the encoder backend.
-   * @return Sunshine memory type used by the capture and encode pipeline.
+   * @return Solstice memory type used by the capture and encode pipeline.
    */
   platf::mem_type_e map_base_dev_type(AVHWDeviceType type);
   /**
-   * @brief Map an FFmpeg pixel format to Sunshine's pixel format enum.
+   * @brief Map an FFmpeg pixel format to Solstice's pixel format enum.
    *
    * @param fmt FFmpeg pixel format to convert.
-   * @return Sunshine pixel format used by display and encoder backends.
+   * @return Solstice pixel format used by display and encoder backends.
    */
   platf::pix_fmt_e map_pix_fmt(AVPixelFormat fmt);
 
@@ -370,7 +370,7 @@ namespace video {
   };
 
   /**
-   * @brief Encoder name and feature flags advertised by Sunshine.
+   * @brief Encoder name and feature flags advertised by Solstice.
    */
   struct encoder_t {
     std::string_view name;  ///< Encoder name used in logs, configuration, and capability probes.
@@ -629,7 +629,7 @@ namespace video {
     }
 
     /**
-     * @brief Return the FFmpeg packet PTS used as Sunshine's frame index.
+     * @brief Return the FFmpeg packet PTS used as Solstice's frame index.
      *
      * @return Monotonic frame index assigned to this frame.
      */
@@ -663,7 +663,7 @@ namespace video {
    */
   struct packet_raw_generic: packet_raw_t {
     /**
-     * @brief Wrap generic encoded frame bytes in Sunshine packet metadata.
+     * @brief Wrap generic encoded frame bytes in Solstice packet metadata.
      *
      * @param frame_data Encoded frame bytes produced by a non-FFmpeg encoder.
      * @param frame_index Monotonic frame index assigned to the encoded frame.

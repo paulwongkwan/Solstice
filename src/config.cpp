@@ -1,6 +1,6 @@
 /**
  * @file src/config.cpp
- * @brief Definitions for the configuration of Sunshine.
+ * @brief Definitions for the configuration of Solstice.
  */
 // standard includes
 #include <algorithm>
@@ -49,7 +49,7 @@
 namespace fs = std::filesystem;
 using namespace std::literals;
 
-constexpr auto CA_DIR = "credentials";  ///< Subdirectory under app data that stores Sunshine credentials.
+constexpr auto CA_DIR = "credentials";  ///< Subdirectory under app data that stores Solstice credentials.
 const std::string PRIVATE_KEY_FILE = std::string(CA_DIR) + "/cakey.pem";  ///< Relative path to the persisted private key PEM file.
 const std::string CERTIFICATE_FILE = std::string(CA_DIR) + "/cacert.pem";  ///< Relative path to the persisted certificate PEM file.
 const std::string APPS_JSON_PATH = platf::appdata().string() + "/apps.json";  ///< Default path to the applications JSON file.
@@ -631,7 +631,7 @@ namespace config {
     CERTIFICATE_FILE,
 
     platf::get_host_name(),  // sunshine_name,
-    "sunshine_state.json"s,  // file_state
+    "solstice_state.json"s,  // file_state
     {},  // external_ip
   };
 
@@ -663,7 +663,7 @@ namespace config {
   };
 
   /**
-   * @brief Default top-level Sunshine configuration values used before file and CLI overrides.
+   * @brief Default top-level Solstice configuration values used before file and CLI overrides.
    */
   sunshine_t sunshine {
     "en",  // locale
@@ -673,12 +673,12 @@ namespace config {
     {},  // Username
     {},  // Password
     {},  // Password Salt
-    platf::appdata().string() + "/sunshine.conf",  // config file
+    platf::appdata().string() + "/solstice.conf",  // config file
     {},  // cmd args
     47989,  // Base port number
     "ipv4",  // Address family
     {},  // Bind address
-    platf::appdata().string() + "/sunshine.log",  // log file
+    platf::appdata().string() + "/solstice.log",  // log file
     false,  // notify_pre_releases
     true,  // system_tray
     {},  // prep commands
@@ -810,7 +810,7 @@ namespace config {
   }
 
   /**
-   * @brief Parse Sunshine configuration text into key-value entries.
+   * @brief Parse Solstice configuration text into key-value entries.
    */
   config_map_t parse_config(const std::string_view &file_content) {
     config_map_t vars;
@@ -1317,7 +1317,7 @@ namespace config {
   }
 
   /**
-   * @brief Apply single-character command-line flags to the global Sunshine flags bitset.
+   * @brief Apply single-character command-line flags to the global Solstice flags bitset.
    *
    * @param line Configuration line being parsed.
    * @return 0 when all flags are recognized; -1 when at least one flag is unknown.
@@ -1594,7 +1594,7 @@ namespace config {
       }
     }
     if (csrf_invalid_config) {
-      BOOST_LOG(warning) << "Please refer to: https://docs.lizardbyte.dev/projects/sunshine/latest/md_docs_2configuration.html#csrf_allowed_origins"sv;
+      BOOST_LOG(warning) << "Please refer to: https://github.com/paulwongkwan/Sunshine/tree/master/docs"sv;
     }
 
     int to = -1;
@@ -1610,7 +1610,7 @@ namespace config {
 
     path_f(vars, "file_apps", stream.file_apps);
     if (!fs::exists(stream.file_apps.c_str())) {
-      fs::copy_file(SUNSHINE_ASSETS_DIR "/apps.json", stream.file_apps);
+      fs::copy_file(SOLSTICE_ASSETS_DIR "/apps.json", stream.file_apps);
       fs::permissions(
         stream.file_apps,
         fs::perms::owner_read | fs::perms::owner_write,
@@ -1759,7 +1759,7 @@ namespace config {
     }
   }
 
-#ifdef SUNSHINE_TESTS
+#ifdef SOLSTICE_TESTS
   /**
    * @brief Parse and apply serialized configuration text for unit tests.
    *
@@ -1769,6 +1769,110 @@ namespace config {
     apply_config(parse_config(file_content));
   }
 #endif
+
+  namespace {
+    /**
+     * @brief Configuration file renamed when migrating a pre-rename installation.
+     */
+    struct legacy_file_t {
+      const char *legacy;  ///< File name used before the rename.
+      const char *current;  ///< File name used by the current installation.
+    };
+
+    constexpr std::array<legacy_file_t, 2> LEGACY_CONFIG_FILES {{
+      {"sunshine.conf", "solstice.conf"},
+      {"sunshine_state.json", "solstice_state.json"},
+    }};
+
+    constexpr std::array<const char *, 3> LEGACY_CONFIG_ENTRIES {"apps.json", "credentials", "covers"};  ///< Entries copied without a rename.
+
+    /**
+     * @brief Copy a file or a directory tree, keeping entries that already exist.
+     *
+     * @param source Entry to copy.
+     * @param destination Destination path.
+     * @param ec Error code set by the first failing operation.
+     */
+    void copy_entry(const fs::path &source, const fs::path &destination, std::error_code &ec) {
+      if (fs::is_directory(source, ec)) {
+        fs::create_directories(destination, ec);
+        if (ec) {
+          return;
+        }
+
+        for (const auto &child : fs::directory_iterator(source, ec)) {
+          copy_entry(child.path(), destination / child.path().filename(), ec);
+          if (ec) {
+            return;
+          }
+        }
+
+        return;
+      }
+
+      fs::copy_file(source, destination, fs::copy_options::skip_existing, ec);
+    }
+  }  // namespace
+
+  bool migrate_legacy_config(const std::filesystem::path &target, const std::filesystem::path &legacy) {
+    std::error_code ec;
+    if (legacy.empty() || !fs::is_directory(legacy, ec)) {
+      return false;
+    }
+
+    // A configuration in the current directory means the migration already ran, or the user started fresh.
+    if (fs::exists(target / "solstice.conf", ec)) {
+      return false;
+    }
+
+    fs::create_directories(target, ec);
+    if (ec) {
+      BOOST_LOG(warning) << "Failed to create the configuration directory: "sv << ec.message();
+      return false;
+    }
+
+    bool migrated = false;
+
+    for (const auto &file : LEGACY_CONFIG_FILES) {
+      if (!fs::exists(legacy / file.legacy, ec)) {
+        continue;
+      }
+
+      fs::copy_file(legacy / file.legacy, target / file.current, fs::copy_options::skip_existing, ec);
+      if (ec) {
+        BOOST_LOG(warning) << "Failed to migrate "sv << file.legacy << ": "sv << ec.message();
+        ec.clear();
+        continue;
+      }
+
+      migrated = true;
+    }
+
+    for (const auto *entry : LEGACY_CONFIG_ENTRIES) {
+      const auto source = legacy / entry;
+      const auto destination = target / entry;
+      if (!fs::exists(source, ec) || fs::exists(destination, ec)) {
+        continue;
+      }
+
+      std::error_code copy_error;
+      copy_entry(source, destination, copy_error);
+      if (copy_error) {
+        // Pairing credentials are only readable by SYSTEM and Administrators.
+        BOOST_LOG(warning) << "Failed to migrate "sv << entry << ": "sv << copy_error.message()
+                           << ". Start the service or the installer to migrate protected state."sv;
+        continue;
+      }
+
+      migrated = true;
+    }
+
+    if (migrated) {
+      BOOST_LOG(info) << "Migrated configuration and pairing state from "sv << legacy.string();
+    }
+
+    return migrated;
+  }
 
   /**
    * @brief Parse serialized text into the corresponding runtime representation.
@@ -1829,6 +1933,9 @@ namespace config {
 
     bool config_loaded = false;
     try {
+      // Copy configuration and pairing state from a pre-rename installation before anything reads them.
+      migrate_legacy_config(platf::appdata(), platf::legacy_appdata());
+
       // Create appdata folder if it does not exist
       file_handler::make_directory(platf::appdata().string());
 
@@ -1860,7 +1967,7 @@ namespace config {
     // so that service instance will do the work instead.
 
     if (!config_loaded && !shortcut_launch) {
-      BOOST_LOG(fatal) << "To relaunch Sunshine successfully, use the shortcut in the Start Menu. Do not run Sunshine.exe manually."sv;
+      BOOST_LOG(fatal) << "To relaunch Solstice successfully, use the shortcut in the Start Menu. Do not run Solstice.exe manually."sv;
       std::this_thread::sleep_for(10s);
       return -1;
     }
@@ -1873,7 +1980,7 @@ namespace config {
       // This is a relaunch as admin to start the service
       service_ctrl::start_service();
 
-      // Always return 1 to ensure Sunshine doesn't start normally
+      // Always return 1 to ensure Solstice doesn't start normally
       return 1;
     }
     if (shortcut_launch) {
@@ -1903,7 +2010,7 @@ namespace config {
         service_ctrl::wait_for_ui_ready();
       }
 
-      // Always return 1 to ensure Sunshine doesn't start normally
+      // Always return 1 to ensure Solstice doesn't start normally
       return 1;
     }
 
