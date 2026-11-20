@@ -87,14 +87,14 @@ set up by hand:
 After installation, some initial setup is required.
 
 ### Windows
-Solstice creates virtual gamepads through [PadBus](https://github.com/paulwongkwan/padbus). Install the driver, then
-enable gamepad input in the Web UI under **Configuration > Input**. PadBus supports three profiles: **auto** (the
+Solstice creates virtual gamepads through [ViGEmBus](https://github.com/nefarius/ViGEmBus). Install the driver, then
+enable gamepad input in the Web UI under **Configuration > Input**. ViGEmBus supports three profiles: **auto** (the
 default, which picks Xbox 360 or DualShock 4 from the controller the client reports), **x360**, and **ds4**.
 
 Keyboard and mouse input is injected with the Windows `SendInput` API, and touch and pen input uses the Windows
 pointer injection APIs. No additional driver is required for those devices.
 
-After installing or updating PadBus, restart your computer.
+After installing or updating ViGEmBus, restart your computer.
 
 ## Usage
 

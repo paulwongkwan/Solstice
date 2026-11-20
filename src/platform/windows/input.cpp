@@ -19,17 +19,13 @@
 
 // standard includes
 #include <algorithm>
-#include <chrono>
 #include <cmath>
-#include <limits>
-#include <map>
 #include <memory>
-#include <optional>
 #include <thread>
 #include <vector>
 
 // lib includes
-#include <padbus/padbus.hpp>
+#include <ViGEm/Client.h>
 
 // local includes
 #include "input.h"
@@ -44,234 +40,75 @@ namespace platf {
   using namespace std::literals;
 
   /**
-   * @brief Meters per second squared represented by one gravity unit.
+   * @brief ViGEm client pointer released with `vigem_free`.
    */
-  constexpr float EARTH_G = 9.80665f;
-
-  namespace gamepad {
-    /**
-     * @brief Raw DualShock 4 accelerometer units per gravity.
-     */
-    constexpr float DS4_ACCEL_PER_G = 8192.0f;
-
-    /**
-     * @brief Raw DualShock 4 gyroscope units per degree per second.
-     */
-    constexpr float DS4_GYRO_PER_DPS = 1024.0f / 64.0f;
-
-    /**
-     * @brief Clamp an intermediate sensor value to the report's integer range.
-     *
-     * @param value Sensor value in raw DualShock 4 units.
-     * @return Value clamped to the signed 16-bit range.
-     */
-    static std::int32_t clamp_report_value(float value) {
-      return static_cast<std::int32_t>(std::clamp(value, static_cast<float>(std::numeric_limits<std::int16_t>::min()), static_cast<float>(std::numeric_limits<std::int16_t>::max())));
-    }
-
-    float normalize_stick(std::int16_t value) {
-      return std::clamp(static_cast<float>(value) / std::numeric_limits<std::int16_t>::max(), -1.0f, 1.0f);
-    }
-
-    float normalize_trigger(std::uint8_t value) {
-      return static_cast<float>(value) / std::numeric_limits<std::uint8_t>::max();
-    }
-
-    padbus::ButtonSet buttons(std::uint32_t flags, bool dualshock4, bool back_as_touchpad_click) {
-      padbus::ButtonSet result;
-
-      const auto press = [&result, flags](std::uint32_t mask, padbus::GamepadButton button) {
-        if (flags & mask) {
-          result.set(button);
-        }
-      };
-
-      press(DPAD_UP, padbus::GamepadButton::dpad_up);
-      press(DPAD_DOWN, padbus::GamepadButton::dpad_down);
-      press(DPAD_LEFT, padbus::GamepadButton::dpad_left);
-      press(DPAD_RIGHT, padbus::GamepadButton::dpad_right);
-      press(START, padbus::GamepadButton::start);
-      press(BACK, padbus::GamepadButton::back);
-      press(LEFT_STICK, padbus::GamepadButton::left_stick);
-      press(RIGHT_STICK, padbus::GamepadButton::right_stick);
-      press(LEFT_BUTTON, padbus::GamepadButton::left_shoulder);
-      press(RIGHT_BUTTON, padbus::GamepadButton::right_shoulder);
-      press(HOME, padbus::GamepadButton::guide);
-      press(A, padbus::GamepadButton::a);
-      press(B, padbus::GamepadButton::b);
-      press(X, padbus::GamepadButton::x);
-      press(Y, padbus::GamepadButton::y);
-
-      if (dualshock4) {
-        // Allow either PS4/PS5 clickpad button or Xbox Series X share button to activate the clickpad
-        press(TOUCHPAD_BUTTON | MISC_BUTTON, padbus::GamepadButton::touchpad);
-        if (back_as_touchpad_click) {
-          // PlayStation-style emulation: the back button also clicks the touchpad
-          press(BACK, padbus::GamepadButton::touchpad);
-        }
-      } else {
-        press(MISC_BUTTON, padbus::GamepadButton::guide);
-      }
-
-      return result;
-    }
-
-    bool update_touch(std::array<padbus::GamepadTouchContact, 2> &contacts, std::map<std::uint32_t, std::uint8_t> &pointer_id_map, const gamepad_touch_t &touch) {
-      std::uint8_t pointer_index {};
-
-      if (touch.eventType == LI_TOUCH_EVENT_DOWN) {
-        const auto free_slot = std::find_if(contacts.begin(), contacts.end(), [](const padbus::GamepadTouchContact &contact) {
-          return !contact.active;
-        });
-
-        if (free_slot == contacts.end()) {
-          BOOST_LOG(warning) << "No more free pointer indices! Did the client miss an touch up event?"sv;
-          return false;
-        }
-
-        pointer_index = static_cast<std::uint8_t>(std::distance(contacts.begin(), free_slot));
-        pointer_id_map[touch.pointerId] = pointer_index;
-      } else if (touch.eventType == LI_TOUCH_EVENT_CANCEL_ALL) {
-        // Raise both contacts without discarding the last reported coordinates
-        for (auto &contact : contacts) {
-          contact.active = false;
-        }
-        pointer_id_map.clear();
-        return true;
-      } else {
-        const auto mapping = pointer_id_map.find(touch.pointerId);
-        if (mapping == pointer_id_map.end()) {
-          BOOST_LOG(warning) << "Pointer ID not found! Did the client miss a touch down event?"sv;
-          return false;
-        }
-
-        pointer_index = mapping->second;
-
-        if (touch.eventType == LI_TOUCH_EVENT_UP || touch.eventType == LI_TOUCH_EVENT_CANCEL) {
-          pointer_id_map.erase(mapping);
-          contacts[pointer_index].active = false;
-        } else if (touch.eventType != LI_TOUCH_EVENT_MOVE) {
-          BOOST_LOG(warning) << "Unsupported touch event for gamepad: "sv << static_cast<std::uint32_t>(touch.eventType);
-          return false;
-        }
-      }
-
-      auto &contact = contacts[pointer_index];
-      contact.id = pointer_index;
-      contact.active = touch.eventType != LI_TOUCH_EVENT_UP && touch.eventType != LI_TOUCH_EVENT_CANCEL;
-      contact.x = std::clamp(touch.x, 0.0f, 1.0f);
-      contact.y = std::clamp(touch.y, 0.0f, 1.0f);
-
-      return true;
-    }
-
-    std::optional<padbus::GamepadBattery> battery(const gamepad_battery_t &battery) {
-      const auto percentage = battery.percentage == LI_BATTERY_PERCENTAGE_UNKNOWN
-                                ? std::nullopt
-                                : std::optional<std::uint8_t> {std::min<std::uint8_t>(battery.percentage, 100)};
-
-      switch (battery.state) {
-        case LI_BATTERY_STATE_CHARGING:
-          return padbus::GamepadBattery {percentage.value_or(100), true};
-        case LI_BATTERY_STATE_DISCHARGING:
-          return padbus::GamepadBattery {percentage.value_or(0), false};
-        case LI_BATTERY_STATE_FULL:
-          return padbus::GamepadBattery {100, true};
-        case LI_BATTERY_STATE_NOT_PRESENT:
-        case LI_BATTERY_STATE_NOT_CHARGING:
-          return std::nullopt;
-        default:
-          if (!percentage) {
-            return std::nullopt;
-          }
-          return padbus::GamepadBattery {*percentage, false};
-      }
-    }
-
-    padbus::Vector3 ds4_acceleration(float x, float y, float z) {
-      // Apply the inverse of the driver's calibration data so the emulated sensor matches the client
-      const auto calibrate = [](float value, float bias, float scale) {
-        const auto raw = static_cast<float>((value / EARTH_G) * DS4_ACCEL_PER_G);
-        return static_cast<float>(clamp_report_value((raw + bias) / scale));
-      };
-
-      return {
-        calibrate(x, -297, 1.010796f),
-        calibrate(y, -42, 1.014614f),
-        calibrate(z, -512, 1.024768f),
-      };
-    }
-
-    padbus::Vector3 ds4_gyroscope(float x, float y, float z) {
-      const auto calibrate = [](float value, float bias, float scale) {
-        const auto raw = static_cast<float>(value * DS4_GYRO_PER_DPS);
-        return static_cast<float>(clamp_report_value((raw + bias) / scale));
-      };
-
-      return {
-        calibrate(x, 1, 0.977596f),
-        calibrate(y, 0, 0.972370f),
-        calibrate(z, 0, 0.971550f),
-      };
-    }
-  }  // namespace gamepad
+  using client_t = util::safe_ptr<_VIGEM_CLIENT_T, &vigem_free>;
+  /**
+   * @brief ViGEm target pointer released with `vigem_target_free`.
+   */
+  using target_t = util::safe_ptr<_VIGEM_TARGET_T, &vigem_target_free>;
 
   /**
-   * @brief Describe a PadBus operation failure for the log.
+   * @brief Handle Xbox 360 virtual gamepad notification events.
    *
-   * @param status Status returned by PadBus.
-   * @return Human-readable status text.
+   * @param client ViGEm client.
+   * @param target ViGEm target.
+   * @param largeMotor Large motor strength.
+   * @param smallMotor Small motor strength.
+   * @param userdata User data pointer.
    */
-  static std::string status_text(const padbus::OperationStatus &status) {
-    std::string text = padbus::to_string(status.code());
-    if (!status.message().empty()) {
-      text += ": "sv;
-      text += status.message();
-    }
-    if (status.has_native_code()) {
-      text += " (native code "sv;
-      text += std::to_string(status.native_code());
-      text += ')';
-    }
-    return text;
-  }
+  void CALLBACK x360_notify(
+    client_t::pointer client,
+    target_t::pointer target,
+    std::uint8_t largeMotor,
+    std::uint8_t smallMotor,
+    std::uint8_t /* led_number */,
+    void *userdata
+  );
 
   /**
-   * @brief Create the runtime options used by the Windows input backend.
+   * @brief Handle DualShock 4 virtual gamepad notification events.
    *
-   * @return Runtime options that route PadBus diagnostics into the Solstice log.
+   * @param client ViGEm client.
+   * @param target ViGEm target.
+   * @param largeMotor Large motor strength.
+   * @param smallMotor Small motor strength.
+   * @param led_color Requested lightbar color.
+   * @param userdata User data pointer.
    */
-  static padbus::RuntimeOptions runtime_options() {
-    padbus::RuntimeOptions options;
-    options.log_callback = [](const padbus::LogLevel level, const std::string &message) {
-      switch (level) {
-        case padbus::LogLevel::debug:
-          BOOST_LOG(debug) << message;
-          break;
-        case padbus::LogLevel::info:
-          BOOST_LOG(info) << message;
-          break;
-        case padbus::LogLevel::warning:
-          BOOST_LOG(warning) << message;
-          break;
-        case padbus::LogLevel::error:
-          BOOST_LOG(error) << message;
-          break;
-      }
-    };
-    return options;
-  }
+  void CALLBACK ds4_notify(
+    client_t::pointer client,
+    target_t::pointer target,
+    std::uint8_t largeMotor,
+    std::uint8_t smallMotor,
+    DS4_LIGHTBAR_COLOR /* led_color */,
+    void *userdata
+  );
 
   /**
-   * @brief PadBus target and state for one virtual gamepad.
+   * @brief Last touch coordinates reported by a virtual gamepad.
+   */
+  struct gp_touch_context_t {
+    uint8_t pointerIndex;  ///< Pointer index.
+    uint16_t x;  ///< X.
+    uint16_t y;  ///< Y.
+  };
+
+  /**
+   * @brief ViGEm target and report buffers for one virtual gamepad.
    */
   struct gamepad_context_t {
-    std::unique_ptr<padbus::Gamepad> gp;  ///< Virtual gamepad owned by the backend.
-    bool dualshock4 {};  ///< Whether the gamepad emulates a DualShock 4.
+    target_t gp;  ///< Gp.
     feedback_queue_t feedback_queue;  ///< Feedback queue.
 
-    padbus::GamepadState state;  ///< State submitted with the next report.
-    std::map<uint32_t, uint8_t> pointer_id_map;  ///< Map from pointer ID to touchpad contact slot.
+    union {
+      XUSB_REPORT x360;  ///< Current Xbox 360 controller report.
+      DS4_REPORT_EX ds4;  ///< Current DualShock 4 controller report.
+    } report;  ///< Current HID report for the virtual controller..
+
+    // Map from pointer ID to pointer index
+    std::map<uint32_t, uint8_t> pointer_id_map;  ///< Pointer ID map.
+    std::byte available_pointers;  ///< Byte mask of available DualShock 4 touch slots.
 
     uint8_t client_relative_index;  ///< Client relative index.
 
@@ -282,22 +119,151 @@ namespace platf {
     gamepad_feedback_msg_t last_rgb_led;  ///< Last RGB led.
   };
 
+  constexpr float EARTH_G = 9.80665f;  ///< Meters per second squared represented by one gravity unit.
+
+/**
+ * @def MPS2_TO_DS4_ACCEL(x)
+ * @brief Macro for MPS2 TO DS4 ACCEL.
+ */
+#define MPS2_TO_DS4_ACCEL(x) (int32_t) (((x) / EARTH_G) * 8192)
+/**
+ * @def DPS_TO_DS4_GYRO(x)
+ * @brief Macro for DPS TO DS4 GYRO.
+ */
+#define DPS_TO_DS4_GYRO(x) (int32_t) ((x) * (1024 / 64))
+
+/**
+ * @def APPLY_CALIBRATION(val, bias, scale)
+ * @brief Macro for APPLY CALIBRATION.
+ */
+#define APPLY_CALIBRATION(val, bias, scale) (int32_t) (((float) (val) + (bias)) / (scale))
+
   /**
-   * @brief PadBus runtime connection and virtual gamepad collection.
+   * @brief DS4 touch unused.
    */
-  class padbus_backend_t {
+  constexpr DS4_TOUCH ds4_touch_unused = {
+    .bPacketCounter = 0,
+    .bIsUpTrackingNum1 = 0x80,
+    .bTouchData1 = {0x00, 0x00, 0x00},
+    .bIsUpTrackingNum2 = 0x80,
+    .bTouchData2 = {0x00, 0x00, 0x00},
+  };
+
+  // See https://github.com/ViGEm/ViGEmBus/blob/22835473d17fbf0c4d4bb2f2d42fd692b6e44df4/sys/Ds4Pdo.cpp#L153-L164
+  /**
+   * @brief DS4 report init ex.
+   */
+  constexpr DS4_REPORT_EX ds4_report_init_ex = {
+    {{.bThumbLX = 0x80,
+      .bThumbLY = 0x80,
+      .bThumbRX = 0x80,
+      .bThumbRY = 0x80,
+      .wButtons = DS4_BUTTON_DPAD_NONE,
+      .bSpecial = 0,
+      .bTriggerL = 0,
+      .bTriggerR = 0,
+      .wTimestamp = 0,
+      .bBatteryLvl = 0xFF,
+      .wGyroX = 0,
+      .wGyroY = 0,
+      .wGyroZ = 0,
+      .wAccelX = 0,
+      .wAccelY = 0,
+      .wAccelZ = 0,
+      ._bUnknown1 = {0x00, 0x00, 0x00, 0x00, 0x00},
+      .bBatteryLvlSpecial = 0x1A,  // Wired - Full battery
+      ._bUnknown2 = {0x00, 0x00},
+      .bTouchPacketsN = 1,
+      .sCurrentTouch = ds4_touch_unused,
+      .sPreviousTouch = {ds4_touch_unused, ds4_touch_unused}}}
+  };
+
+  /**
+   * @brief Updates the DS4 input report with the provided motion data.
+   * @details Acceleration is in m/s^2 and gyro is in deg/s.
+   * @param gamepad The gamepad to update.
+   * @param motion_type The type of motion data.
+   * @param x X component of motion.
+   * @param y Y component of motion.
+   * @param z Z component of motion.
+   */
+  static void ds4_update_motion(gamepad_context_t &gamepad, uint8_t motion_type, float x, float y, float z) {
+    auto &report = gamepad.report.ds4.Report;
+
+    // Use int32 to process this data, so we can clamp if needed.
+    int32_t intX;
+    int32_t intY;
+    int32_t intZ;
+
+    switch (motion_type) {
+      case LI_MOTION_TYPE_ACCEL:
+        // Convert to the DS4's accelerometer scale
+        intX = MPS2_TO_DS4_ACCEL(x);
+        intY = MPS2_TO_DS4_ACCEL(y);
+        intZ = MPS2_TO_DS4_ACCEL(z);
+
+        // Apply the inverse of ViGEmBus's calibration data
+        intX = APPLY_CALIBRATION(intX, -297, 1.010796f);
+        intY = APPLY_CALIBRATION(intY, -42, 1.014614f);
+        intZ = APPLY_CALIBRATION(intZ, -512, 1.024768f);
+        break;
+      case LI_MOTION_TYPE_GYRO:
+        // Convert to the DS4's gyro scale
+        intX = DPS_TO_DS4_GYRO(x);
+        intY = DPS_TO_DS4_GYRO(y);
+        intZ = DPS_TO_DS4_GYRO(z);
+
+        // Apply the inverse of ViGEmBus's calibration data
+        intX = APPLY_CALIBRATION(intX, 1, 0.977596f);
+        intY = APPLY_CALIBRATION(intY, 0, 0.972370f);
+        intZ = APPLY_CALIBRATION(intZ, 0, 0.971550f);
+        break;
+      default:
+        return;
+    }
+
+    // Clamp the values to the range of the data type
+    intX = std::clamp(intX, INT16_MIN, INT16_MAX);
+    intY = std::clamp(intY, INT16_MIN, INT16_MAX);
+    intZ = std::clamp(intZ, INT16_MIN, INT16_MAX);
+
+    // Populate the report
+    switch (motion_type) {
+      case LI_MOTION_TYPE_ACCEL:
+        report.wAccelX = (int16_t) intX;
+        report.wAccelY = (int16_t) intY;
+        report.wAccelZ = (int16_t) intZ;
+        break;
+      case LI_MOTION_TYPE_GYRO:
+        report.wGyroX = (int16_t) intX;
+        report.wGyroY = (int16_t) intY;
+        report.wGyroZ = (int16_t) intZ;
+        break;
+      default:
+        return;
+    }
+  }
+
+  /**
+   * @brief ViGEm client connection and virtual gamepad collection.
+   */
+  class vigem_t {
   public:
     /**
-     * @brief Create the runtime and probe whether gamepads can be attached.
+     * @brief Connect to ViGEm and prepare virtual gamepad slots.
      *
-     * The probe lets the Web UI report an unusable driver before the user tries to stream.
-     *
-     * @return 0 on success; nonzero platform status on failure.
+     * @return 0 on success; nonzero or negative platform status on failure.
      */
     int init() {
-      if (!connect()) {
-        BOOST_LOG(warning) << "PadBus is not installed or running, so its Xbox 360 and DualShock 4 gamepad support is unavailable"sv;
+      // Probe ViGEm during startup to see if we can successfully attach gamepads. This will allow us to
+      // immediately display the error message in the web UI even before the user tries to stream.
+      client_t probe_client {vigem_alloc()};
+      VIGEM_ERROR status = vigem_connect(probe_client.get());
+      if (!VIGEM_SUCCESS(status)) {
+        BOOST_LOG(warning) << "ViGEmBus is not installed or running, so its limited Xbox 360 and DualShock 4 gamepad support is unavailable"sv;
         return -1;
+      } else {
+        vigem_disconnect(probe_client.get());
       }
 
       gamepads.resize(MAX_GAMEPADS);
@@ -309,66 +275,74 @@ namespace platf {
      * @brief Attaches a new gamepad.
      * @param id The gamepad ID.
      * @param feedback_queue The queue for posting messages back to the client.
-     * @param dualshock4 Whether to emulate a DualShock 4 instead of an Xbox 360 controller.
+     * @param gp_type The type of gamepad.
      * @return 0 on success.
      */
-    int alloc_gamepad_internal(const gamepad_id_t &id, feedback_queue_t &feedback_queue, bool dualshock4) {
+    int alloc_gamepad_internal(const gamepad_id_t &id, feedback_queue_t &feedback_queue, VIGEM_TARGET_TYPE gp_type) {
       auto &gamepad = gamepads[id.globalIndex];
       assert(!gamepad.gp);
 
       gamepad.client_relative_index = id.clientRelativeIndex;
       gamepad.last_report_ts = std::chrono::steady_clock::now();
-      gamepad.dualshock4 = dualshock4;
-      gamepad.state = {};
-      gamepad.pointer_id_map.clear();
 
-      // Establish a connection to the driver if we don't have one yet
-      if (!runtime && !connect()) {
-        return -1;
+      // Establish a connect to the ViGEm driver if we don't have one yet
+      if (!client) {
+        BOOST_LOG(debug) << "Connecting to ViGEmBus driver"sv;
+        client.reset(vigem_alloc());
+
+        auto status = vigem_connect(client.get());
+        if (!VIGEM_SUCCESS(status)) {
+          BOOST_LOG(warning) << "Couldn't setup connection to ViGEm for gamepad support ["sv << util::hex(status).to_string_view() << ']';
+          client.reset();
+          return -1;
+        }
       }
 
-      const auto profile = dualshock4 ? padbus::profiles::dualshock4() : padbus::profiles::xbox_360();
-      auto created = runtime->create_gamepad(profile);
-      if (!created) {
-        BOOST_LOG(error) << "Couldn't add gamepad to the PadBus runtime ["sv << status_text(created.status) << ']';
-        return -1;
-      }
+      if (gp_type == Xbox360Wired) {
+        gamepad.gp.reset(vigem_target_x360_alloc());
+        XUSB_REPORT_INIT(&gamepad.report.x360);
+      } else {
+        gamepad.gp.reset(vigem_target_ds4_alloc());
 
-      gamepad.gp = std::move(created.gamepad);
+        // There is no equivalent DS4_REPORT_EX_INIT()
+        gamepad.report.ds4 = ds4_report_init_ex;
 
-      if (dualshock4) {
         // Set initial accelerometer and gyro state
-        gamepad.state.acceleration = gamepad::ds4_acceleration(0.0f, EARTH_G, 0.0f);
-        gamepad.state.gyroscope = gamepad::ds4_gyroscope(0.0f, 0.0f, 0.0f);
+        ds4_update_motion(gamepad, LI_MOTION_TYPE_ACCEL, 0.0f, EARTH_G, 0.0f);
+        ds4_update_motion(gamepad, LI_MOTION_TYPE_GYRO, 0.0f, 0.0f, 0.0f);
 
         // Request motion events from the client at 100 Hz
-        gamepad.feedback_queue = std::move(feedback_queue);
-        gamepad.feedback_queue->raise(gamepad_feedback_msg_t::make_motion_event_state(gamepad.client_relative_index, LI_MOTION_TYPE_ACCEL, 100));
-        gamepad.feedback_queue->raise(gamepad_feedback_msg_t::make_motion_event_state(gamepad.client_relative_index, LI_MOTION_TYPE_GYRO, 100));
-      } else {
-        gamepad.feedback_queue = std::move(feedback_queue);
+        feedback_queue->raise(gamepad_feedback_msg_t::make_motion_event_state(gamepad.client_relative_index, LI_MOTION_TYPE_ACCEL, 100));
+        feedback_queue->raise(gamepad_feedback_msg_t::make_motion_event_state(gamepad.client_relative_index, LI_MOTION_TYPE_GYRO, 100));
+
+        // We support pointer index 0 and 1
+        gamepad.available_pointers = std::byte {0x3};
       }
 
-      gamepad.gp->set_output_callback([this, index = id.globalIndex](const padbus::GamepadOutput &output) {
-        switch (output.kind) {
-          case padbus::GamepadOutputKind::rumble:
-            BOOST_LOG(debug) << "largeMotor: "sv << output.low_frequency_rumble << std::endl
-                             << "smallMotor: "sv << output.high_frequency_rumble;
-            task_pool.push(&padbus_backend_t::rumble, this, index, output.low_frequency_rumble, output.high_frequency_rumble);
-            break;
-          case padbus::GamepadOutputKind::rgb_led:
-            task_pool.push(&padbus_backend_t::set_rgb_led, this, index, output.red, output.green, output.blue);
-            break;
-          default:
-            break;
-        }
-      });
+      auto status = vigem_target_add(client.get(), gamepad.gp.get());
+      if (!VIGEM_SUCCESS(status)) {
+        BOOST_LOG(error) << "Couldn't add Gamepad to ViGEm connection ["sv << util::hex(status).to_string_view() << ']';
+
+        return -1;
+      }
+
+      gamepad.feedback_queue = std::move(feedback_queue);
+
+      if (gp_type == Xbox360Wired) {
+        status = vigem_target_x360_register_notification(client.get(), gamepad.gp.get(), x360_notify, this);
+      } else {
+        status = vigem_target_ds4_register_notification(client.get(), gamepad.gp.get(), ds4_notify, this);
+      }
+
+      if (!VIGEM_SUCCESS(status)) {
+        BOOST_LOG(warning) << "Couldn't register notifications for rumble support ["sv << util::hex(status).to_string_view() << ']';
+      }
 
       return 0;
     }
 
     /**
-     * @brief Route an existing gamepad's feedback to a resumed client.
+     * @brief Route an existing ViGEm gamepad's feedback to a resumed client.
      *
      * @param id Global and client-relative identifiers for the resumed controller.
      * @param feedback_queue Queue used to return gamepad feedback to the resumed client.
@@ -380,17 +354,8 @@ namespace platf {
       }
 
       auto &gamepad = gamepads[id.globalIndex];
-      if (!gamepad.gp || !gamepad.gp->is_open()) {
+      if (!gamepad.gp || !vigem_target_is_attached(gamepad.gp.get())) {
         return -1;
-      }
-
-      if (!gamepad.gp->is_attached()) {
-        // The driver dropped the target, for example after a bus restart
-        const auto status = gamepad.gp->reattach();
-        if (!status.ok() || !gamepad.gp->is_attached()) {
-          BOOST_LOG(warning) << "Couldn't reattach gamepad to PadBus ["sv << status_text(status) << ']';
-          return -1;
-        }
       }
 
       gamepad.client_relative_index = id.clientRelativeIndex;
@@ -398,7 +363,7 @@ namespace platf {
       gamepad.last_rumble = {};
       gamepad.last_rgb_led = {};
 
-      if (gamepad.feedback_queue && gamepad.dualshock4) {
+      if (gamepad.feedback_queue && vigem_target_get_type(gamepad.gp.get()) == DualShock4Wired) {
         gamepad.feedback_queue->raise(gamepad_feedback_msg_t::make_motion_event_state(id.clientRelativeIndex, LI_MOTION_TYPE_ACCEL, 100));
         gamepad.feedback_queue->raise(gamepad_feedback_msg_t::make_motion_event_state(id.clientRelativeIndex, LI_MOTION_TYPE_GYRO, 100));
       }
@@ -418,160 +383,155 @@ namespace platf {
         gamepad.repeat_task = nullptr;
       }
 
-      if (gamepad.gp) {
-        if (const auto status = gamepad.gp->close(); !status.ok()) {
-          BOOST_LOG(warning) << "Couldn't detach gamepad from PadBus ["sv << status_text(status) << ']';
+      if (gamepad.gp && vigem_target_is_attached(gamepad.gp.get())) {
+        auto status = vigem_target_remove(client.get(), gamepad.gp.get());
+        if (!VIGEM_SUCCESS(status)) {
+          BOOST_LOG(warning) << "Couldn't detach gamepad from ViGEm ["sv << util::hex(status).to_string_view() << ']';
         }
-        gamepad.gp.reset();
       }
 
-      // Drop the runtime if we just removed the last gamepad
-      const auto attached = std::any_of(gamepads.begin(), gamepads.end(), [](const gamepad_context_t &other) {
-        return other.gp != nullptr;
-      });
-      if (!attached) {
-        BOOST_LOG(debug) << "Disconnecting from PadBus driver"sv;
-        runtime.reset();
+      gamepad.gp.reset();
+
+      // Disconnect from ViGEm if we just removed the last gamepad
+      bool disconnect = true;
+      for (auto &attached_gamepad : gamepads) {
+        if (attached_gamepad.gp && vigem_target_is_attached(attached_gamepad.gp.get())) {
+          disconnect = false;
+          break;
+        }
+      }
+      if (disconnect) {
+        BOOST_LOG(debug) << "Disconnecting from ViGEmBus driver"sv;
+        vigem_disconnect(client.get());
+        client.reset();
       }
     }
 
     /**
      * @brief Pass rumble data back to the client.
-     * @param index The gamepad index.
-     * @param low_frequency Low frequency motor strength.
-     * @param high_frequency High frequency motor strength.
+     * @param target The gamepad.
+     * @param largeMotor The large motor.
+     * @param smallMotor The small motor.
      */
-    void rumble(int index, std::uint16_t low_frequency, std::uint16_t high_frequency) {
-      auto &gamepad = gamepads[index];
-      if (!gamepad.gp || !gamepad.feedback_queue) {
-        return;
-      }
+    void rumble(target_t::pointer target, std::uint8_t largeMotor, std::uint8_t smallMotor) {
+      for (int x = 0; x < gamepads.size(); ++x) {
+        auto &gamepad = gamepads[x];
 
-      // Don't resend duplicate rumble data
-      if (high_frequency == gamepad.last_rumble.data.rumble.highfreq && low_frequency == gamepad.last_rumble.data.rumble.lowfreq) {
-        return;
+        if (gamepad.gp.get() == target) {
+          // Convert from 8-bit to 16-bit values
+          const auto normalizedLargeMotor = vigem::scale_rumble(largeMotor);
+          // Don't resend duplicate rumble data
+          if (const auto normalizedSmallMotor = vigem::scale_rumble(smallMotor); normalizedSmallMotor != gamepad.last_rumble.data.rumble.highfreq || normalizedLargeMotor != gamepad.last_rumble.data.rumble.lowfreq) {
+            // We have to use the client-relative index when communicating back to the client
+            gamepad_feedback_msg_t msg = gamepad_feedback_msg_t::make_rumble(
+              gamepad.client_relative_index,
+              normalizedLargeMotor,
+              normalizedSmallMotor
+            );
+            gamepad.feedback_queue->raise(msg);
+            gamepad.last_rumble = msg;
+          }
+          return;
+        }
       }
-
-      // We have to use the client-relative index when communicating back to the client
-      gamepad_feedback_msg_t msg = gamepad_feedback_msg_t::make_rumble(
-        gamepad.client_relative_index,
-        low_frequency,
-        high_frequency
-      );
-      gamepad.feedback_queue->raise(msg);
-      gamepad.last_rumble = msg;
     }
 
     /**
      * @brief Pass RGB LED data back to the client.
-     * @param index The gamepad index.
+     * @param target The gamepad.
      * @param r The red channel.
-     * @param g The green channel.
-     * @param b The blue channel.
+     * @param g The red channel.
+     * @param b The red channel.
      */
-    void set_rgb_led(int index, std::uint8_t r, std::uint8_t g, std::uint8_t b) {
-      auto &gamepad = gamepads[index];
-      if (!gamepad.gp || !gamepad.feedback_queue) {
-        return;
-      }
+    void set_rgb_led(target_t::pointer target, std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+      for (int x = 0; x < gamepads.size(); ++x) {
+        auto &gamepad = gamepads[x];
 
-      // Don't resend duplicate RGB data
-      if (r == gamepad.last_rgb_led.data.rgb_led.r && g == gamepad.last_rgb_led.data.rgb_led.g && b == gamepad.last_rgb_led.data.rgb_led.b) {
-        return;
-      }
-
-      // We have to use the client-relative index when communicating back to the client
-      gamepad_feedback_msg_t msg = gamepad_feedback_msg_t::make_rgb_led(gamepad.client_relative_index, r, g, b);
-      gamepad.feedback_queue->raise(msg);
-      gamepad.last_rgb_led = msg;
-    }
-
-    /**
-     * @brief Submit the cached state of one gamepad.
-     * @param index The gamepad index.
-     */
-    void submit(int index) {
-      auto &gamepad = gamepads[index];
-      if (!gamepad.gp) {
-        return;
-      }
-
-      if (const auto status = gamepad.gp->submit(gamepad.state); !status.ok()) {
-        BOOST_LOG(warning) << "Couldn't send gamepad input to PadBus ["sv << status_text(status) << ']';
-        return;
-      }
-
-      gamepad.last_report_ts = std::chrono::steady_clock::now();
-
-      // Repeat at least every 100ms to keep the DualShock 4 timestamp advancing
-      if (gamepad.dualshock4) {
-        if (gamepad.repeat_task) {
-          task_pool.cancel(gamepad.repeat_task);
+        if (gamepad.gp.get() == target) {
+          // Don't resend duplicate RGB data
+          if (r != gamepad.last_rgb_led.data.rgb_led.r || g != gamepad.last_rgb_led.data.rgb_led.g || b != gamepad.last_rgb_led.data.rgb_led.b) {
+            // We have to use the client-relative index when communicating back to the client
+            gamepad_feedback_msg_t msg = gamepad_feedback_msg_t::make_rgb_led(gamepad.client_relative_index, r, g, b);
+            gamepad.feedback_queue->raise(msg);
+            gamepad.last_rgb_led = msg;
+          }
+          return;
         }
-        gamepad.repeat_task = task_pool.pushDelayed(&padbus_backend_t::repeat_submit, 100ms, this, index).task_id;
       }
     }
 
     /**
-     * @brief Resubmit a DualShock 4 report so its timestamp keeps moving.
-     * @param index The gamepad index.
+     * @brief Detach all virtual gamepads and disconnect from the ViGEm client.
      */
-    void repeat_submit(int index) {
-      gamepads[index].repeat_task = nullptr;
-      submit(index);
-    }
-
-    /**
-     * @brief Detach all virtual gamepads and destroy the runtime.
-     */
-    ~padbus_backend_t() {
-      for (auto &gamepad : gamepads) {
-        if (gamepad.repeat_task) {
-          task_pool.cancel(gamepad.repeat_task);
-          gamepad.repeat_task = nullptr;
+    ~vigem_t() {
+      if (client) {
+        for (auto &gamepad : gamepads) {
+          if (gamepad.gp && vigem_target_is_attached(gamepad.gp.get())) {
+            auto status = vigem_target_remove(client.get(), gamepad.gp.get());
+            if (!VIGEM_SUCCESS(status)) {
+              BOOST_LOG(warning) << "Couldn't detach gamepad from ViGEm ["sv << util::hex(status).to_string_view() << ']';
+            }
+          }
         }
-        gamepad.gp.reset();
+
+        vigem_disconnect(client.get());
       }
-      runtime.reset();
     }
 
-    std::vector<gamepad_context_t> gamepads;  ///< Virtual gamepads owned by this runtime.
-    std::unique_ptr<padbus::Runtime> runtime;  ///< PadBus runtime used to create virtual gamepads.
+    std::vector<gamepad_context_t> gamepads;  ///< Virtual gamepads owned by this ViGEm connection.
 
-  private:
-    /**
-     * @brief Create a PadBus runtime when the driver is available.
-     *
-     * @return True when the runtime can create devices.
-     */
-    bool connect() {
-      BOOST_LOG(debug) << "Connecting to PadBus driver"sv;
-
-      runtime = padbus::Runtime::create(runtime_options());
-      if (!runtime || !runtime->capabilities().available) {
-        runtime.reset();
-        return false;
-      }
-
-      return true;
-    }
+    client_t client;  ///< ViGEm client connection used to create virtual gamepads.
   };
+
+  void CALLBACK x360_notify(
+    client_t::pointer client,
+    target_t::pointer target,
+    std::uint8_t largeMotor,
+    std::uint8_t smallMotor,
+    std::uint8_t /* led_number */,
+    void *userdata  // NOSONAR(cpp:S5008): ViGEm notification callbacks require a void pointer for user data.
+  ) {
+    BOOST_LOG(debug)
+      << "largeMotor: "sv << (int) largeMotor << std::endl
+      << "smallMotor: "sv << (int) smallMotor;
+
+    task_pool.push(&vigem_t::rumble, (vigem_t *) userdata, target, largeMotor, smallMotor);
+  }
+
+  void CALLBACK ds4_notify(
+    client_t::pointer client,
+    target_t::pointer target,
+    std::uint8_t largeMotor,
+    std::uint8_t smallMotor,
+    DS4_LIGHTBAR_COLOR led_color,
+    void *userdata  // NOSONAR(cpp:S5008): ViGEm notification callbacks require a void pointer for user data.
+  ) {
+    BOOST_LOG(debug)
+      << "largeMotor: "sv << (int) largeMotor << std::endl
+      << "smallMotor: "sv << (int) smallMotor << std::endl
+      << "LED: "sv << util::hex(led_color.Red).to_string_view() << ' '
+      << util::hex(led_color.Green).to_string_view() << ' '
+      << util::hex(led_color.Blue).to_string_view() << std::endl;
+
+    task_pool.push(&vigem_t::rumble, (vigem_t *) userdata, target, largeMotor, smallMotor);
+    task_pool.push(&vigem_t::set_rgb_led, (vigem_t *) userdata, target, led_color.Red, led_color.Green, led_color.Blue);
+  }
 
   /**
    * @brief Global input backend handles shared by clients.
    */
   struct input_raw_t {
-    std::unique_ptr<padbus_backend_t> backend;  ///< PadBus gamepad context.
+    std::unique_ptr<vigem_t> vigem;  ///< ViGEm gamepad context.
   };
 
   /**
-   * @brief Return the gamepad choices supported by PadBus.
+   * @brief Return the gamepad choices supported by ViGEmBus.
    *
-   * @param available Whether Solstice can connect to PadBus.
+   * @param available Whether Solstice can connect to ViGEmBus.
    * @return Automatic, Xbox 360, and DualShock 4 choices with availability metadata.
    */
-  std::vector<supported_gamepad_t> padbus_supported_gamepads(const bool available) {
-    const auto reason = available ? "" : "gamepads.padbus-not-available";
+  std::vector<supported_gamepad_t> vigembus_supported_gamepads(const bool available) {
+    const auto reason = available ? "" : "gamepads.vigembus-not-available";
     return {
       {"auto", available, reason},
       {"x360", available, reason},
@@ -583,9 +543,9 @@ namespace platf {
     input_t result {new input_raw_t {}};
 
     if (auto &raw = *result; config::input.controller) {
-      auto backend = std::make_unique<padbus_backend_t>();
-      if (!backend->init()) {
-        raw.backend = std::move(backend);
+      auto vigem = std::make_unique<vigem_t>();
+      if (!vigem->init()) {
+        raw.vigem = std::move(vigem);
       }
     }
 
@@ -593,22 +553,22 @@ namespace platf {
   }
 
   /**
-   * @brief Create the PadBus context if it is not already available.
+   * @brief Create the ViGEm context if it is not already available.
    *
    * @param raw Platform input context.
-   * @return True when PadBus is available.
+   * @return True when ViGEm is available.
    */
-  bool ensure_backend(input_raw_t *raw) {
-    if (raw->backend) {
+  bool ensure_vigem(input_raw_t *raw) {
+    if (raw->vigem) {
       return true;
     }
 
-    auto backend = std::make_unique<padbus_backend_t>();
-    if (backend->init()) {
+    auto vigem = std::make_unique<vigem_t>();
+    if (vigem->init()) {
       return false;
     }
 
-    raw->backend = std::move(backend);
+    raw->vigem = std::move(vigem);
     return true;
   }
 
@@ -707,36 +667,36 @@ namespace platf {
   int alloc_gamepad(input_t &input, const gamepad_id_t &id, const gamepad_arrival_t &metadata, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
 
-    if (!ensure_backend(raw)) {
+    if (!ensure_vigem(raw)) {
       return -1;
     }
 
-    bool dualshock4;
+    VIGEM_TARGET_TYPE selectedGamepadType;
 
     if (config::input.gamepad == "x360"sv) {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be Xbox 360 controller (manual selection)"sv;
-      dualshock4 = false;
+      selectedGamepadType = Xbox360Wired;
     } else if (config::input.gamepad == "ds4"sv) {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (manual selection)"sv;
-      dualshock4 = true;
+      selectedGamepadType = DualShock4Wired;
     } else if (metadata.type == LI_CTYPE_PS) {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (auto-selected by client-reported type)"sv;
-      dualshock4 = true;
+      selectedGamepadType = DualShock4Wired;
     } else if (metadata.type == LI_CTYPE_XBOX) {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be Xbox 360 controller (auto-selected by client-reported type)"sv;
-      dualshock4 = false;
+      selectedGamepadType = Xbox360Wired;
     } else if (config::input.motion_as_ds4 && (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (auto-selected by motion sensor presence)"sv;
-      dualshock4 = true;
+      selectedGamepadType = DualShock4Wired;
     } else if (config::input.touchpad_as_ds4 && (metadata.capabilities & LI_CCAP_TOUCHPAD)) {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be DualShock 4 controller (auto-selected by touchpad presence)"sv;
-      dualshock4 = true;
+      selectedGamepadType = DualShock4Wired;
     } else {
       BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be Xbox 360 controller (default)"sv;
-      dualshock4 = false;
+      selectedGamepadType = Xbox360Wired;
     }
 
-    if (!dualshock4) {
+    if (selectedGamepadType == Xbox360Wired) {
       if (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO)) {
         BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " has motion sensors, but they are not usable when emulating an Xbox 360 controller"sv;
       }
@@ -746,7 +706,7 @@ namespace platf {
       if (metadata.capabilities & LI_CCAP_RGB_LED) {
         BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " has an RGB LED, but it is not usable when emulating an Xbox 360 controller"sv;
       }
-    } else {
+    } else if (selectedGamepadType == DualShock4Wired) {
       if (!(metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
         BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " is emulating a DualShock 4 controller, but the client gamepad doesn't have motion sensors active"sv;
       }
@@ -755,27 +715,270 @@ namespace platf {
       }
     }
 
-    return raw->backend->alloc_gamepad_internal(id, feedback_queue, dualshock4);
+    return raw->vigem->alloc_gamepad_internal(id, feedback_queue, selectedGamepadType);
   }
 
   int rebind_gamepad(input_t &input, const gamepad_id_t &id, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
 
-    if (!raw->backend) {
+    if (!raw->vigem) {
       return -1;
     }
 
-    return raw->backend->rebind_gamepad(id, std::move(feedback_queue));
+    return raw->vigem->rebind_gamepad(id, std::move(feedback_queue));
   }
 
   void free_gamepad(input_t &input, int nr) {
     auto raw = (input_raw_t *) input.get();
 
-    if (!raw->backend) {
+    if (!raw->vigem) {
       return;
     }
 
-    raw->backend->free_target(nr);
+    raw->vigem->free_target(nr);
+  }
+
+  /**
+   * @brief Converts the standard button flags into X360 format.
+   * @param gamepad_state The gamepad button/axis state sent from the client.
+   * @return XUSB_BUTTON flags.
+   */
+  static XUSB_BUTTON x360_buttons(const gamepad_state_t &gamepad_state) {
+    int buttons {};
+
+    auto flags = gamepad_state.buttonFlags;
+    if (flags & DPAD_UP) {
+      buttons |= XUSB_GAMEPAD_DPAD_UP;
+    }
+    if (flags & DPAD_DOWN) {
+      buttons |= XUSB_GAMEPAD_DPAD_DOWN;
+    }
+    if (flags & DPAD_LEFT) {
+      buttons |= XUSB_GAMEPAD_DPAD_LEFT;
+    }
+    if (flags & DPAD_RIGHT) {
+      buttons |= XUSB_GAMEPAD_DPAD_RIGHT;
+    }
+    if (flags & START) {
+      buttons |= XUSB_GAMEPAD_START;
+    }
+    if (flags & BACK) {
+      buttons |= XUSB_GAMEPAD_BACK;
+    }
+    if (flags & LEFT_STICK) {
+      buttons |= XUSB_GAMEPAD_LEFT_THUMB;
+    }
+    if (flags & RIGHT_STICK) {
+      buttons |= XUSB_GAMEPAD_RIGHT_THUMB;
+    }
+    if (flags & LEFT_BUTTON) {
+      buttons |= XUSB_GAMEPAD_LEFT_SHOULDER;
+    }
+    if (flags & RIGHT_BUTTON) {
+      buttons |= XUSB_GAMEPAD_RIGHT_SHOULDER;
+    }
+    if (flags & (HOME | MISC_BUTTON)) {
+      buttons |= XUSB_GAMEPAD_GUIDE;
+    }
+    if (flags & A) {
+      buttons |= XUSB_GAMEPAD_A;
+    }
+    if (flags & B) {
+      buttons |= XUSB_GAMEPAD_B;
+    }
+    if (flags & X) {
+      buttons |= XUSB_GAMEPAD_X;
+    }
+    if (flags & Y) {
+      buttons |= XUSB_GAMEPAD_Y;
+    }
+
+    return (XUSB_BUTTON) buttons;
+  }
+
+  /**
+   * @brief Update an X360 report from Solstice gamepad state.
+   * @param gamepad The gamepad to update.
+   * @param gamepad_state The gamepad button/axis state sent from the client.
+   */
+  static void x360_update_state(gamepad_context_t &gamepad, const gamepad_state_t &gamepad_state) {
+    auto &report = gamepad.report.x360;
+
+    report.wButtons = x360_buttons(gamepad_state);
+    report.bLeftTrigger = gamepad_state.lt;
+    report.bRightTrigger = gamepad_state.rt;
+    report.sThumbLX = gamepad_state.lsX;
+    report.sThumbLY = gamepad_state.lsY;
+    report.sThumbRX = gamepad_state.rsX;
+    report.sThumbRY = gamepad_state.rsY;
+  }
+
+  static DS4_DPAD_DIRECTIONS ds4_dpad(const gamepad_state_t &gamepad_state) {
+    if (auto flags = gamepad_state.buttonFlags; flags & DPAD_UP) {
+      if (flags & DPAD_RIGHT) {
+        return DS4_BUTTON_DPAD_NORTHEAST;
+      } else if (flags & DPAD_LEFT) {
+        return DS4_BUTTON_DPAD_NORTHWEST;
+      } else {
+        return DS4_BUTTON_DPAD_NORTH;
+      }
+    }
+
+    else if (flags & DPAD_DOWN) {
+      if (flags & DPAD_RIGHT) {
+        return DS4_BUTTON_DPAD_SOUTHEAST;
+      } else if (flags & DPAD_LEFT) {
+        return DS4_BUTTON_DPAD_SOUTHWEST;
+      } else {
+        return DS4_BUTTON_DPAD_SOUTH;
+      }
+    }
+
+    else if (flags & DPAD_RIGHT) {
+      return DS4_BUTTON_DPAD_EAST;
+    }
+
+    else if (flags & DPAD_LEFT) {
+      return DS4_BUTTON_DPAD_WEST;
+    }
+
+    return DS4_BUTTON_DPAD_NONE;
+  }
+
+  /**
+   * @brief Converts the standard button flags into DS4 format.
+   * @param gamepad_state The gamepad button/axis state sent from the client.
+   * @return DS4_BUTTONS flags.
+   */
+  static DS4_BUTTONS ds4_buttons(const gamepad_state_t &gamepad_state) {
+    int buttons {};
+
+    auto flags = gamepad_state.buttonFlags;
+    if (flags & LEFT_STICK) {
+      buttons |= DS4_BUTTON_THUMB_LEFT;
+    }
+    if (flags & RIGHT_STICK) {
+      buttons |= DS4_BUTTON_THUMB_RIGHT;
+    }
+    if (flags & LEFT_BUTTON) {
+      buttons |= DS4_BUTTON_SHOULDER_LEFT;
+    }
+    if (flags & RIGHT_BUTTON) {
+      buttons |= DS4_BUTTON_SHOULDER_RIGHT;
+    }
+    if (flags & START) {
+      buttons |= DS4_BUTTON_OPTIONS;
+    }
+    if (flags & BACK) {
+      buttons |= DS4_BUTTON_SHARE;
+    }
+    if (flags & A) {
+      buttons |= DS4_BUTTON_CROSS;
+    }
+    if (flags & B) {
+      buttons |= DS4_BUTTON_CIRCLE;
+    }
+    if (flags & X) {
+      buttons |= DS4_BUTTON_SQUARE;
+    }
+    if (flags & Y) {
+      buttons |= DS4_BUTTON_TRIANGLE;
+    }
+
+    if (gamepad_state.lt > 0) {
+      buttons |= DS4_BUTTON_TRIGGER_LEFT;
+    }
+    if (gamepad_state.rt > 0) {
+      buttons |= DS4_BUTTON_TRIGGER_RIGHT;
+    }
+
+    return (DS4_BUTTONS) buttons;
+  }
+
+  static DS4_SPECIAL_BUTTONS ds4_special_buttons(const gamepad_state_t &gamepad_state) {
+    int buttons {};
+
+    if (gamepad_state.buttonFlags & HOME) {
+      buttons |= DS4_SPECIAL_BUTTON_PS;
+    }
+
+    // Allow either PS4/PS5 clickpad button or Xbox Series X share button to activate DS4 clickpad
+    if (gamepad_state.buttonFlags & (TOUCHPAD_BUTTON | MISC_BUTTON)) {
+      buttons |= DS4_SPECIAL_BUTTON_TOUCHPAD;
+    }
+
+    // PlayStation-style emulation: check if BACK should also trigger touchpad click
+    if (config::input.ds4_back_as_touchpad_click && (gamepad_state.buttonFlags & BACK)) {
+      buttons |= DS4_SPECIAL_BUTTON_TOUCHPAD;
+    }
+
+    return (DS4_SPECIAL_BUTTONS) buttons;
+  }
+
+  static std::uint8_t to_ds4_triggerX(std::int16_t v) {
+    return (v + std::numeric_limits<std::uint16_t>::max() / 2 + 1) / 257;
+  }
+
+  static std::uint8_t to_ds4_triggerY(std::int16_t v) {
+    auto new_v = -((std::numeric_limits<std::uint16_t>::max() / 2 + v - 1)) / 257;
+
+    return new_v == 0 ? 0xFF : (std::uint8_t) new_v;
+  }
+
+  /**
+   * @brief Update a DS4 report from Solstice gamepad state.
+   * @param gamepad The gamepad to update.
+   * @param gamepad_state The gamepad button/axis state sent from the client.
+   */
+  static void ds4_update_state(gamepad_context_t &gamepad, const gamepad_state_t &gamepad_state) {
+    auto &report = gamepad.report.ds4.Report;
+
+    report.wButtons = static_cast<uint16_t>(ds4_buttons(gamepad_state)) | static_cast<uint16_t>(ds4_dpad(gamepad_state));
+    report.bSpecial = ds4_special_buttons(gamepad_state);
+
+    report.bTriggerL = gamepad_state.lt;
+    report.bTriggerR = gamepad_state.rt;
+
+    report.bThumbLX = to_ds4_triggerX(gamepad_state.lsX);
+    report.bThumbLY = to_ds4_triggerY(gamepad_state.lsY);
+
+    report.bThumbRX = to_ds4_triggerX(gamepad_state.rsX);
+    report.bThumbRY = to_ds4_triggerY(gamepad_state.rsY);
+  }
+
+  /**
+   * @brief Sends DS4 input with updated timestamps and repeats to keep timestamp updated.
+   * @details Some applications require updated timestamps values to register DS4 input.
+   * @param vigem The global ViGEm context object.
+   * @param nr The global gamepad index.
+   */
+  void ds4_update_ts_and_send(vigem_t *vigem, int nr) {
+    auto &gamepad = vigem->gamepads[nr];
+
+    // Cancel any pending updates. We will requeue one here when we're finished.
+    if (gamepad.repeat_task) {
+      task_pool.cancel(gamepad.repeat_task);
+      gamepad.repeat_task = nullptr;
+    }
+
+    if (gamepad.gp && vigem_target_is_attached(gamepad.gp.get())) {
+      auto now = std::chrono::steady_clock::now();
+      auto delta_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now - gamepad.last_report_ts);
+
+      // Timestamp is reported in 5.333us units
+      gamepad.report.ds4.Report.wTimestamp += (uint16_t) (delta_ns.count() / 5333);
+
+      // Send the report to the virtual device
+      auto status = vigem_target_ds4_update_ex(vigem->client.get(), gamepad.gp.get(), gamepad.report.ds4);
+      if (!VIGEM_SUCCESS(status)) {
+        BOOST_LOG(warning) << "Couldn't send gamepad input to ViGEm ["sv << util::hex(status).to_string_view() << ']';
+        return;
+      }
+
+      // Repeat at least every 100ms to keep the 16-bit timestamp field from overflowing
+      gamepad.last_report_ts = now;
+      gamepad.repeat_task = task_pool.pushDelayed(ds4_update_ts_and_send, 100ms, vigem, nr).task_id;
+    }
   }
 
   /**
@@ -787,31 +990,170 @@ namespace platf {
   void gamepad_update(input_t &input, int nr, const gamepad_state_t &gamepad_state) {
     auto raw = (input_raw_t *) input.get();
 
-    auto *backend = raw->backend.get();
+    auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
-    if (!backend) {
+    if (!vigem) {
       return;
     }
 
-    auto &gamepad = backend->gamepads[nr];
+    auto &gamepad = vigem->gamepads[nr];
     if (!gamepad.gp) {
       return;
     }
 
-    gamepad.state.buttons = gamepad::buttons(gamepad_state.buttonFlags, gamepad.dualshock4, config::input.ds4_back_as_touchpad_click);
-    gamepad.state.left_stick = {
-      gamepad::normalize_stick(gamepad_state.lsX),
-      gamepad::normalize_stick(gamepad_state.lsY),
-    };
-    gamepad.state.right_stick = {
-      gamepad::normalize_stick(gamepad_state.rsX),
-      gamepad::normalize_stick(gamepad_state.rsY),
-    };
-    gamepad.state.left_trigger = gamepad::normalize_trigger(gamepad_state.lt);
-    gamepad.state.right_trigger = gamepad::normalize_trigger(gamepad_state.rt);
+    VIGEM_ERROR status;
 
-    backend->submit(nr);
+    if (vigem_target_get_type(gamepad.gp.get()) == Xbox360Wired) {
+      x360_update_state(gamepad, gamepad_state);
+      status = vigem_target_x360_update(vigem->client.get(), gamepad.gp.get(), gamepad.report.x360);
+      if (!VIGEM_SUCCESS(status)) {
+        BOOST_LOG(warning) << "Couldn't send gamepad input to ViGEm ["sv << util::hex(status).to_string_view() << ']';
+      }
+    } else {
+      ds4_update_state(gamepad, gamepad_state);
+      ds4_update_ts_and_send(vigem, nr);
+    }
+  }
+
+  std::uint16_t vigem::scale_rumble(std::uint8_t strength) {
+    return strength * 256;
+  }
+
+  bool vigem::update_touch(DS4_REPORT_EX &ds4_report, std::map<std::uint32_t, std::uint8_t> &pointer_id_map, std::byte &available_pointers, const gamepad_touch_t &touch) {
+    auto &report = ds4_report.Report;
+
+    uint8_t pointerIndex {};
+    if (touch.eventType == LI_TOUCH_EVENT_DOWN) {
+      if ((available_pointers & std::byte {0x1}) != std::byte {0}) {
+        // Reserve pointer index 0 for this touch
+        pointer_id_map[touch.pointerId] = pointerIndex = 0;
+        available_pointers &= ~(std::byte {1} << pointerIndex);
+
+        // Set pointer 0 down
+        report.sCurrentTouch.bIsUpTrackingNum1 = std::to_integer<uint8_t>(std::byte {report.sCurrentTouch.bIsUpTrackingNum1} & ~std::byte {0x80});
+        report.sCurrentTouch.bIsUpTrackingNum1++;
+      } else if ((available_pointers & std::byte {0x2}) != std::byte {0}) {
+        // Reserve pointer index 1 for this touch
+        pointer_id_map[touch.pointerId] = pointerIndex = 1;
+        available_pointers &= ~(std::byte {1} << pointerIndex);
+
+        // Set pointer 1 down
+        report.sCurrentTouch.bIsUpTrackingNum2 = std::to_integer<uint8_t>(std::byte {report.sCurrentTouch.bIsUpTrackingNum2} & ~std::byte {0x80});
+        report.sCurrentTouch.bIsUpTrackingNum2++;
+      } else {
+        BOOST_LOG(warning) << "No more free pointer indices! Did the client miss an touch up event?"sv;
+        return false;
+      }
+    } else if (touch.eventType == LI_TOUCH_EVENT_CANCEL_ALL) {
+      // Raise both pointers
+      report.sCurrentTouch.bIsUpTrackingNum1 = std::to_integer<uint8_t>(std::byte {report.sCurrentTouch.bIsUpTrackingNum1} | std::byte {0x80});
+      report.sCurrentTouch.bIsUpTrackingNum2 = std::to_integer<uint8_t>(std::byte {report.sCurrentTouch.bIsUpTrackingNum2} | std::byte {0x80});
+
+      // Remove all pointer index mappings
+      pointer_id_map.clear();
+
+      // All pointers are now available
+      available_pointers = std::byte {0x3};
+    } else {
+      auto i = pointer_id_map.find(touch.pointerId);
+      if (i == pointer_id_map.end()) {
+        BOOST_LOG(warning) << "Pointer ID not found! Did the client miss a touch down event?"sv;
+        return false;
+      }
+
+      pointerIndex = (*i).second;
+
+      if (touch.eventType == LI_TOUCH_EVENT_UP || touch.eventType == LI_TOUCH_EVENT_CANCEL) {
+        // Remove the pointer index mapping
+        pointer_id_map.erase(i);
+
+        // Set pointer up
+        if (pointerIndex == 0) {
+          report.sCurrentTouch.bIsUpTrackingNum1 = std::to_integer<uint8_t>(std::byte {report.sCurrentTouch.bIsUpTrackingNum1} | std::byte {0x80});
+        } else {
+          report.sCurrentTouch.bIsUpTrackingNum2 = std::to_integer<uint8_t>(std::byte {report.sCurrentTouch.bIsUpTrackingNum2} | std::byte {0x80});
+        }
+
+        // Free the pointer index
+        available_pointers |= (std::byte {1} << pointerIndex);
+      } else if (touch.eventType != LI_TOUCH_EVENT_MOVE) {
+        BOOST_LOG(warning) << "Unsupported touch event for gamepad: "sv << (uint32_t) touch.eventType;
+        return false;
+      }
+    }
+
+    // Touchpad is 1920x943 according to ViGEm
+    uint16_t x = touch.x * 1920;
+    uint16_t y = touch.y * 943;
+    std::array<std::byte, 3> touchData = {
+      static_cast<std::byte>(x & 0xFF),  // Low 8 bits of X
+      static_cast<std::byte>((x >> 8 & 0x0F) | (y & 0x0F) << 4),  // High 4 bits of X and low 4 bits of Y
+      static_cast<std::byte>(y >> 4 & 0xFF)  // High 8 bits of Y
+    };
+
+    report.sCurrentTouch.bPacketCounter++;
+    if (touch.eventType != LI_TOUCH_EVENT_CANCEL_ALL) {
+      if (pointerIndex == 0) {
+        memcpy(report.sCurrentTouch.bTouchData1, touchData.data(), touchData.size());
+      } else {
+        memcpy(report.sCurrentTouch.bTouchData2, touchData.data(), touchData.size());
+      }
+    }
+
+    return true;
+  }
+
+  void vigem::update_battery(DS4_REPORT_EX &ds4_report, const gamepad_battery_t &battery) {
+    // For details on the report format of these battery level fields, see:
+    // https://github.com/torvalds/linux/blob/946c6b59c56dc6e7d8364a8959cb36bf6d10bc37/drivers/hid/hid-playstation.c#L2305-L2314
+
+    auto &report = ds4_report.Report;
+    auto battery_status = std::byte {report.bBatteryLvlSpecial};
+
+    // Update the battery state if it is known
+    switch (battery.state) {
+      case LI_BATTERY_STATE_CHARGING:
+      case LI_BATTERY_STATE_DISCHARGING:
+        if (battery.state == LI_BATTERY_STATE_CHARGING) {
+          battery_status |= std::byte {0x10};  // Connected via USB
+        } else {
+          battery_status &= ~std::byte {0x10};  // Not connected via USB
+        }
+
+        // If there was a special battery status set before, clear that and
+        // initialize the battery level to 50%. It will be overwritten below
+        // if the actual percentage is known.
+        if ((battery_status & std::byte {0xF}) > std::byte {0xA}) {
+          battery_status = (battery_status & ~std::byte {0xF}) | std::byte {0x5};
+        }
+        break;
+
+      case LI_BATTERY_STATE_FULL:
+        battery_status = std::byte {0x1B};  // USB + Battery Full
+        report.bBatteryLvl = 0xFF;
+        break;
+
+      case LI_BATTERY_STATE_NOT_PRESENT:
+      case LI_BATTERY_STATE_NOT_CHARGING:
+        battery_status = std::byte {0x1F};  // USB + Charging Error
+        break;
+
+      default:
+        break;
+    }
+
+    // Update the battery level if it is known
+    if (battery.percentage != LI_BATTERY_PERCENTAGE_UNKNOWN) {
+      report.bBatteryLvl = battery.percentage * 255 / 100;
+
+      // Don't overwrite low nibble if there's a special status there (see above)
+      if ((battery_status & std::byte {0x10}) != std::byte {0} && (battery_status & std::byte {0xF}) <= std::byte {0xA}) {
+        battery_status = (battery_status & ~std::byte {0xF}) | static_cast<std::byte>((battery.percentage + 5) / 10);
+      }
+    }
+
+    report.bBatteryLvlSpecial = std::to_integer<uint8_t>(battery_status);
   }
 
   /**
@@ -822,25 +1164,25 @@ namespace platf {
   void gamepad_touch(input_t &input, const gamepad_touch_t &touch) {
     auto raw = (input_raw_t *) input.get();
 
-    auto *backend = raw->backend.get();
+    auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
-    if (!backend) {
+    if (!vigem) {
       return;
     }
 
-    auto &gamepad = backend->gamepads[touch.id.globalIndex];
+    auto &gamepad = vigem->gamepads[touch.id.globalIndex];
     if (!gamepad.gp) {
       return;
     }
 
     // Touch is only supported on DualShock 4 controllers
-    if (!gamepad.dualshock4) {
+    if (vigem_target_get_type(gamepad.gp.get()) != DualShock4Wired) {
       return;
     }
 
-    if (gamepad::update_touch(gamepad.state.touchpad_contacts, gamepad.pointer_id_map, touch)) {
-      backend->submit(touch.id.globalIndex);
+    if (vigem::update_touch(gamepad.report.ds4, gamepad.pointer_id_map, gamepad.available_pointers, touch)) {
+      ds4_update_ts_and_send(vigem, touch.id.globalIndex);
     }
   }
 
@@ -852,35 +1194,25 @@ namespace platf {
   void gamepad_motion(input_t &input, const gamepad_motion_t &motion) {
     auto raw = (input_raw_t *) input.get();
 
-    auto *backend = raw->backend.get();
+    auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
-    if (!backend) {
+    if (!vigem) {
       return;
     }
 
-    auto &gamepad = backend->gamepads[motion.id.globalIndex];
+    auto &gamepad = vigem->gamepads[motion.id.globalIndex];
     if (!gamepad.gp) {
       return;
     }
 
     // Motion is only supported on DualShock 4 controllers
-    if (!gamepad.dualshock4) {
+    if (vigem_target_get_type(gamepad.gp.get()) != DualShock4Wired) {
       return;
     }
 
-    switch (motion.motionType) {
-      case LI_MOTION_TYPE_ACCEL:
-        gamepad.state.acceleration = gamepad::ds4_acceleration(motion.x, motion.y, motion.z);
-        break;
-      case LI_MOTION_TYPE_GYRO:
-        gamepad.state.gyroscope = gamepad::ds4_gyroscope(motion.x, motion.y, motion.z);
-        break;
-      default:
-        return;
-    }
-
-    backend->submit(motion.id.globalIndex);
+    ds4_update_motion(gamepad, motion.motionType, motion.x, motion.y, motion.z);
+    ds4_update_ts_and_send(vigem, motion.id.globalIndex);
   }
 
   /**
@@ -891,25 +1223,25 @@ namespace platf {
   void gamepad_battery(input_t &input, const gamepad_battery_t &battery) {
     auto raw = (input_raw_t *) input.get();
 
-    auto *backend = raw->backend.get();
+    auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
-    if (!backend) {
+    if (!vigem) {
       return;
     }
 
-    auto &gamepad = backend->gamepads[battery.id.globalIndex];
+    auto &gamepad = vigem->gamepads[battery.id.globalIndex];
     if (!gamepad.gp) {
       return;
     }
 
     // Battery is only supported on DualShock 4 controllers
-    if (!gamepad.dualshock4) {
+    if (vigem_target_get_type(gamepad.gp.get()) != DualShock4Wired) {
       return;
     }
 
-    gamepad.state.battery = gamepad::battery(battery);
-    backend->submit(battery.id.globalIndex);
+    vigem::update_battery(gamepad.report.ds4, battery);
+    ds4_update_ts_and_send(vigem, battery.id.globalIndex);
   }
 
   void freeInput(input_raw_t *input) {
@@ -919,14 +1251,15 @@ namespace platf {
   std::vector<supported_gamepad_t> &supported_gamepads(input_t *input) {
     static std::vector<supported_gamepad_t> gps;
     if (!input || !input->get()) {
-      gps = padbus_supported_gamepads(false);
+      gps = vigembus_supported_gamepads(false);
       return gps;
     }
 
     const auto raw = (input_raw_t *) input->get();
-    gps = padbus_supported_gamepads(raw->backend != nullptr);
+    gps = vigembus_supported_gamepads(raw->vigem != nullptr);
     return gps;
   }
+
   void move_mouse(input_t & /*input*/, const int deltaX, const int deltaY) {
     INPUT input_event {};
     input_event.type = INPUT_MOUSE;

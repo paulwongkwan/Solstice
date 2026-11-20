@@ -32,7 +32,7 @@
       </RouterLink>
     </div>
 
-    <!-- PadBus driver status -->
+    <!-- ViGEmBus driver status -->
     <div class="alert my-4" :class="virtualInputNotice.alertClass" v-if="virtualInputNotice">
       <div>
         <div class="d-flex align-items-center mb-3">
@@ -178,7 +178,7 @@
         logs: null,
         platform: "",
         controllerEnabled: false,
-        padbus: null,
+        vigembus: null,
         permissions: [],
       }
     },
@@ -202,9 +202,9 @@
         console.log("Pre-Release Version: ", this.preReleaseVersion.version)
 
         try {
-          this.padbus = (await fetch("./api/virtual-input/status").then((r) => r.json())).padbus;
+          this.vigembus = (await fetch("./api/virtual-input/status").then((r) => r.json())).vigembus;
         } catch (e) {
-          console.error("Failed to fetch the PadBus driver status:", e);
+          console.error("Failed to fetch the ViGEmBus driver status:", e);
         }
       } catch (e) {
         console.error(e);
@@ -222,15 +222,15 @@
         return this.permissions.filter(permission => permission.required && permission.verifiable && permission.status !== 'granted');
       },
       /**
-       * Build the PadBus notice shown on the home page.
-       * Warn when virtual gamepads are enabled but PadBus is missing or unsupported.
+       * Build the ViGEmBus notice shown on the home page.
+       * Warn when virtual gamepads are enabled but ViGEmBus is missing or unsupported.
        */
       virtualInputNotice() {
-        if (!this.controllerEnabled || !this.padbus) {
+        if (!this.controllerEnabled || !this.vigembus) {
           return null;
         }
 
-        return this.buildPadbusNotice(this.padbus.installed && this.padbus.version_compatible);
+        return this.buildVigembusNotice(this.vigembus.installed && this.vigembus.version_compatible);
       },
       installedVersionNotStable() {
         if (!this.githubVersion || !this.version) {
@@ -281,25 +281,25 @@
           action: options.action || 'index.review_virtual_input',
           alertClass: warning ? 'alert-warning' : 'alert-info',
           buttonClass: warning ? 'btn-warning' : 'btn-info',
-          to: options.to || '/troubleshooting#padbus',
+          to: options.to || '/troubleshooting#vigembus',
           messages,
           title,
           warning,
         };
       },
       /**
-       * Build the notice for an explicitly selected PadBus backend.
+       * Build the notice for an explicitly selected ViGEmBus backend.
        *
-       * @param {boolean} padbusUsable Whether PadBus is installed and compatible.
-       * @returns {object|null} Warning data, or no notice when PadBus is usable.
+       * @param {boolean} vigembusUsable Whether ViGEmBus is installed and compatible.
+       * @returns {object|null} Warning data, or no notice when ViGEmBus is usable.
        */
-      buildPadbusNotice(padbusUsable) {
-        if (!this.controllerEnabled || padbusUsable) {
+      buildVigembusNotice(vigembusUsable) {
+        if (!this.controllerEnabled || vigembusUsable) {
           return null;
         }
-        return this.buildVirtualInputNotice(true, 'index.padbus_required_title', [{
-          key: this.padbus.installed ? 'index.padbus_outdated_desc' : 'index.padbus_not_installed_desc',
-          params: { version: this.padbus.version, supported_versions: this.padbus.supported_versions },
+        return this.buildVirtualInputNotice(true, 'index.vigembus_required_title', [{
+          key: this.vigembus.installed ? 'index.vigembus_outdated_desc' : 'index.vigembus_not_installed_desc',
+          params: { version: this.vigembus.version, supported_versions: this.vigembus.supported_versions },
         }]);
       },
       convertMarkdownToHtml(markdown) {

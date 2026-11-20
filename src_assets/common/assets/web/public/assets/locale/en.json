@@ -451,9 +451,9 @@
     "review_virtual_input": "Review Virtual Input",
     "version_dirty": "Thank you for helping to make Solstice a better software!",
     "version_latest": "You are running the latest version of Solstice",
-    "padbus_not_installed_desc": "PadBus is selected, but it is not installed or running. Install PadBus or choose a different gamepad driver before using gamepad input.",
-    "padbus_outdated_desc": "PadBus is selected, but the installed version (v{version}) is not supported. Supported versions: {supported_versions}.",
-    "padbus_required_title": "PadBus Is Unavailable",
+    "vigembus_not_installed_desc": "ViGEmBus is selected, but it is not installed or running. Install ViGEmBus or choose a different gamepad driver before using gamepad input.",
+    "vigembus_outdated_desc": "ViGEmBus is selected, but the installed version (v{version}) is not supported. Supported versions: {supported_versions}.",
+    "vigembus_required_title": "ViGEmBus Is Unavailable",
     "welcome": "Hello, Solstice!"
   },
   "navbar": {
@@ -618,11 +618,11 @@
     "unpair_single_success": "However, the device(s) may still be in an active session. Use the 'Force Close' button above to end any open sessions.",
     "unpair_single_unknown": "Unknown Client",
     "unpair_title": "Unpair Devices",
-    "padbus_driver": "PadBus Driver",
+    "vigembus_driver": "ViGEmBus Driver",
     "virtual_gamepad": "Virtual Input",
     "virtual_gamepad_drivers": "Virtual Input Backend Status",
     "virtual_gamepad_drivers_desc": "Installed versions are compared with each project's latest stable GitHub release. Prereleases are ignored.",
-    "virtual_gamepad_padbus_desc": "Solstice emulates Xbox 360 and DualShock 4 gamepads through the PadBus driver, and uses SendInput for keyboard and mouse. Install the latest PadBus release and restart your computer after installing or updating it."
+    "virtual_gamepad_vigembus_desc": "Solstice is using ViGEmBus for limited Xbox 360 and DualShock 4 emulation and SendInput for keyboard and mouse. ViGEmBus has reached end of life. Consider upgrading to Virtual HID Broker for broader, actively supported virtual input."
   },
   "featured": {
     "category_filter": "Category filter",

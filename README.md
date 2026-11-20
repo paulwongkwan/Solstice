@@ -20,7 +20,7 @@ network.
 - **Desktop capture.** DXGI Desktop Duplication in both portable and service mode, Windows.Graphics.Capture in portable
   mode.
 - **Virtual gamepads.** Xbox 360 and DualShock 4 emulation, either fixed or selected automatically from the client's
-  controller, through the [PadBus](https://github.com/paulwongkwan/padbus) driver.
+  controller, through the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver.
 - **Web UI with sign-in.** Pair clients, change settings, and read logs from `https://localhost:47990`, protected by a
   login screen with an optional "remember me" session.
 - **Sunshine-compatible.** Existing Sunshine configuration is picked up automatically, and the client, application, and
@@ -44,7 +44,7 @@ Core i5, and wired Ethernet on both ends. These recommendations are a work in pr
 them alone.
 
 > [!NOTE]
-> Virtual gamepads require the [PadBus](https://github.com/paulwongkwan/padbus/releases/latest) driver, which the
+> Virtual gamepads require the [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) driver, which the
 > installer does not bundle. Without it, keyboard, mouse, touch, and pen input still work.
 
 ## Install
@@ -143,7 +143,7 @@ localization, and testing rules.
 
 ## Credits
 
-Solstice is built on [Moonlight](https://moonlight-stream.org) for the client side, [PadBus](https://github.com/paulwongkwan/padbus)
+Solstice is built on [Moonlight](https://moonlight-stream.org) for the client side, [ViGEmBus](https://github.com/nefarius/ViGEmBus)
 for virtual gamepads, and [FFmpeg](https://ffmpeg.org) for media handling. Thank you to everyone who maintains those
 projects.
 

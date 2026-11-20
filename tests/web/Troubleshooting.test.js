@@ -33,7 +33,7 @@ async function mountTroubleshooting(platform, gamepadDriver, licenseStatus = {},
             version_compatible: true,
             supported_versions: '>= 2026.914.1218',
           },
-          padbus: { installed: false },
+          vigembus: { installed: false },
         }),
       }
     }
@@ -230,7 +230,7 @@ describe('virtual input troubleshooting', () => {
     wrapper.unmount()
   })
 
-  it('shows the broker version table without PadBus on macOS', async () => {
+  it('shows the broker version table without ViGEmBus on macOS', async () => {
     const wrapper = await mountTroubleshooting('macos', 'all')
 
     expect(wrapper.find('.virtual-gamepad-section').exists()).toBe(true)
@@ -261,10 +261,10 @@ describe('virtual input troubleshooting', () => {
     const wrapper = await mountTroubleshooting('windows', 'all')
 
     expect(wrapper.findAll('.driver-table-shell tbody tr')).toHaveLength(2)
-    const padbusStatus = wrapper.get('#padbus .driver-status-icon')
-    expect(padbusStatus.classes()).toContain('status-icon-neutral')
-    expect(padbusStatus.attributes('title')).toBe('troubleshooting.driver_status_not_installed')
-    expect(padbusStatus.get('.visually-hidden').text()).toBe('troubleshooting.driver_status_not_installed')
+    const vigembusStatus = wrapper.get('#vigembus .driver-status-icon')
+    expect(vigembusStatus.classes()).toContain('status-icon-neutral')
+    expect(vigembusStatus.attributes('title')).toBe('troubleshooting.driver_status_not_installed')
+    expect(vigembusStatus.get('.visually-hidden').text()).toBe('troubleshooting.driver_status_not_installed')
     wrapper.vm.virtualhid.version_compatible = false
     await wrapper.vm.$nextTick()
     const unsupportedStatus = wrapper.get('.driver-table-shell tbody tr:first-child .driver-status-icon')

@@ -442,7 +442,7 @@ int main(int argc, char *argv[]) {
 
   if (tray_is_enabled && config::solstice.system_tray) {
     BOOST_LOG(info) << "Starting system tray"sv;
-    system_tray::prepare_tray_padbus_driver();
+    system_tray::prepare_tray_vigembus_driver();
     // TODO: Windows has a weird bug where when running as a service and on the first Windows boot,
     // the tray icon would not appear even though Solstice is running correctly otherwise.
     // Restarting the service would allow the icon to appear normally.

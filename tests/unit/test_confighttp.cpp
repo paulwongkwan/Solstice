@@ -1531,25 +1531,25 @@ TEST(ConfigHttpDriverStatusTest, BuildDriverStatus_DevelopmentVersionIsCompatibl
   ASSERT_TRUE(status["version_compatible"].get<bool>());
 }
 
-TEST(ConfigHttpDriverStatusTest, BuildsLivePadbusDriverStatus) {
-  const auto padbus = confighttp::get_padbus_driver_status();
-  EXPECT_TRUE(padbus.contains("installed"));
-  EXPECT_TRUE(padbus.contains("version"));
-  EXPECT_TRUE(padbus.contains("minimum_version"));
-  EXPECT_TRUE(padbus.contains("version_compatible"));
-  EXPECT_TRUE(padbus.contains("supported_versions"));
+TEST(ConfigHttpDriverStatusTest, BuildsLiveVigembusDriverStatus) {
+  const auto vigembus = confighttp::get_vigembus_driver_status();
+  EXPECT_TRUE(vigembus.contains("installed"));
+  EXPECT_TRUE(vigembus.contains("version"));
+  EXPECT_TRUE(vigembus.contains("minimum_version"));
+  EXPECT_TRUE(vigembus.contains("version_compatible"));
+  EXPECT_TRUE(vigembus.contains("supported_versions"));
 }
 
-TEST_F(ConfigHttpTest, VirtualInputStatusReportsPadbusBackend) {
+TEST_F(ConfigHttpTest, VirtualInputStatusReportsVigembusBackend) {
   SimpleWeb::CaseInsensitiveMultimap headers;
   headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
 
   const auto response = client->request("GET", "/virtual-input-status-test", "", headers);
   ASSERT_EQ(response->status_code, "200 OK");
   const auto body = nlohmann::json::parse(response->content.string());
-  ASSERT_TRUE(body.contains("padbus"));
+  ASSERT_TRUE(body.contains("vigembus"));
   EXPECT_FALSE(body.contains("virtualhid"));
-  EXPECT_TRUE(body.at("padbus").contains("installed"));
+  EXPECT_TRUE(body.at("vigembus").contains("installed"));
 }
 
 TEST_F(ConfigHttpTest, PermissionsEndpointRequiresAuthenticationAndCsrf) {

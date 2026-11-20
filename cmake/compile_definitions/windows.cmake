@@ -12,7 +12,7 @@ list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-misleading-indentation)
 # Disable warnings for Windows ARM64
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
     list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-dll-attribute-on-redeclaration)  # Boost
-    list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-unknown-warning-option)  # padbus
+    list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-unknown-warning-option)  # ViGEmClient
     list(APPEND SOLSTICE_COMPILE_OPTIONS -Wno-unused-variable)  # Boost
 
     # Qt's static qwindows plugin and MinGW's Windowsapp import library both provide the
@@ -44,8 +44,8 @@ file(GLOB NVPREFS_FILES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/platform/windows/nvprefs/*.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/nvprefs/*.h")
 
-# padbus
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/include")
+# vigem
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/third-party/ViGEmClient/include")
 
 # solstice icon
 if(NOT DEFINED SOLSTICE_ICON_PATH)
@@ -75,13 +75,11 @@ set(PLATFORM_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/platform/windows/audio.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/utf_utils.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/utf_utils.h"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/src/backend_padbus.cpp"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/src/mapping.cpp"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/src/profiles.cpp"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/src/runtime.cpp"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/src/types.cpp"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/src/detail.hpp"
-        "${CMAKE_SOURCE_DIR}/third-party/padbus/libpadbus/include/padbus/padbus.hpp"
+        "${CMAKE_SOURCE_DIR}/third-party/ViGEmClient/src/ViGEmClient.cpp"
+        "${CMAKE_SOURCE_DIR}/third-party/ViGEmClient/include/ViGEm/Client.h"
+        "${CMAKE_SOURCE_DIR}/third-party/ViGEmClient/include/ViGEm/Common.h"
+        "${CMAKE_SOURCE_DIR}/third-party/ViGEmClient/include/ViGEm/Util.h"
+        "${CMAKE_SOURCE_DIR}/third-party/ViGEmClient/include/ViGEm/km/BusShared.h"
         ${NVPREFS_FILES})
 
 set(OPENSSL_LIBRARIES
