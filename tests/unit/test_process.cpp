@@ -186,7 +186,7 @@ TEST(ProcessTest, ExpandsEnvironmentNamesWithoutChangingTheirCase) {
   });
   env[key] = "case-preserved";
 
-  EXPECT_EQ(proc::parse_env_val(env, "before-$(sunshine_range_search_regression)-after"), "before-case-preserved-after");
+  EXPECT_EQ(proc::parse_env_val(env, "before-$(solstice_range_search_regression)-after"), "before-case-preserved-after");
   EXPECT_EQ(proc::parse_env_val(env, "$(SOLSTICE_RANGE_SEARCH_REGRESSION)"), "case-preserved");
 }
 #endif

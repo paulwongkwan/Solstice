@@ -743,8 +743,8 @@ namespace proc {
 
         std::vector<proc::cmd_t> prep_cmds;
         if (!exclude_global_prep.value_or(false)) {
-          prep_cmds.reserve(config::sunshine.prep_cmds.size());
-          for (auto &prep_cmd : config::sunshine.prep_cmds) {
+          prep_cmds.reserve(config::solstice.prep_cmds.size());
+          for (auto &prep_cmd : config::solstice.prep_cmds) {
             auto do_cmd = parse_env_val(this_env, prep_cmd.do_cmd);
             auto undo_cmd = parse_env_val(this_env, prep_cmd.undo_cmd);
 

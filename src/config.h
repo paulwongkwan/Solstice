@@ -265,7 +265,7 @@ namespace config {
     std::string pkey;  ///< Private key PEM string or path.
     std::string cert;  ///< Certificate PEM string or path.
 
-    std::string sunshine_name;  ///< Host name advertised to Moonlight clients.
+    std::string solstice_name;  ///< Host name advertised to Moonlight clients.
 
     std::string file_state;  ///< Path to the persisted Solstice state file.
 
@@ -348,7 +348,7 @@ namespace config {
   /**
    * @brief Top-level Solstice configuration and credential state.
    */
-  struct sunshine_t {
+  struct solstice_t {
     std::string locale;  ///< Locale selected for Solstice UI and log messages.
     int min_log_level;  ///< Minimum severity level written to the configured log sink.
     std::bitset<flag::FLAG_SIZE> flags;  ///< Runtime flags parsed from command-line options.
@@ -390,7 +390,7 @@ namespace config {
   extern stream_t stream;
   extern nvhttp_t nvhttp;
   extern input_t input;
-  extern sunshine_t sunshine;
+  extern solstice_t solstice;
 
   /**
    * @brief Copy configuration, applications, credentials, and pairing state from a pre-rename installation.

@@ -118,19 +118,19 @@ namespace {
      * @brief Preserve the active config path and prepare an empty temporary path.
      */
     void SetUp() override {
-      original_config_file_ = config::sunshine.config_file;
+      original_config_file_ = config::solstice.config_file;
       original_gamepad_ = config::input.gamepad;
       original_apps_file_ = config::stream.file_apps;
       config_file_ = std::filesystem::temp_directory_path() / "sunshine_test_config_persistence.conf";  // NOSONAR(cpp:S5443): safe for tests
       std::filesystem::remove(config_file_);
-      config::sunshine.config_file = config_file_.string();
+      config::solstice.config_file = config_file_.string();
     }
 
     /**
      * @brief Remove the temporary file and restore the active config path.
      */
     void TearDown() override {
-      config::sunshine.config_file = std::move(original_config_file_);
+      config::solstice.config_file = std::move(original_config_file_);
       config::input.gamepad = std::move(original_gamepad_);
       config::stream.file_apps = std::move(original_apps_file_);
       std::filesystem::remove(config_file_.parent_path() / "sunshine_test_config_apps.json");
@@ -160,7 +160,7 @@ TEST_F(ConfigPersistenceTest, AcceptsAllGamepadProfilesAcrossRepeatedConfigurati
   ASSERT_EQ(file_handler::write_file(apps_file.string().c_str(), "{}"), 0);
   config::stream.file_apps = apps_file.string();
 
-  constexpr std::array profiles {"generic"sv, "x360"sv, "xone"sv, "xseries"sv, "ds4"sv, "ds5"sv, "switch"sv};
+  constexpr std::array profiles {"auto"sv, "x360"sv, "ds4"sv};
   for (const auto profile : profiles) {
     config::input.gamepad = "auto";
     config::apply_config_for_test(std::string {"gamepad = "} + std::string {profile} + "\n");

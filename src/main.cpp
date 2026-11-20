@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  auto log_deinit_guard = logging::init(config::sunshine.min_log_level, config::sunshine.log_file);
+  auto log_deinit_guard = logging::init(config::solstice.min_log_level, config::solstice.log_file);
   if (!log_deinit_guard) {
     BOOST_LOG(error) << "Logging failed to initialize"sv;
   }
@@ -220,10 +220,10 @@ int main(int argc, char *argv[]) {
   config::log_config_settings(config::modified_config_settings, false);
   config::modified_config_settings.clear();
 
-  if (!config::sunshine.cmd.name.empty()) {
-    auto fn = cmd_to_func.find(config::sunshine.cmd.name);
+  if (!config::solstice.cmd.name.empty()) {
+    auto fn = cmd_to_func.find(config::solstice.cmd.name);
     if (fn == std::end(cmd_to_func)) {
-      BOOST_LOG(fatal) << "Unknown command: "sv << config::sunshine.cmd.name;
+      BOOST_LOG(fatal) << "Unknown command: "sv << config::solstice.cmd.name;
 
       BOOST_LOG(info) << "Possible commands:"sv;
       for (auto &[key, _] : cmd_to_func) {
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
       return 7;
     }
 
-    return fn->second(argv[0], config::sunshine.cmd.argc, config::sunshine.cmd.argv);
+    return fn->second(argv[0], config::solstice.cmd.argc, config::solstice.cmd.argv);
   }
 
   // Adding guard here first as it also performs recovery after crash,
@@ -346,7 +346,7 @@ int main(int argc, char *argv[]) {
     // Break out of the main loop
     shutdown_event->raise(true);
 
-    if (tray_is_enabled && config::sunshine.system_tray) {
+    if (tray_is_enabled && config::solstice.system_tray) {
       system_tray::end_tray();
     }
 
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
     // Break out of the main loop
     shutdown_event->raise(true);
 
-    if (tray_is_enabled && config::sunshine.system_tray) {
+    if (tray_is_enabled && config::solstice.system_tray) {
       system_tray::end_tray();
     }
 
@@ -435,12 +435,12 @@ int main(int argc, char *argv[]) {
   std::jthread rtspThread {rtsp_stream::start};
 
   // If we're using the default port and GameStream is enabled, warn the user
-  if (config::sunshine.port == 47989 && is_gamestream_enabled()) {
+  if (config::solstice.port == 47989 && is_gamestream_enabled()) {
     BOOST_LOG(fatal) << "GameStream is still enabled in GeForce Experience! This *will* cause streaming problems with Solstice!"sv;
     BOOST_LOG(fatal) << "Disable GameStream on the SHIELD tab in GeForce Experience or change the Port setting on the Advanced tab in the Solstice Web UI."sv;
   }
 
-  if (tray_is_enabled && config::sunshine.system_tray) {
+  if (tray_is_enabled && config::solstice.system_tray) {
     BOOST_LOG(info) << "Starting system tray"sv;
     system_tray::prepare_tray_vigembus_driver();
     // TODO: Windows has a weird bug where when running as a service and on the first Windows boot,

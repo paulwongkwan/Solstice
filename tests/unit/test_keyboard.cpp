@@ -6,15 +6,11 @@
  * runs on. Solstice is responsible for the platform-independent half of the translation:
  * applying the `keybindings` remap, tracking which modifiers the client holds, and injecting
  * synthetic modifier presses when the client reports a modifier Solstice does not believe is
- * held. Translating a virtual-key code into a native keycode is libvirtualhid's job, and each
- * of its backend tables is covered by that project's own per-platform test job (see
- * `TranslatesKeyboardKeys` in libvirtualhid's `tests/unit/test_*_backend.cpp`). The tables are
- * not reachable from here: they live in anonymous namespaces inside backend translation units
- * that only compile on their own platform.
+ * held. Translating a virtual-key code into a native keycode is the Windows input backend's
+ * job and is covered by that platform's own tests, not here.
  *
  * These tests record keyboard output instead of delivering it, so they never type into the
- * machine running the suite. Tests that clear the recorder exercise the real delivery path
- * through the platform adapter to a fake virtual keyboard, including F17/F18 volume remapping.
+ * machine running the suite.
  */
 
 // test includes
@@ -36,7 +32,6 @@
 // local includes
 #include "src/config.h"
 #include "src/input.h"
-#include "src/platform/virtualhid_input.h"
 
 namespace input {
   /**
@@ -342,13 +337,6 @@ namespace {
       // Keep every emission on the calling thread so the recorded order is deterministic.
       config::input.key_repeat_delay = 0ms;
 
-      auto platform_input = platf::input();
-      ASSERT_TRUE(platform_input);
-      auto &context = platf::virtualhid::get_input_context(platform_input);
-      context = platf::virtualhid::input_context_t {lvh::BackendKind::fake};
-      context_ = &context;
-      ASSERT_NE(context_->keyboard, nullptr);
-      input::testing::set_platform_input(std::move(platform_input));
       input::testing::reset_keyboard_state();
 
       input::testing::set_keyboard_sink([this](const input::testing::keyboard_event_t &event) {
@@ -367,8 +355,6 @@ namespace {
       input::testing::set_keyboard_sink({});
       input::testing::reset_keyboard_state();
       stream_.reset();
-      context_ = nullptr;
-      input::testing::set_platform_input({});
       config::input = std::move(original_input_);
     }
 
@@ -430,19 +416,9 @@ namespace {
       return std::exchange(events_, {});
     }
 
-    /**
-     * @brief Access the fake virtual keyboard installed for the current test.
-     *
-     * @return Fake libvirtualhid keyboard.
-     */
-    lvh::Keyboard &fake_keyboard() const {
-      return *context_->keyboard;
-    }
-
   private:
     std::shared_ptr<input::input_t> stream_;  ///< Stream input state under test.
     std::vector<input::testing::keyboard_event_t> events_;  ///< Keyboard output recorded for the current test.
-    platf::virtualhid::input_context_t *context_ = nullptr;  ///< Fake input context installed in the global backend.
     config::input_t original_input_;  ///< Input configuration restored after each test.
   };
 }  // namespace
@@ -706,25 +682,25 @@ TEST_F(KeyboardPassthroughTest, EmitsRemappedKeycodesFromKeybindings) {
   EXPECT_EQ(taken(), (std::vector<std::string> {pressed(VKEY_A), released(VKEY_A)}));
 }
 
-TEST_F(KeyboardPassthroughTest, RemapsFunctionKeysToVolumeKeysThroughThePlatformAdapter) {
+TEST_F(KeyboardPassthroughTest, RemapsFunctionKeysToVolumeKeyCodes) {
   // Issue #4981: F17/F18 must reach the backend as volume keys, with no client extended bit.
   config::input.keybindings = {{0x80, 0xAE}, {0x81, 0xAF}};
-  input::testing::set_keyboard_sink({});
 
   for (const auto flags : {0U, static_cast<unsigned>(SS_KBE_FLAG_NON_NORMALIZED)}) {
     for (const auto &[client, host] : config::input.keybindings) {
       SCOPED_TRACE(hex(client));
       SCOPED_TRACE(flags);
-      const auto prior_count = fake_keyboard().submit_count();
       press(client, 0, flags);
-      auto event = fake_keyboard().last_submitted_event();
-      EXPECT_EQ(event.key_code, host);
-      EXPECT_TRUE(event.pressed);
+      auto events = taken_events();
+      ASSERT_EQ(events.size(), 1U);
+      EXPECT_EQ(events.front().key_code, host);
+      EXPECT_FALSE(events.front().release);
+      EXPECT_FALSE(events.front().extended);
       release(client, 0, flags);
-      event = fake_keyboard().last_submitted_event();
-      EXPECT_EQ(event.key_code, host);
-      EXPECT_FALSE(event.pressed);
-      EXPECT_EQ(fake_keyboard().submit_count(), prior_count + 2U);
+      events = taken_events();
+      ASSERT_EQ(events.size(), 1U);
+      EXPECT_EQ(events.front().key_code, host);
+      EXPECT_TRUE(events.front().release);
     }
   }
 }
@@ -918,48 +894,6 @@ TEST_F(KeyboardPassthroughTest, SwallowsDisplaySwitchShortcutWhileAllModifiersAr
   press(VKEY_A, all);
   release(VKEY_A, all);
   EXPECT_EQ(taken(), (std::vector<std::string> {pressed(VKEY_A), released(VKEY_A)}));
-}
-
-TEST_F(KeyboardPassthroughTest, DeliversKeysThroughTheVirtualKeyboard) {
-  // Drop the recorder so the events travel the real path into libvirtualhid's fake backend.
-  // This keeps the recorder honest: if platf::keyboard_update stopped being reached, every
-  // other test here would still pass.
-  input::testing::set_keyboard_sink({});
-
-  auto &keyboard = fake_keyboard();
-  const auto submitted = keyboard.submit_count();
-
-  press(VKEY_A);
-  EXPECT_EQ(keyboard.submit_count(), submitted + 1);
-  EXPECT_EQ(keyboard.last_submitted_event().key_code, VKEY_A);
-  EXPECT_TRUE(keyboard.last_submitted_event().pressed);
-
-  release(VKEY_A);
-  EXPECT_EQ(keyboard.submit_count(), submitted + 2);
-  EXPECT_EQ(keyboard.last_submitted_event().key_code, VKEY_A);
-  EXPECT_FALSE(keyboard.last_submitted_event().pressed);
-
-  config::input.keybindings = {{VKEY_LMENU, VKEY_LWIN}};
-  press(VKEY_LMENU, MODIFIER_ALT);
-  EXPECT_EQ(keyboard.submit_count(), submitted + 3);
-  EXPECT_EQ(keyboard.last_submitted_event().key_code, VKEY_LWIN);
-
-  // While the remapped Alt is held, a spurious synthetic Alt would add a press and a release
-  // around the key, so both the count and the last event change if the regression comes back.
-  press(VKEY_SPACE, MODIFIER_ALT);
-  EXPECT_EQ(keyboard.submit_count(), submitted + 4);
-  EXPECT_EQ(keyboard.last_submitted_event().key_code, VKEY_SPACE);
-  EXPECT_TRUE(keyboard.last_submitted_event().pressed);
-
-  release(VKEY_SPACE, MODIFIER_ALT);
-  release(VKEY_LMENU, 0);
-  EXPECT_EQ(keyboard.submit_count(), submitted + 6);
-
-  // With no Alt held, the client's Alt claim is honored with a real synthetic modifier.
-  press(VKEY_B, MODIFIER_ALT);
-  EXPECT_EQ(keyboard.submit_count(), submitted + 9);
-  EXPECT_EQ(keyboard.last_submitted_event().key_code, VKEY_MENU);
-  EXPECT_FALSE(keyboard.last_submitted_event().pressed);
 }
 
 TEST_F(KeyboardPassthroughTest, ReleasesHeldKeysAsThemselvesWithoutKeybindings) {

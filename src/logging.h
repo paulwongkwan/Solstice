@@ -175,7 +175,7 @@ namespace logging {
         message(message),
         units(units),
         interval(interval_in_seconds),
-        enabled(config::sunshine.min_log_level <= severity.default_severity()) {
+        enabled(config::solstice.min_log_level <= severity.default_severity()) {
     }
 
     /**

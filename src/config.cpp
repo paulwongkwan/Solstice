@@ -630,7 +630,7 @@ namespace config {
     PRIVATE_KEY_FILE,
     CERTIFICATE_FILE,
 
-    platf::get_host_name(),  // sunshine_name,
+    platf::get_host_name(),  // solstice_name,
     "solstice_state.json"s,  // file_state
     {},  // external_ip
   };
@@ -665,7 +665,7 @@ namespace config {
   /**
    * @brief Default top-level Solstice configuration values used before file and CLI overrides.
    */
-  sunshine_t sunshine {
+  solstice_t solstice {
     "en",  // locale
     2,  // min_log_level
     0,  // flags
@@ -837,7 +837,7 @@ namespace config {
   }
 
   bool persist_config_option_if_missing(const std::string_view name, const std::string_view value) {
-    auto file_content = file_handler::read_file(sunshine.config_file.c_str());
+    auto file_content = file_handler::read_file(solstice.config_file.c_str());
     if (parse_config(file_content).contains(std::string {name})) {
       return false;
     }
@@ -846,7 +846,7 @@ namespace config {
       file_content += '\n';
     }
     file_content += std::format("{} = {}\n", name, value);
-    if (file_handler::write_file(sunshine.config_file.c_str(), file_content) != 0) {
+    if (file_handler::write_file(solstice.config_file.c_str(), file_content) != 0) {
       BOOST_LOG(warning) << "Failed to persist automatically selected config option '"sv << name << "'"sv;
       return false;
     }
@@ -1267,7 +1267,7 @@ namespace config {
     }
 
     // The framerate list must be cleared before adding values from the file configuration.
-    // If the list is not cleared, then the specified parameters do not affect the behavior of the sunshine server.
+    // If the list is not cleared, then the specified parameters do not affect the behavior of the Solstice server.
     // That is, if you set only 30 fps in the configuration file, it will not work because by default, during initialization the list includes 10, 30, 60, 90 and 120 fps.
     destination.clear();
     for (auto &el : list) {
@@ -1327,16 +1327,16 @@ namespace config {
     while (*line != '\0') {
       switch (*line) {
         case '0':
-          config::sunshine.flags[config::flag::PIN_STDIN].flip();
+          config::solstice.flags[config::flag::PIN_STDIN].flip();
           break;
         case '1':
-          config::sunshine.flags[config::flag::FRESH_STATE].flip();
+          config::solstice.flags[config::flag::FRESH_STATE].flip();
           break;
         case '2':
-          config::sunshine.flags[config::flag::FORCE_VIDEO_HEADER_REPLACE].flip();
+          config::solstice.flags[config::flag::FORCE_VIDEO_HEADER_REPLACE].flip();
           break;
         case 'p':
-          config::sunshine.flags[config::flag::UPNP].flip();
+          config::solstice.flags[config::flag::UPNP].flip();
           break;
         default:
           BOOST_LOG(warning) << "config: Unrecognized flag: ["sv << *line << ']' << std::endl;
@@ -1553,16 +1553,16 @@ namespace config {
 
     path_f(vars, "pkey", nvhttp.pkey);
     path_f(vars, "cert", nvhttp.cert);
-    string_f(vars, "sunshine_name", nvhttp.sunshine_name);
-    path_f(vars, "log_path", config::sunshine.log_file);
+    string_f(vars, "sunshine_name", nvhttp.solstice_name);
+    path_f(vars, "log_path", config::solstice.log_file);
     path_f(vars, "file_state", nvhttp.file_state);
 
     // Must be run after "file_state"
-    config::sunshine.credentials_file = config::nvhttp.file_state;
-    path_f(vars, "credentials_file", config::sunshine.credentials_file);
+    config::solstice.credentials_file = config::nvhttp.file_state;
+    path_f(vars, "credentials_file", config::solstice.credentials_file);
 
     string_f(vars, "external_ip", nvhttp.external_ip);
-    list_prep_cmd_f(vars, "global_prep_cmd", config::sunshine.prep_cmds);
+    list_prep_cmd_f(vars, "global_prep_cmd", config::solstice.prep_cmds);
 
     string_f(vars, "audio_sink", audio.sink);
     string_f(vars, "virtual_sink", audio.virtual_sink);
@@ -1577,7 +1577,7 @@ namespace config {
     string_list_f(vars, "csrf_allowed_origins", user_csrf_origins);
 
     // Start with default localhost variants
-    sunshine.csrf_allowed_origins = {
+    solstice.csrf_allowed_origins = {
       "https://localhost",
       "https://127.0.0.1",
       "https://[::1]"
@@ -1587,7 +1587,7 @@ namespace config {
     bool csrf_invalid_config = false;
     for (const auto &origin : user_csrf_origins) {
       if (origin.size() > 8 && origin.starts_with("https://")) {
-        sunshine.csrf_allowed_origins.push_back(origin);
+        solstice.csrf_allowed_origins.push_back(origin);
       } else {
         csrf_invalid_config = true;
         BOOST_LOG(warning) << "Invalid 'csrf_allowed_origins' entry rejected: "sv << origin;
@@ -1669,31 +1669,31 @@ namespace config {
     bool_f(vars, "high_resolution_scrolling", input.high_resolution_scrolling);
     bool_f(vars, "native_pen_touch", input.native_pen_touch);
 
-    bool_f(vars, "notify_pre_releases", sunshine.notify_pre_releases);
-    bool_f(vars, "system_tray", sunshine.system_tray);
+    bool_f(vars, "notify_pre_releases", solstice.notify_pre_releases);
+    bool_f(vars, "system_tray", solstice.system_tray);
 
-    int port = sunshine.port;
+    int port = solstice.port;
     int_between_f(vars, "port"s, port, {1024 + nvhttp::PORT_HTTPS, 65535 - rtsp_stream::RTSP_SETUP_PORT});
-    sunshine.port = (std::uint16_t) port;
+    solstice.port = (std::uint16_t) port;
 
     // Now that we have the port, add web UI port-specific origins to CSRF allowed list
     // Web UI runs on port + 1 (PORT_HTTPS offset is 1 for confighttp)
-    const unsigned short web_ui_port = sunshine.port + 1;
-    sunshine.csrf_allowed_origins.push_back(std::format("https://localhost:{}", web_ui_port));
-    sunshine.csrf_allowed_origins.push_back(std::format("https://127.0.0.1:{}", web_ui_port));
-    sunshine.csrf_allowed_origins.push_back(std::format("https://[::1]:{}", web_ui_port));
+    const unsigned short web_ui_port = solstice.port + 1;
+    solstice.csrf_allowed_origins.push_back(std::format("https://localhost:{}", web_ui_port));
+    solstice.csrf_allowed_origins.push_back(std::format("https://127.0.0.1:{}", web_ui_port));
+    solstice.csrf_allowed_origins.push_back(std::format("https://[::1]:{}", web_ui_port));
 
-    string_restricted_f(vars, "address_family", sunshine.address_family, {"ipv4"sv, "both"sv});
-    string_f(vars, "bind_address", sunshine.bind_address);
+    string_restricted_f(vars, "address_family", solstice.address_family, {"ipv4"sv, "both"sv});
+    string_f(vars, "bind_address", solstice.bind_address);
 
     bool upnp = false;
     bool_f(vars, "upnp"s, upnp);
 
     if (upnp) {
-      config::sunshine.flags[config::flag::UPNP].flip();
+      config::solstice.flags[config::flag::UPNP].flip();
     }
 
-    string_restricted_f(vars, "locale", config::sunshine.locale, {
+    string_restricted_f(vars, "locale", config::solstice.locale, {
                                                                    "bg"sv,  // Bulgarian
                                                                    "cs"sv,  // Czech
                                                                    "de"sv,  // German
@@ -1723,24 +1723,24 @@ namespace config {
 
     if (!log_level_string.empty()) {
       if (log_level_string == "verbose"sv) {
-        sunshine.min_log_level = 0;
+        solstice.min_log_level = 0;
       } else if (log_level_string == "debug"sv) {
-        sunshine.min_log_level = 1;
+        solstice.min_log_level = 1;
       } else if (log_level_string == "info"sv) {
-        sunshine.min_log_level = 2;
+        solstice.min_log_level = 2;
       } else if (log_level_string == "warning"sv) {
-        sunshine.min_log_level = 3;
+        solstice.min_log_level = 3;
       } else if (log_level_string == "error"sv) {
-        sunshine.min_log_level = 4;
+        solstice.min_log_level = 4;
       } else if (log_level_string == "fatal"sv) {
-        sunshine.min_log_level = 5;
+        solstice.min_log_level = 5;
       } else if (log_level_string == "none"sv) {
-        sunshine.min_log_level = 6;
+        solstice.min_log_level = 6;
       } else {
         // accept digit directly
         auto val = log_level_string[0];
         if (val >= '0' && val < '7') {
-          sunshine.min_log_level = val - '0';
+          solstice.min_log_level = val - '0';
         }
       }
     }
@@ -1752,7 +1752,7 @@ namespace config {
       vars.erase(it);
     }
 
-    if (sunshine.min_log_level <= 3) {
+    if (solstice.min_log_level <= 3) {
       for (auto &[var, _] : vars) {
         std::cout << "Warning: Unrecognized configurable option ["sv << var << ']' << std::endl;
       }
@@ -1896,9 +1896,9 @@ namespace config {
       }
       else if (*line == '-') {
         if (*(line + 1) == '-') {
-          sunshine.cmd.name = line + 2;
-          sunshine.cmd.argc = argc - x - 1;
-          sunshine.cmd.argv = argv + x + 1;
+          solstice.cmd.name = line + 2;
+          solstice.cmd.argc = argc - x - 1;
+          solstice.cmd.argv = argv + x + 1;
 
           break;
         }
@@ -1911,7 +1911,7 @@ namespace config {
 
         auto pos = std::find(line, line_end, '=');
         if (pos == line_end) {
-          sunshine.config_file = line;
+          solstice.config_file = line;
         } else {
           TUPLE_EL(var, 1, parse_option(line, line_end));
           if (!var) {
@@ -1940,12 +1940,12 @@ namespace config {
       file_handler::make_directory(platf::appdata().string());
 
       // Create empty config file if it does not exist
-      if (!fs::exists(sunshine.config_file)) {
-        std::ofstream {sunshine.config_file};
+      if (!fs::exists(solstice.config_file)) {
+        std::ofstream {solstice.config_file};
       }
 
       // Read config file
-      auto vars = parse_config(file_handler::read_file(sunshine.config_file.c_str()));
+      auto vars = parse_config(file_handler::read_file(solstice.config_file.c_str()));
 
       for (auto &[name, value] : cmd_vars) {
         vars.insert_or_assign(name, std::move(value));

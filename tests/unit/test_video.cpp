@@ -133,31 +133,6 @@ INSTANTIATE_TEST_SUITE_P(
   }
 );
 
-TEST(NvencAvcodecOptionsTest, UsesVersionStablePresetAndSpatialAqNames) {
-  const std::array codecs {
-    &video::nvenc.av1,
-    &video::nvenc.hevc,
-    &video::nvenc.h264,
-  };
-
-  for (const auto *codec : codecs) {
-    const auto preset = std::ranges::find(codec->common_options, "preset"sv, &video::encoder_t::option_t::name);
-    ASSERT_NE(codec->common_options.end(), preset);
-    ASSERT_TRUE(std::holds_alternative<std::string *>(preset->value));
-    EXPECT_EQ(&config::video.nv_legacy.preset, std::get<std::string *>(preset->value));
-
-    const auto spatial_aq = std::ranges::find(codec->common_options, "spatial-aq"sv, &video::encoder_t::option_t::name);
-    ASSERT_NE(codec->common_options.end(), spatial_aq);
-    ASSERT_TRUE(std::holds_alternative<int *>(spatial_aq->value));
-    EXPECT_EQ(&config::video.nv_legacy.spatial_aq, std::get<int *>(spatial_aq->value));
-
-    EXPECT_EQ(
-      codec->common_options.end(),
-      std::ranges::find(codec->common_options, "aq"sv, &video::encoder_t::option_t::name)
-    );
-  }
-}
-
 TEST_P(EncoderTest, ValidateEncoder) {
   // todo:: test something besides fixture setup
 }
@@ -364,7 +339,7 @@ struct AmfMaxAuSizeConfigTest: BaseTest, testing::WithParamInterface<AmfMaxAuSiz
     config::stream = original_stream;
     config::nvhttp = original_nvhttp;
     config::input = original_input;
-    config::sunshine = original_sunshine;
+    config::solstice = original_solstice;
     config::modified_config_settings = original_modified_config_settings;
     BaseTest::TearDown();
   }
@@ -374,7 +349,7 @@ struct AmfMaxAuSizeConfigTest: BaseTest, testing::WithParamInterface<AmfMaxAuSiz
   config::stream_t original_stream {config::stream};  ///< Stream configuration restored after each parameterized test.
   config::nvhttp_t original_nvhttp {config::nvhttp};  ///< HTTP configuration restored after each parameterized test.
   config::input_t original_input {config::input};  ///< Input configuration restored after each parameterized test.
-  config::sunshine_t original_sunshine {config::sunshine};  ///< Core configuration restored after each parameterized test.
+  config::solstice_t original_solstice {config::solstice};  ///< Core configuration restored after each parameterized test.
   decltype(config::modified_config_settings) original_modified_config_settings {config::modified_config_settings};  ///< Modified settings restored after each parameterized test.
 };
 

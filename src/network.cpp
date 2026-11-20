@@ -125,12 +125,12 @@ namespace net {
   }
 
   af_e get_effective_address_family(const af_e af) {
-    if (af != BOTH || config::sunshine.bind_address.empty()) {
+    if (af != BOTH || config::solstice.bind_address.empty()) {
       return af;
     }
 
     boost::system::error_code ec;
-    const auto bind_address = ip::make_address(config::sunshine.bind_address, ec);
+    const auto bind_address = ip::make_address(config::solstice.bind_address, ec);
     return !ec && bind_address.is_v4() ? IPV4 : af;
   }
 
@@ -148,8 +148,8 @@ namespace net {
 
   std::string get_bind_address(const af_e af) {
     // If bind_address is configured, use it
-    if (!config::sunshine.bind_address.empty()) {
-      return config::sunshine.bind_address;
+    if (!config::solstice.bind_address.empty()) {
+      return config::solstice.bind_address;
     }
 
     // Otherwise use the wildcard address for the given address family
@@ -184,13 +184,13 @@ namespace net {
   }
 
   std::string get_bind_address_url_host() {
-    if (config::sunshine.bind_address.empty()) {
+    if (config::solstice.bind_address.empty()) {
       return "localhost";
     }
 
     boost::system::error_code ec;
-    const auto bind_address = ip::make_address(config::sunshine.bind_address, ec);
-    return ec ? config::sunshine.bind_address : addr_to_url_escaped_string(bind_address);
+    const auto bind_address = ip::make_address(config::solstice.bind_address, ec);
+    return ec ? config::solstice.bind_address : addr_to_url_escaped_string(bind_address);
   }
 
   int encryption_mode_for_address(boost::asio::ip::address address) {
@@ -242,7 +242,7 @@ namespace net {
 
   std::uint16_t map_port(int port) {
     // calculate the port from the config port
-    auto mapped_port = (std::uint16_t) ((int) config::sunshine.port + port);
+    auto mapped_port = (std::uint16_t) ((int) config::solstice.port + port);
 
     // Ensure port is in the range of 1024-65535
     if (mapped_port < 1024 || mapped_port > 65535) {

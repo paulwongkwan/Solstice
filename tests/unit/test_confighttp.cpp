@@ -118,37 +118,29 @@ protected:
   void SetUp() override {
     BaseTest::SetUp();
     nvhttp::expire_pair_sessions(std::chrono::steady_clock::time_point::max());
-    confighttp::set_virtual_input_license_status_provider_for_testing([]() {
-      lvh::LicenseStatus license;
-      license.service_available = true;
-      license.state = lvh::LicenseState::licensed;
-      license.active_devices = 2;
-      license.message = "Test license status";
-      return lvh::LicenseResult {lvh::OperationStatus::success(), std::move(license)};
-    });
     confighttp::set_permission_statuses_for_testing(nlohmann::json::array({
       {{"id", "screen_recording"}, {"status", "denied"}, {"required", true}, {"verifiable", true}},
       {{"id", "notifications"}, {"status", "granted"}, {"required", false}, {"verifiable", true}},
     }));
 
     // Save current config
-    saved_username = config::sunshine.username;
-    saved_password = config::sunshine.password;
-    saved_salt = config::sunshine.salt;
-    saved_locale = config::sunshine.locale;
-    saved_csrf_allowed_origins = config::sunshine.csrf_allowed_origins;
+    saved_username = config::solstice.username;
+    saved_password = config::solstice.password;
+    saved_salt = config::solstice.salt;
+    saved_locale = config::solstice.locale;
+    saved_csrf_allowed_origins = config::solstice.csrf_allowed_origins;
 
     // Set up test credentials
-    config::sunshine.username = "testuser";
-    config::sunshine.salt = "testsalt";
-    config::sunshine.password = util::hex(crypto::hash("testpass" + config::sunshine.salt)).to_string();
+    config::solstice.username = "testuser";
+    config::solstice.salt = "testsalt";
+    config::solstice.password = util::hex(crypto::hash("testpass" + config::solstice.salt)).to_string();
 
     // Set test locale
-    config::sunshine.locale = "en";
+    config::solstice.locale = "en";
 
     // Set test web UI port (will be used in SetUp after server starts)
     // For now, just set the base defaults - we'll add the port-specific ones after server starts
-    config::sunshine.csrf_allowed_origins = {
+    config::solstice.csrf_allowed_origins = {
       "https://localhost",
       "https://127.0.0.1",
       "https://[::1]"
@@ -157,9 +149,6 @@ protected:
     // Create test web directory in temp
     test_web_dir = std::filesystem::temp_directory_path() / "sunshine_test_confighttp";  // NOSONAR(cpp:S5443): safe for tests
     std::filesystem::create_directories(test_web_dir / "web");
-    confighttp::set_portal_token_path_provider_for_testing([this]() {
-      return test_web_dir / "portal_token";
-    });
 
     // Create the SPA entry document in WEB_DIR, creating parent directories with proper permissions
     std::filesystem::path web_dir_path(WEB_DIR);
@@ -336,14 +325,11 @@ protected:
     };
 
     server->resource["^/virtual-input-status-test$"]["GET"] = confighttp::getVirtualInputStatus;
-    server->resource["^/virtual-input-license-test$"]["GET"] = confighttp::getVirtualInputLicense;
-    server->resource["^/virtual-input-license-test$"]["POST"] = confighttp::updateVirtualInputLicense;
     server->resource["^/permissions-test$"]["GET"] = confighttp::getPermissions;
     server->resource["^/permissions-test$"]["POST"] = confighttp::requestPermission;
     server->resource["^/pairing-test$"]["DELETE"] = confighttp::cancelPairing;
     server->resource["^/pairing-test$"]["GET"] = confighttp::getPendingPairings;
     server->resource["^/pairing-test$"]["POST"] = confighttp::savePin;
-    server->resource["^/portal-token-reset-test$"]["POST"] = confighttp::resetPortalToken;
     server->resource["^/api/apps$"]["POST"] = confighttp::saveApp;
     server->default_resource["GET"] = confighttp::getFallbackPage;
 
@@ -362,9 +348,9 @@ protected:
     ASSERT_NE(port, 0) << "Server failed to start";
 
     // Now that we have the port, add it to CSRF allowed origins
-    config::sunshine.csrf_allowed_origins.push_back(std::format("https://localhost:{}", port));
-    config::sunshine.csrf_allowed_origins.push_back(std::format("https://127.0.0.1:{}", port));
-    config::sunshine.csrf_allowed_origins.push_back(std::format("https://[::1]:{}", port));
+    config::solstice.csrf_allowed_origins.push_back(std::format("https://localhost:{}", port));
+    config::solstice.csrf_allowed_origins.push_back(std::format("https://127.0.0.1:{}", port));
+    config::solstice.csrf_allowed_origins.push_back(std::format("https://[::1]:{}", port));
 
     // Set up client
     client = std::make_unique<SimpleWeb::Client<SimpleWeb::HTTPS>>(std::format("localhost:{}", port), false);
@@ -378,15 +364,13 @@ protected:
     if (server_thread.joinable()) {
       server_thread.join();
     }
-    confighttp::reset_virtual_input_license_status_provider_for_testing();
     confighttp::reset_permission_statuses_for_testing();
-    confighttp::reset_portal_token_path_provider_for_testing();
 
-    config::sunshine.username = saved_username;
-    config::sunshine.password = saved_password;
-    config::sunshine.salt = saved_salt;
-    config::sunshine.locale = saved_locale;
-    config::sunshine.csrf_allowed_origins = saved_csrf_allowed_origins;
+    config::solstice.username = saved_username;
+    config::solstice.password = saved_password;
+    config::solstice.salt = saved_salt;
+    config::solstice.locale = saved_locale;
+    config::solstice.csrf_allowed_origins = saved_csrf_allowed_origins;
     nvhttp::expire_pair_sessions(std::chrono::steady_clock::time_point::max());
 
     // Clean up test HTML file from WEB_DIR
@@ -512,34 +496,6 @@ namespace {
     const char *body;  ///< Request body.
   };
 
-  /**
-   * @brief Invalid virtual-input license request and expected error.
-   */
-  struct invalid_license_request_t {
-    const char *name;  ///< Stable parameter name.
-    const char *body;  ///< Invalid request body.
-    const char *expected_error;  ///< Expected response error.
-  };
-
-  /**
-   * @brief Return the stable name for an endpoint request parameter.
-   *
-   * @param param_info Parameter information supplied by GoogleTest.
-   * @return Stable test suffix.
-   */
-  std::string endpoint_request_name(const testing::TestParamInfo<endpoint_request_t> &param_info) {
-    return param_info.param.name;
-  }
-
-  /**
-   * @brief Return the stable name for an invalid license request parameter.
-   *
-   * @param param_info Parameter information supplied by GoogleTest.
-   * @return Stable test suffix.
-   */
-  std::string invalid_license_request_name(const testing::TestParamInfo<invalid_license_request_t> &param_info) {
-    return param_info.param.name;
-  }
 }  // namespace
 
 /**
@@ -551,78 +507,6 @@ class AuthenticatedConfigHttpEndpointTest: public ConfigHttpTest, public testing
  * @brief Parameterized fixture for endpoints protected from cross-origin requests.
  */
 class CsrfProtectedConfigHttpEndpointTest: public ConfigHttpTest, public testing::WithParamInterface<endpoint_request_t> {};
-
-/**
- * @brief Parameterized fixture for invalid virtual-input license requests.
- */
-class InvalidVirtualInputLicenseRequestTest: public ConfigHttpTest, public testing::WithParamInterface<invalid_license_request_t> {};
-
-TEST_P(AuthenticatedConfigHttpEndpointTest, RejectsUnauthenticatedRequest) {
-  const auto &request = GetParam();
-  const auto response = client->request(request.method, request.path, request.body);
-  ASSERT_EQ(response->status_code, "401 Unauthorized");
-  EXPECT_NE(response->header.find("WWW-Authenticate"), response->header.end());
-}
-
-INSTANTIATE_TEST_SUITE_P(
-  ConfigHttpEndpoints,
-  AuthenticatedConfigHttpEndpointTest,
-  testing::Values(
-    endpoint_request_t {"Page", "GET", "/page-test", ""},
-    endpoint_request_t {"CsrfToken", "GET", "/csrf-token-test", ""},
-    endpoint_request_t {"BrowseDirectory", "GET", "/browse-test", ""},
-    endpoint_request_t {"PairingList", "GET", "/pairing-test", ""},
-    endpoint_request_t {"PortalTokenReset", "POST", "/portal-token-reset-test", ""},
-    endpoint_request_t {"VirtualInputStatus", "GET", "/virtual-input-status-test", ""},
-    endpoint_request_t {"VirtualInputLicense", "GET", "/virtual-input-license-test", ""},
-    endpoint_request_t {"VirtualInputLicenseUpdate", "POST", "/virtual-input-license-test", R"({"action":"validate"})"}
-  ),
-  endpoint_request_name
-);
-
-TEST_P(CsrfProtectedConfigHttpEndpointTest, RejectsCrossOriginRequestWithoutToken) {
-  const auto &request = GetParam();
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", "https://example.invalid");
-
-  const auto response = client->request(request.method, request.path, request.body, headers);
-  ASSERT_EQ(response->status_code, "400 Bad Request");
-  EXPECT_TRUE(response->content.string().contains("Missing CSRF token"));
-}
-
-INSTANTIATE_TEST_SUITE_P(
-  ConfigHttpEndpoints,
-  CsrfProtectedConfigHttpEndpointTest,
-  testing::Values(
-    endpoint_request_t {"CsrfValidation", "POST", "/csrf-validate-test", ""},
-    endpoint_request_t {"PortalTokenReset", "POST", "/portal-token-reset-test", ""},
-    endpoint_request_t {"VirtualInputLicenseUpdate", "POST", "/virtual-input-license-test", R"({"action":"validate"})"}
-  ),
-  endpoint_request_name
-);
-
-TEST_P(InvalidVirtualInputLicenseRequestTest, ReturnsExpectedError) {
-  const auto &request = GetParam();
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", std::format("https://localhost:{}", port));
-
-  const auto response = client->request("POST", "/virtual-input-license-test", request.body, headers);
-  ASSERT_EQ(response->status_code, "400 Bad Request");
-  EXPECT_TRUE(response->content.string().contains(request.expected_error));
-}
-
-INSTANTIATE_TEST_SUITE_P(
-  InvalidRequests,
-  InvalidVirtualInputLicenseRequestTest,
-  testing::Values(
-    invalid_license_request_t {"InvalidJson", "not-json", "Invalid license request"},
-    invalid_license_request_t {"UnknownAction", R"({"action":"unknown"})", "Unknown license action"},
-    invalid_license_request_t {"MissingActivationKey", R"({"action":"activate","license_key":""})", "License key is required"}
-  ),
-  invalid_license_request_name
-);
 
 TEST_F(ConfigHttpTest, PairingMutationsRejectUnauthenticatedRestRequests) {
   SimpleWeb::CaseInsensitiveMultimap headers;
@@ -753,111 +637,14 @@ TEST_F(ConfigHttpTest, PairingRestApiReportsIncompleteHandshakeAsFailure) {
   EXPECT_TRUE(nvhttp::get_pending_pairings().empty());
 }
 
-TEST_F(ConfigHttpTest, PortalTokenResetHandlesSavedTokenForCurrentPlatform) {
-  const auto token_path = test_web_dir / "portal_token";
-  std::ofstream(token_path) << "saved-token";
-
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", std::format("https://localhost:{}", port));
-
-  const auto response = client->request("POST", "/portal-token-reset-test", "", headers);
-
-  ASSERT_EQ(response->status_code, "200 OK");
-  EXPECT_TRUE(nlohmann::json::parse(response->content.string()).at("status").get<bool>());
-#if defined(linux) || defined(__FreeBSD__)
-  EXPECT_FALSE(std::filesystem::exists(token_path));
-#else
-  EXPECT_TRUE(std::filesystem::exists(token_path));
-#endif
-}
-
-TEST_F(ConfigHttpTest, PortalTokenResetSucceedsWhenTokenDoesNotExist) {
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", std::format("https://localhost:{}", port));
-
-  const auto response = client->request("POST", "/portal-token-reset-test", "", headers);
-
-  ASSERT_EQ(response->status_code, "200 OK");
-  EXPECT_TRUE(nlohmann::json::parse(response->content.string()).at("status").get<bool>());
-}
-
-TEST_F(ConfigHttpTest, PortalTokenResetReportsDeletionFailure) {
-  const auto token_path = test_web_dir / "portal_token";
-  std::filesystem::create_directories(token_path);
-  std::ofstream(token_path / "contents") << "not empty";
-
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", std::format("https://localhost:{}", port));
-
-  const auto response = client->request("POST", "/portal-token-reset-test", "", headers);
-
-  ASSERT_EQ(response->status_code, "200 OK");
-#if defined(linux) || defined(__FreeBSD__)
-  EXPECT_FALSE(nlohmann::json::parse(response->content.string()).at("status").get<bool>());
-#else
-  EXPECT_TRUE(nlohmann::json::parse(response->content.string()).at("status").get<bool>());
-#endif
-  EXPECT_TRUE(std::filesystem::exists(token_path));
-}
-
-#ifdef SOLSTICE_BUILD_PORTAL
-TEST_F(ConfigHttpTest, PortalTokenResetUsesSessionResolverAndPreservesOtherDesktops) {
-  const auto active_token = test_web_dir / "portal_token.kde";
-  const auto other_token = test_web_dir / "portal_token.gnome";
-  std::ofstream(active_token) << "kde-token";
-  std::ofstream(other_token) << "gnome-token";
-  confighttp::set_portal_token_path_provider_for_testing([this]() {
-    return portal::get_saved_token_path_for_testing(test_web_dir, "KDE");
-  });
-
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", std::format("https://localhost:{}", port));
-  const auto response = client->request("POST", "/portal-token-reset-test", "", headers);
-
-  ASSERT_EQ(response->status_code, "200 OK");
-  EXPECT_TRUE(nlohmann::json::parse(response->content.string()).at("status").get<bool>());
-  EXPECT_FALSE(std::filesystem::exists(active_token));
-  ASSERT_TRUE(std::filesystem::exists(other_token));
-  std::ifstream remaining_token(other_token);
-  std::string value;
-  std::getline(remaining_token, value);
-  EXPECT_EQ(value, "gnome-token");
-}
-
-TEST_F(ConfigHttpTest, PortalTokenResetRemovesMigratedLegacyToken) {
-  const auto legacy_token = test_web_dir / "portal_token";
-  const auto active_token = test_web_dir / "portal_token.kde";
-  std::ofstream(legacy_token) << "legacy-token";
-  confighttp::set_portal_token_path_provider_for_testing([this]() {
-    return portal::get_saved_token_path_for_testing(test_web_dir, "KDE");
-  });
-
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-  headers.emplace("Origin", std::format("https://localhost:{}", port));
-  const auto response = client->request("POST", "/portal-token-reset-test", "", headers);
-
-  ASSERT_EQ(response->status_code, "200 OK");
-  EXPECT_TRUE(nlohmann::json::parse(response->content.string()).at("status").get<bool>());
-  EXPECT_FALSE(std::filesystem::exists(legacy_token));
-  EXPECT_FALSE(std::filesystem::exists(active_token));
-  EXPECT_EQ(portal::get_saved_token_path_for_testing(test_web_dir, "KDE"), active_token);
-  EXPECT_FALSE(std::filesystem::exists(active_token));
-}
-#endif
-
 // Test: confighttp::authenticate() rejects requests without auth header
 TEST_F(ConfigHttpTest, AuthenticateRejectsNoAuth) {
   const auto response = client->request("GET", "/auth-test");
   ASSERT_EQ(response->status_code, "401 Unauthorized");
 
-  // Check for WWW-Authenticate header
-  const auto www_auth = response->header.find("WWW-Authenticate");
-  ASSERT_NE(www_auth, response->header.end());
+  // The Web UI signs in through its own login flow, so no browser auth challenge is sent.
+  EXPECT_EQ(response->header.find("WWW-Authenticate"), response->header.end());
+  EXPECT_TRUE(response->content.string().find("Unauthorized") != std::string::npos);
 }
 
 // Test: confighttp::authenticate() accepts valid credentials
@@ -895,10 +682,8 @@ TEST_F(ConfigHttpTest, SendUnauthorizedResponse) {
   const auto response = client->request("GET", "/unauthorized-test");
   ASSERT_EQ(response->status_code, "401 Unauthorized");
 
-  // Check for WWW-Authenticate header
-  const auto www_auth = response->header.find("WWW-Authenticate");
-  ASSERT_NE(www_auth, response->header.end());
-  ASSERT_TRUE(www_auth->second.find("Basic realm") != std::string::npos);
+  // Session logins replace the basic-auth challenge, so the response stays JSON-only.
+  EXPECT_EQ(response->header.find("WWW-Authenticate"), response->header.end());
 
   // Check security headers
   assert_security_headers(response);
@@ -1165,14 +950,14 @@ TEST_F(ConfigHttpTest, GetPageRedirectsWhenUsernameSet) {
 // Test: confighttp::getPage() doesn't redirect when username is empty
 TEST_F(ConfigHttpTest, GetPageNoRedirectWhenUsernameEmpty) {
   // Temporarily clear username
-  const std::string saved = config::sunshine.username;
-  config::sunshine.username = "";
+  const std::string saved = config::solstice.username;
+  config::solstice.username = "";
 
   const auto response = client->request("GET", "/page-redirect-test");
   ASSERT_EQ(response->status_code, "200 OK");
 
   // Restore username
-  config::sunshine.username = saved;
+  config::solstice.username = saved;
 }
 
 // Test: browser routes fall back to the SPA entry document
@@ -1746,43 +1531,24 @@ TEST(ConfigHttpDriverStatusTest, BuildDriverStatus_DevelopmentVersionIsCompatibl
   ASSERT_TRUE(status["version_compatible"].get<bool>());
 }
 
-TEST(ConfigHttpDriverStatusTest, BuildsLiveVirtualInputDriverStatus) {
-  const auto virtualhid = confighttp::get_virtualhid_driver_status();
-  EXPECT_TRUE(virtualhid.contains("installed"));
-  EXPECT_TRUE(virtualhid.contains("version"));
-  EXPECT_TRUE(virtualhid.contains("version_compatible"));
-  EXPECT_TRUE(virtualhid.contains("development_version"));
-  EXPECT_TRUE(virtualhid.contains("backend_name"));
-  EXPECT_TRUE(virtualhid.contains("requires_installed_driver"));
-#ifdef __APPLE__
-  EXPECT_EQ(virtualhid["minimum_version"].get<std::string>(), LIBVIRTUALHID_MACOS_MINIMUM_VERSION);
-  EXPECT_EQ(virtualhid["supported_versions"].get<std::string>(), std::format(">= {}", LIBVIRTUALHID_MACOS_MINIMUM_VERSION));
-  if (std::filesystem::exists("/Applications/VirtualHIDBroker.app/Contents/Info.plist")) {
-    EXPECT_TRUE(virtualhid["installed"].get<bool>());
-    EXPECT_FALSE(virtualhid["version"].get<std::string>().empty());
-  }
-#else
-  EXPECT_EQ(virtualhid["minimum_version"].get<std::string>(), LIBVIRTUALHID_MINIMUM_VERSION);
-  EXPECT_EQ(virtualhid["supported_versions"].get<std::string>(), std::format(">= {}", LIBVIRTUALHID_MINIMUM_VERSION));
-#endif
-
+TEST(ConfigHttpDriverStatusTest, BuildsLiveVigembusDriverStatus) {
   const auto vigembus = confighttp::get_vigembus_driver_status();
   EXPECT_TRUE(vigembus.contains("installed"));
   EXPECT_TRUE(vigembus.contains("version"));
   EXPECT_TRUE(vigembus.contains("minimum_version"));
   EXPECT_TRUE(vigembus.contains("version_compatible"));
+  EXPECT_TRUE(vigembus.contains("supported_versions"));
 }
 
-TEST_F(ConfigHttpTest, VirtualInputStatusReturnsBothBackends) {
+TEST_F(ConfigHttpTest, VirtualInputStatusReportsVigembusBackend) {
   SimpleWeb::CaseInsensitiveMultimap headers;
   headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
 
   const auto response = client->request("GET", "/virtual-input-status-test", "", headers);
   ASSERT_EQ(response->status_code, "200 OK");
   const auto body = nlohmann::json::parse(response->content.string());
-  ASSERT_TRUE(body.contains("virtualhid"));
   ASSERT_TRUE(body.contains("vigembus"));
-  EXPECT_TRUE(body.at("virtualhid").contains("installed"));
+  EXPECT_FALSE(body.contains("virtualhid"));
   EXPECT_TRUE(body.at("vigembus").contains("installed"));
 }
 
@@ -1821,86 +1587,6 @@ TEST_F(ConfigHttpTest, PermissionsEndpointRejectsMalformedAndUnknownRequests) {
   EXPECT_EQ(client->request("POST", "/permissions-test", "not-json", headers)->status_code, "400 Bad Request");
   EXPECT_EQ(client->request("POST", "/permissions-test", R"({"id":1})", headers)->status_code, "400 Bad Request");
   EXPECT_EQ(client->request("POST", "/permissions-test", R"({"id":"unknown"})", headers)->status_code, "400 Bad Request");
-}
-
-TEST_F(ConfigHttpTest, VirtualInputLicenseReturnsCurrentStatus) {
-  SimpleWeb::CaseInsensitiveMultimap headers;
-  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
-
-  const auto response = client->request("GET", "/virtual-input-license-test", "", headers);
-  ASSERT_EQ(response->status_code, "200 OK");
-  const auto body = nlohmann::json::parse(response->content.string());
-  EXPECT_TRUE(body.at("operation_ok").get<bool>());
-  EXPECT_TRUE(body.at("service_available").get<bool>());
-  EXPECT_EQ(body.at("state").get<std::string>(), "licensed");
-  EXPECT_TRUE(body.at("licensed").get<bool>());
-  EXPECT_EQ(body.at("active_devices").get<unsigned int>(), 2U);
-  EXPECT_EQ(body.at("message").get<std::string>(), "Test license status");
-}
-
-// Test: every public license state maps to a stable Web UI state string
-TEST(ConfigHttpLicenseStatusTest, BuildVirtualHidLicenseStatus_MapsEveryState) {
-  using enum lvh::LicenseState;
-
-  const std::array states {
-    std::pair {unavailable, "unavailable"s},
-    std::pair {unlicensed, "unlicensed"s},
-    std::pair {licensed, "licensed"s},
-    std::pair {expired, "expired"s},
-    std::pair {disabled, "disabled"s},
-    std::pair {invalid, "invalid"s},
-  };
-
-  for (const auto &[state, expected] : states) {
-    lvh::LicenseStatus license;
-    license.state = state;
-    const auto output = confighttp::build_virtualhid_license_status({lvh::OperationStatus::success(), license});
-    EXPECT_EQ(output["state"].get<std::string>(), expected);
-    EXPECT_EQ(output["licensed"].get<bool>(), state == licensed);
-  }
-}
-
-// Test: license status JSON includes all customer-visible metadata without a key field
-TEST(ConfigHttpLicenseStatusTest, BuildVirtualHidLicenseStatus_IncludesExpectedFields) {
-  lvh::LicenseStatus license;
-  license.service_available = true;
-  license.state = lvh::LicenseState::licensed;
-  license.active_devices = 2;
-  license.activation_limit = 5;
-  license.activation_usage = 1;
-  license.plan_name = "Yearly";
-  license.customer_email = "customer@example.com";
-  license.message = "License is active";
-  license.purchase_url = "https://example.com/buy";
-  license.manage_account_url = "https://example.com/manage";
-
-  const auto output = confighttp::build_virtualhid_license_status({lvh::OperationStatus::success(), license});
-  EXPECT_TRUE(output["operation_ok"].get<bool>());
-  EXPECT_TRUE(output["service_available"].get<bool>());
-  EXPECT_EQ(output["active_devices"].get<unsigned int>(), 2U);
-  EXPECT_EQ(output["activation_limit"].get<unsigned int>(), 5U);
-  EXPECT_EQ(output["activation_usage"].get<unsigned int>(), 1U);
-  EXPECT_EQ(output["plan_name"].get<std::string>(), "Yearly");
-  EXPECT_EQ(output["customer_email"].get<std::string>(), "customer@example.com");
-  EXPECT_FALSE(output.contains("expires_at"));
-  EXPECT_EQ(output["message"].get<std::string>(), "License is active");
-  EXPECT_EQ(output["purchase_url"].get<std::string>(), "https://example.com/buy");
-  EXPECT_EQ(output["manage_account_url"].get<std::string>(), "https://example.com/manage");
-  EXPECT_EQ(output["error"].get<std::string>(), "");
-  EXPECT_FALSE(output.contains("license_key"));
-}
-
-// Test: failed license operations preserve the latest status and expose only the safe error message
-TEST(ConfigHttpLicenseStatusTest, BuildVirtualHidLicenseStatus_IncludesOperationFailure) {
-  lvh::LicenseStatus license;
-  license.service_available = true;
-  license.state = lvh::LicenseState::invalid;
-  const auto operation = lvh::OperationStatus::failure(lvh::ErrorCode::license_invalid, "License is invalid");
-
-  const auto output = confighttp::build_virtualhid_license_status({operation, license});
-  EXPECT_FALSE(output["operation_ok"].get<bool>());
-  EXPECT_EQ(output["state"].get<std::string>(), "invalid");
-  EXPECT_EQ(output["error"].get<std::string>(), "License is invalid");
 }
 
 // ============================================================

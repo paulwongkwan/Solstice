@@ -337,7 +337,7 @@ namespace upnp {
       bool mapped = false;
       IGDdatas data;
       urls_t mapped_urls;
-      auto address_family = net::get_effective_address_family(net::af_from_enum_string(config::sunshine.address_family));
+      auto address_family = net::get_effective_address_family(net::af_from_enum_string(config::solstice.address_family));
 
       // Refresh UPnP rules every few minutes. They can be lost if the router reboots,
       // WAN IP address changes, or various other conditions.
@@ -403,7 +403,7 @@ namespace upnp {
    * @brief Start UPnP port mapping and return its shutdown guard.
    */
   std::unique_ptr<platf::deinit_t> start() {
-    if (!config::sunshine.flags[config::flag::UPNP]) {
+    if (!config::solstice.flags[config::flag::UPNP]) {
       return nullptr;
     }
 

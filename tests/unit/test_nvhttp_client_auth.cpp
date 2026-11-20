@@ -33,11 +33,11 @@ protected:
   void SetUp() override {
     BaseTest::SetUp();
     original_state_file = config::nvhttp.file_state;
-    original_fresh_state = config::sunshine.flags[config::flag::FRESH_STATE];
+    original_fresh_state = config::solstice.flags[config::flag::FRESH_STATE];
     state_file = fs::path {SOLSTICE_TEST_BIN_DIR} / "client_authorization_state.json";
 
     config::nvhttp.file_state = state_file.string();
-    config::sunshine.flags[config::flag::FRESH_STATE] = false;
+    config::solstice.flags[config::flag::FRESH_STATE] = false;
     nvhttp::test_support::reset_client_state();
 
     std::error_code remove_error;
@@ -53,7 +53,7 @@ protected:
     fs::remove(state_file, remove_error);
 
     config::nvhttp.file_state = original_state_file;
-    config::sunshine.flags[config::flag::FRESH_STATE] = original_fresh_state;
+    config::solstice.flags[config::flag::FRESH_STATE] = original_fresh_state;
     BaseTest::TearDown();
   }
 

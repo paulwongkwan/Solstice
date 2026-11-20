@@ -471,7 +471,7 @@ namespace nvhttp {
     client_root.named_devices.emplace_back(std::move(named_cert));
     rebuild_client_cert_chain();
 
-    if (!config::sunshine.flags[config::flag::FRESH_STATE]) {
+    if (!config::solstice.flags[config::flag::FRESH_STATE]) {
       save_state();
     }
     return uuid;
@@ -1005,7 +1005,7 @@ namespace nvhttp {
     pt::ptree &tree,
     const std::string &unique_id
   ) {
-    const bool pin_stdin = config::sunshine.flags[config::flag::PIN_STDIN];
+    const bool pin_stdin = config::solstice.flags[config::flag::PIN_STDIN];
     auto make_session = [&]() {
       pair_session_t fresh_sess;
       fresh_sess.client.uniqueID = unique_id;
@@ -1262,7 +1262,7 @@ namespace nvhttp {
     pt::ptree tree;
 
     tree.put("root.<xmlattr>.status_code", 200);
-    tree.put("root.hostname", config::nvhttp.sunshine_name);
+    tree.put("root.hostname", config::nvhttp.solstice_name);
 
     tree.put("root.appversion", VERSION);
     tree.put("root.GfeVersion", GFE_VERSION);
@@ -1648,9 +1648,9 @@ namespace nvhttp {
 
     auto port_http = net::map_port(PORT_HTTP);
     auto port_https = net::map_port(PORT_HTTPS);
-    auto address_family = net::af_from_enum_string(config::sunshine.address_family);
+    auto address_family = net::af_from_enum_string(config::solstice.address_family);
 
-    bool clean_slate = config::sunshine.flags[config::flag::FRESH_STATE];
+    bool clean_slate = config::solstice.flags[config::flag::FRESH_STATE];
 
     if (!clean_slate) {
       load_state();

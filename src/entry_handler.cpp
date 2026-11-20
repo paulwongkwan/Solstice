@@ -42,7 +42,7 @@ namespace args {
       help(name);
     }
 
-    http::save_user_creds(config::sunshine.credentials_file, argv[0], argv[1]);
+    http::save_user_creds(config::solstice.credentials_file, argv[0], argv[1]);
 
     return 0;
   }

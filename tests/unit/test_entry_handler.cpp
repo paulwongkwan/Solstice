@@ -21,14 +21,14 @@ private:
 protected:
   void SetUp() override {
     BaseTest::SetUp();
-    original_bind_address = config::sunshine.bind_address;
-    original_port = config::sunshine.port;
-    config::sunshine.port = 47989;
+    original_bind_address = config::solstice.bind_address;
+    original_port = config::solstice.port;
+    config::solstice.port = 47989;
   }
 
   void TearDown() override {
-    config::sunshine.bind_address = original_bind_address;
-    config::sunshine.port = original_port;
+    config::solstice.bind_address = original_bind_address;
+    config::solstice.port = original_port;
     BaseTest::TearDown();
   }
 };
@@ -37,7 +37,7 @@ protected:
  * @brief Test that Web UI URLs use localhost when no bind address is configured.
  */
 TEST_F(LaunchUiUrlTest, UsesLocalhostWithoutBindAddress) {
-  config::sunshine.bind_address = "";
+  config::solstice.bind_address = "";
 
   EXPECT_EQ(get_launch_ui_url(), "https://localhost:47990");
   EXPECT_EQ(get_launch_ui_url("/pin"), "https://localhost:47990/pin");
@@ -47,7 +47,7 @@ TEST_F(LaunchUiUrlTest, UsesLocalhostWithoutBindAddress) {
  * @brief Test that Web UI URLs use the configured IPv4 bind address.
  */
 TEST_F(LaunchUiUrlTest, UsesConfiguredIPv4Address) {
-  config::sunshine.bind_address = "198.51.100.56";
+  config::solstice.bind_address = "198.51.100.56";
 
   EXPECT_EQ(get_launch_ui_url(), "https://198.51.100.56:47990");
 }
@@ -56,7 +56,7 @@ TEST_F(LaunchUiUrlTest, UsesConfiguredIPv4Address) {
  * @brief Test that Web UI URLs enclose configured IPv6 bind addresses in brackets.
  */
 TEST_F(LaunchUiUrlTest, EscapesConfiguredIPv6Address) {
-  config::sunshine.bind_address = "2001:db8::1";
+  config::solstice.bind_address = "2001:db8::1";
 
   EXPECT_EQ(get_launch_ui_url("/config"), "https://[2001:db8::1]:47990/config");
 }

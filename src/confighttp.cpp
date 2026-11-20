@@ -81,6 +81,15 @@ namespace confighttp {
    */
   using https_handler_t = std::function<void(resp_https_t, req_https_t)>;
 
+  namespace {
+#ifdef SOLSTICE_TESTS
+    /**
+     * @brief Deterministic permission statuses returned by getPermissions() in tests.
+     */
+    std::optional<nlohmann::json> permission_status_override;
+#endif
+  }  // namespace
+
   /**
    * @brief Client certificate operations accepted by the configuration API.
    */
@@ -174,7 +183,7 @@ namespace confighttp {
    * @return Hexadecimal signature for the payload.
    */
   std::string session_signature(const std::string_view payload) {
-    const std::string secret = "solstice-session:"s + config::sunshine.password + config::sunshine.salt;
+    const std::string secret = "solstice-session:"s + config::solstice.password + config::solstice.salt;
     return util::hex(crypto::hash(secret + std::string {payload})).to_string();
   }
 
@@ -189,7 +198,7 @@ namespace confighttp {
     const auto expiry = std::chrono::duration_cast<std::chrono::seconds>(
                           std::chrono::system_clock::now().time_since_epoch() + lifetime)
                           .count();
-    const auto payload = std::format("{}.{}", expiry, SimpleWeb::Crypto::Base64::encode(config::sunshine.username));
+    const auto payload = std::format("{}.{}", expiry, SimpleWeb::Crypto::Base64::encode(config::solstice.username));
     return payload + "." + session_signature(payload);
   }
 
@@ -227,7 +236,7 @@ namespace confighttp {
     }
 
     const auto user = SimpleWeb::Crypto::Base64::decode(std::string {payload.substr(expiry_separator + 1)});
-    return boost::iequals(user, config::sunshine.username);
+    return boost::iequals(user, config::solstice.username);
   }
 
   /**
@@ -239,7 +248,7 @@ namespace confighttp {
    * @return True when the request is authenticated.
    */
   bool is_authenticated(const req_https_t &request) {
-    if (config::sunshine.username.empty()) {
+    if (config::solstice.username.empty()) {
       return false;
     }
 
@@ -269,9 +278,9 @@ namespace confighttp {
 
     const auto username = auth_data.substr(0, index);
     const auto password = auth_data.substr(index + 1);
-    const auto hash = util::hex(crypto::hash(password + config::sunshine.salt)).to_string();
+    const auto hash = util::hex(crypto::hash(password + config::solstice.salt)).to_string();
 
-    return boost::iequals(username, config::sunshine.username) && hash == config::sunshine.password;
+    return boost::iequals(username, config::solstice.username) && hash == config::solstice.password;
   }
 
   /**
@@ -461,7 +470,7 @@ namespace confighttp {
     }
 
     // If credentials are shown, redirect the user to a /welcome page
-    if (config::sunshine.username.empty()) {
+    if (config::solstice.username.empty()) {
       send_redirect(response, request, "/welcome");
       return false;
     }
@@ -553,7 +562,7 @@ namespace confighttp {
    */
   std::string get_client_id(const req_https_t &request) {
     // Try to use the authenticated username as client ID
-    if (const auto auth = request->header.find("authorization"); !config::sunshine.username.empty() && auth != request->header.end()) {
+    if (const auto auth = request->header.find("authorization"); !config::solstice.username.empty() && auth != request->header.end()) {
       if (const auto &rawAuth = auth->second; rawAuth.rfind("Basic "sv, 0) == 0) {
         auto authData = SimpleWeb::Crypto::Base64::decode(rawAuth.substr("Basic "sv.length()));
         if (const auto index = static_cast<int>(authData.find(':')); index < authData.size() - 1) {
@@ -635,7 +644,7 @@ namespace confighttp {
   bool validate_csrf_token(const resp_https_t &response, const req_https_t &request, const std::string &client_id) {
     // Helper function to check if a URL starts with any allowed origin
     auto is_allowed_origin = [](const std::string_view url) {
-      return std::ranges::any_of(config::sunshine.csrf_allowed_origins, [&url](const std::string &allowed_origin) {
+      return std::ranges::any_of(config::solstice.csrf_allowed_origins, [&url](const std::string &allowed_origin) {
         // Ensure exact prefix match (with ":" or "/" after to prevent malicious.com matching allowed.com)
         if (url.rfind(allowed_origin, 0) != 0) {  // rfind with pos=0 checks if the url starts with allowed_origin
           return false;
@@ -712,7 +721,7 @@ namespace confighttp {
 
   void getPage(const resp_https_t &response, const req_https_t &request, const bool require_auth, const bool redirect_if_username) {
     // Special handling for welcome page: redirect if the username is already set
-    if (redirect_if_username && !config::sunshine.username.empty()) {
+    if (redirect_if_username && !config::solstice.username.empty()) {
       send_redirect(response, request, "/");
       return;
     }
@@ -724,7 +733,7 @@ namespace confighttp {
         return;
       }
 
-      if (config::sunshine.username.empty()) {
+      if (config::solstice.username.empty()) {
         send_redirect(response, request, "/welcome");
         return;
       }
@@ -1380,7 +1389,7 @@ namespace confighttp {
     output_tree["platform"] = SOLSTICE_PLATFORM;
     output_tree["version"] = PROJECT_VERSION;
 
-    auto vars = config::parse_config(file_handler::read_file(config::sunshine.config_file.c_str()));
+    auto vars = config::parse_config(file_handler::read_file(config::solstice.config_file.c_str()));
 
     for (auto &[name, value] : vars) {
       output_tree[name] = std::move(value);
@@ -1403,7 +1412,7 @@ namespace confighttp {
 
     nlohmann::json output_tree;
     output_tree["status"] = true;
-    output_tree["locale"] = config::sunshine.locale;
+    output_tree["locale"] = config::solstice.locale;
     send_response(response, output_tree);
   }
 
@@ -1453,7 +1462,7 @@ namespace confighttp {
         // we should migrate the config file to straight JSON and get rid of all this nonsense
         config_stream << k << " = " << (v.is_string() ? v.get<std::string>() : v.dump()) << std::endl;
       }
-      file_handler::write_file(config::sunshine.config_file.c_str(), config_stream.str());
+      file_handler::write_file(config::solstice.config_file.c_str(), config_stream.str());
       output_tree["status"] = true;
       send_response(response, output_tree);
     } catch (std::exception &e) {
@@ -1604,7 +1613,7 @@ namespace confighttp {
 
     print_req(request);
 
-    std::string content = file_handler::read_file(config::sunshine.log_file.c_str());
+    std::string content = file_handler::read_file(config::solstice.log_file.c_str());
     SimpleWeb::CaseInsensitiveMultimap headers;
     headers.emplace("Content-Type", "text/plain");
     headers.emplace("X-Frame-Options", "DENY");
@@ -1633,7 +1642,7 @@ namespace confighttp {
     if (!check_content_type(response, request, "application/json")) {
       return;
     }
-    if (!config::sunshine.username.empty() && !authenticate(response, request)) {
+    if (!config::solstice.username.empty() && !authenticate(response, request)) {
       return;
     }
 
@@ -1663,13 +1672,13 @@ namespace confighttp {
       if (newUsername.empty()) {
         errors.emplace_back("Invalid Username");
       } else {
-        auto hash = util::hex(crypto::hash(password + config::sunshine.salt)).to_string();
-        if (config::sunshine.username.empty() || (boost::iequals(username, config::sunshine.username) && hash == config::sunshine.password)) {
+        auto hash = util::hex(crypto::hash(password + config::solstice.salt)).to_string();
+        if (config::solstice.username.empty() || (boost::iequals(username, config::solstice.username) && hash == config::solstice.password)) {
           if (newPassword.empty() || newPassword != confirmPassword) {
             errors.emplace_back("Password Mismatch");
           } else {
-            http::save_user_creds(config::sunshine.credentials_file, newUsername, newPassword);
-            http::reload_user_creds(config::sunshine.credentials_file);
+            http::save_user_creds(config::solstice.credentials_file, newUsername, newPassword);
+            http::reload_user_creds(config::solstice.credentials_file);
             output_tree["status"] = true;
           }
         } else {
@@ -2175,7 +2184,7 @@ namespace confighttp {
       return;
     }
 
-    if (config::sunshine.username.empty()) {
+    if (config::solstice.username.empty()) {
       bad_request(response, "No Web UI credentials are configured");
       return;
     }
@@ -2194,8 +2203,8 @@ namespace confighttp {
     const auto password = input_tree.value("password", "");
     const auto remember = input_tree.value("remember", false);
 
-    const auto hash = util::hex(crypto::hash(password + config::sunshine.salt)).to_string();
-    if (!boost::iequals(username, config::sunshine.username) || hash != config::sunshine.password) {
+    const auto hash = util::hex(crypto::hash(password + config::solstice.salt)).to_string();
+    if (!boost::iequals(username, config::solstice.username) || hash != config::solstice.password) {
       BOOST_LOG(warning) << "Web UI: ["sv << address << "] -- login failed"sv;
       send_unauthorized(response, request);
       return;
@@ -2249,7 +2258,7 @@ namespace confighttp {
     const auto shutdown_event = mail::man->event<bool>(mail::shutdown);
 
     const auto port_https = net::map_port(PORT_HTTPS);
-    const auto address_family = net::af_from_enum_string(config::sunshine.address_family);
+    const auto address_family = net::af_from_enum_string(config::solstice.address_family);
 
     https_server_t server {config::nvhttp.cert, config::nvhttp.pkey};
 
