@@ -3,10 +3,7 @@ import { ref } from 'vue'
 import NvidiaNvencEncoder from './encoders/NvidiaNvencEncoder.vue'
 import IntelQuickSyncEncoder from './encoders/IntelQuickSyncEncoder.vue'
 import AmdAmfEncoder from './encoders/AmdAmfEncoder.vue'
-import VideotoolboxEncoder from './encoders/VideotoolboxEncoder.vue'
 import SoftwareEncoder from './encoders/SoftwareEncoder.vue'
-import VAAPIEncoder from './encoders/VAAPIEncoder.vue'
-import VulkanEncoder from './encoders/VulkanEncoder.vue'
 
 const props = defineProps({
   platform: String,
@@ -36,27 +33,6 @@ const config = ref(props.config)
   <!-- AMD AMF Encoder Tab -->
   <AmdAmfEncoder
       v-if="currentTab === 'amd'"
-      :platform="platform"
-      :config="config"
-  />
-
-  <!-- VideoToolbox Encoder Tab -->
-  <VideotoolboxEncoder
-      v-if="currentTab === 'vt'"
-      :platform="platform"
-      :config="config"
-  />
-
-  <!-- VAAPI Encoder Tab -->
-  <VAAPIEncoder
-      v-if="currentTab === 'vaapi'"
-      :platform="platform"
-      :config="config"
-  />
-
-  <!-- Vulkan Encoder Tab -->
-  <VulkanEncoder
-      v-if="currentTab === 'vulkan'"
       :platform="platform"
       :config="config"
   />

@@ -2,7 +2,6 @@
  * @file src/nvenc/nvenc_d3d11_on_cuda.cpp
  * @brief Definitions for CUDA NVENC encoder with Direct3D11 input surfaces.
  */
-#ifdef _WIN32
   // this include
   #include "nvenc_d3d11_on_cuda.h"
 
@@ -243,4 +242,3 @@ namespace NVENC_NAMESPACE {
   }
 
 }  // namespace NVENC_NAMESPACE
-#endif

@@ -36,13 +36,11 @@
 #include "system_tray.h"
 #include "utility.h"
 
-#ifdef _WIN32
   // from_utf8() string conversion function
   #include "platform/windows/utf_utils.h"
 
   // _SH constants for _wfsopen()
   #include <share.h>
-#endif
 
 namespace proc {
   using namespace std::literals;
@@ -116,11 +114,7 @@ namespace proc {
     // Parse the raw command string into parts to get the actual command portion
     std::vector<std::string> parts;
     try {
-#ifdef _WIN32
       parts = boost::program_options::split_winmain(cmd);
-#else
-      parts = boost::program_options::split_unix(cmd);
-#endif
     } catch (boost::escaped_list_error &err) {
       BOOST_LOG(error) << "Boost failed to parse command ["sv << cmd << "] because " << err.what();
       return boost::filesystem::path();
@@ -256,7 +250,6 @@ namespace proc {
     _env["SUNSHINE_CLIENT_AUDIO_SURROUND_PARAMS"] = launch_session->surround_params;
 
     if (!_app.output.empty() && _app.output != "null"sv) {
-#ifdef _WIN32
       // fopen() interprets the filename as an ANSI string on Windows, so we must convert it
       // to UTF-16 and use the wchar_t variants for proper Unicode log file path support.
       auto woutput = utf_utils::from_utf8(_app.output);
@@ -265,9 +258,6 @@ namespace proc {
       // still open from a previous execution. This is required to handle the case of a
       // detached process executing again while the previous process is still running.
       _pipe.reset(_wfsopen(woutput.c_str(), L"a", _SH_DENYNO));
-#else
-      _pipe.reset(fopen(_app.output.c_str(), "a"));
-#endif
     }
 
     std::error_code ec;
@@ -334,15 +324,6 @@ namespace proc {
   }
 
   int proc_t::running() {
-#ifndef _WIN32
-    // On POSIX OSes, we must periodically wait for our children to avoid
-    // them becoming zombies. This must be synchronized carefully with
-    // calls to bp::wait() and platf::process_group_running() which both
-    // invoke waitpid() under the hood.
-    auto reaper = util::fail_guard([]() {
-      while (waitpid(-1, nullptr, WNOHANG) > 0);
-    });
-#endif
 
     if (placebo) {
       return _app_id;
@@ -519,7 +500,6 @@ namespace proc {
               auto var_end = find_match(next, std::end(val_raw));
               auto var_name = std::string {var_begin, var_end};
 
-#ifdef _WIN32
               // Windows treats environment variable names in a case-insensitive manner,
               // so we look for a case-insensitive match here. This is critical for
               // correctly appending to PATH on Windows.
@@ -530,7 +510,6 @@ namespace proc {
                 // Use an existing case-insensitive match
                 var_name = itr->get_name();
               }
-#endif
 
               ss << env[var_name].to_string();
 
@@ -814,12 +793,10 @@ namespace proc {
 
         if (working_dir) {
           ctx.working_dir = parse_env_val(this_env, *working_dir);
-#ifdef _WIN32
           // The working directory, unlike the command itself, should not be quoted
           // when it contains spaces. Unlike POSIX, Windows forbids quotes in paths,
           // so we can safely strip them all out here to avoid confusing the user.
           boost::erase_all(ctx.working_dir, "\"");
-#endif
         }
 
         if (image_path) {

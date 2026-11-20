@@ -14,14 +14,8 @@
 
 // lib includes
 #include <boost/core/noncopyable.hpp>
-#ifndef _WIN32
-  #include <boost/asio.hpp>
-#endif
 
 // local includes
-#ifndef _WIN32
-  #include "src/compat/boost_process.h"
-#endif
 #include "src/config.h"
 #include "src/logging.h"
 #include "src/thread_safe.h"
@@ -41,7 +35,6 @@ struct AVHWFramesContext;
 struct AVCodecContext;
 struct AVDictionary;
 
-#ifdef _WIN32
 struct ID3D11Device;
 
 // Forward declarations of boost classes to avoid having to include boost headers
@@ -68,7 +61,6 @@ namespace boost {
     using environment = basic_environment<char>;
   }  // namespace process::v1
 }  // namespace boost
-#endif
 namespace video {
   struct config_t;
 }  // namespace video
@@ -328,11 +320,7 @@ namespace platf {
    */
   enum class mem_type_e {
     system,  ///< System memory
-    vaapi,  ///< VAAPI
     dxgi,  ///< DXGI
-    cuda,  ///< CUDA
-    videotoolbox,  ///< VideoToolbox
-    vulkan,  ///< Vulkan
     unknown  ///< Unknown
   };
 
@@ -601,9 +589,7 @@ namespace platf {
      */
     using init_hw_device_fn_t = int (*)(avcodec_encode_device_t *encode_device, AVBufferRef **hw_device_buf);
     init_hw_device_fn_t init_hw_device = nullptr;  ///< Optional backend-specific hardware device initializer.
-#ifdef _WIN32
     ID3D11Device *d3d11_device = nullptr;  ///< Native D3D11 device borrowed while the encode device is alive.
-#endif
     AVFrame *frame {};  ///< FFmpeg frame currently owned by the encode device.
 
     /**

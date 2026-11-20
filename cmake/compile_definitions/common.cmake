@@ -4,7 +4,6 @@
 list(APPEND SUNSHINE_COMPILE_OPTIONS -Wall -Wno-sign-compare)
 # Wall - enable all warnings
 # Werror - treat warnings as errors
-# Wno-maybe-uninitialized/Wno-uninitialized - disable warnings for maybe uninitialized variables
 # Wno-sign-compare - disable warnings for signed/unsigned comparisons
 # Wno-restrict - disable warnings for memory overlap
 # Wmissing-field-initializers - enable warnings for missing field initializers
@@ -30,19 +29,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
     # Clang specific compile options
 
-    # Clang doesn't actually complain about this this, so disabling for now
-    # list(APPEND SUNSHINE_COMPILE_OPTIONS -Wno-uninitialized)
-
     # Warn for missing positional field initializers but not designated initializers
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
         list(APPEND SUNSHINE_COMPILE_OPTIONS -Wmissing-field-initializers)
         list(APPEND SUNSHINE_COMPILE_OPTIONS -Wno-missing-designated-field-initializers)
-    endif()
-
-    # Some libc++ versions on Apple and FreeBSD guard std::jthread behind this flag.
-    if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-        list(APPEND SUNSHINE_COMPILE_OPTIONS -fexperimental-library)
-        list(APPEND SUNSHINE_LINK_OPTIONS -fexperimental-library)
     endif()
 endif()
 if(BUILD_WERROR)
@@ -55,29 +45,7 @@ if(NOT SUNSHINE_ASSETS_DIR)
 endif()
 
 # platform specific compile definitions
-if(WIN32)
-    include(${CMAKE_MODULE_PATH}/compile_definitions/windows.cmake)
-elseif(UNIX)
-    include(${CMAKE_MODULE_PATH}/compile_definitions/unix.cmake)
-
-    if(APPLE)
-        include(${CMAKE_MODULE_PATH}/compile_definitions/macos.cmake)
-    else()
-        include(${CMAKE_MODULE_PATH}/compile_definitions/linux.cmake)
-    endif()
-endif()
-
-# libvirtualhid
-add_subdirectory("${CMAKE_SOURCE_DIR}/third-party/libvirtualhid")
-list(APPEND SUNSHINE_EXTERNAL_LIBRARIES libvirtualhid::libvirtualhid)
-list(APPEND PLATFORM_TARGET_FILES
-        "${CMAKE_SOURCE_DIR}/src/platform/virtualhid_input.h"
-        "${CMAKE_SOURCE_DIR}/src/platform/virtualhid_input.cpp")
-
-# build libevdev before the libvirtualhid target when using the ExternalProject fallback
-if(EXTERNAL_PROJECT_LIBEVDEV_USED AND TARGET libvirtualhid)
-    add_dependencies(libvirtualhid libevdev)
-endif()
+include(${CMAKE_MODULE_PATH}/compile_definitions/windows.cmake)
 
 set(NVENC_PUBLIC_SOURCES
         "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_config.h"
@@ -90,43 +58,41 @@ set(NVENC_PUBLIC_SOURCES
         "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_shared_dll.h"
         "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_version.h"
 )
-set(NVENC_SOURCES ${NVENC_PUBLIC_SOURCES})
 
-if(WIN32)
-    set(NVENC_IMPLEMENTATION_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_base.cpp"
-            "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_d3d11.cpp"
-            "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_d3d11_native.cpp"
-            "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_d3d11_on_cuda.cpp"
-            "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_dynamic_factory_impl.cpp"
-            "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_utils.cpp"
+set(NVENC_IMPLEMENTATION_SOURCES
+        "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_base.cpp"
+        "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_d3d11.cpp"
+        "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_d3d11_native.cpp"
+        "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_d3d11_on_cuda.cpp"
+        "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_dynamic_factory_impl.cpp"
+        "${CMAKE_SOURCE_DIR}/src/nvenc/nvenc_utils.cpp"
+)
+
+# Add a version-isolated NVENC implementation object library.
+# add_nvenc_sdk_implementation: args = `target_name`, `sdk_version`, `sdk_include_dir`
+function(add_nvenc_sdk_implementation target_name sdk_version sdk_include_dir)
+    add_library(${target_name} OBJECT ${NVENC_IMPLEMENTATION_SOURCES})
+    target_include_directories(${target_name} BEFORE PRIVATE "${sdk_include_dir}")
+    target_compile_definitions(${target_name} PRIVATE
+            NVENC_FACTORY_SUFFIX=${sdk_version}
+            NVENC_NAMESPACE=nvenc_${sdk_version}
+            NVENC_SDK_VERSION=${sdk_version}
     )
+    target_compile_options(${target_name} PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
+endfunction()
 
-    # Add a version-isolated NVENC implementation object library.
-    # add_nvenc_sdk_implementation: args = `target_name`, `sdk_version`, `sdk_include_dir`
-    function(add_nvenc_sdk_implementation target_name sdk_version sdk_include_dir)
-        add_library(${target_name} OBJECT ${NVENC_IMPLEMENTATION_SOURCES})
-        target_include_directories(${target_name} BEFORE PRIVATE "${sdk_include_dir}")
-        target_compile_definitions(${target_name} PRIVATE
-                NVENC_FACTORY_SUFFIX=${sdk_version}
-                NVENC_NAMESPACE=nvenc_${sdk_version}
-                NVENC_SDK_VERSION=${sdk_version}
-        )
-        target_compile_options(${target_name} PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
-    endfunction()
+add_nvenc_sdk_implementation(nvenc_sdk_1100 1100 "${NV_CODEC_HEADERS_11_INCLUDE_DIR}")
+add_nvenc_sdk_implementation(nvenc_sdk_1200 1200 "${NV_CODEC_HEADERS_12_INCLUDE_DIR}")
+add_nvenc_sdk_implementation(nvenc_sdk_1300 1300 "${NV_CODEC_HEADERS_13_INCLUDE_DIR}")
+add_nvenc_sdk_implementation(nvenc_sdk_1301 1301 "${NV_CODEC_HEADERS_13_1_INCLUDE_DIR}")
 
-    add_nvenc_sdk_implementation(nvenc_sdk_1100 1100 "${NV_CODEC_HEADERS_11_INCLUDE_DIR}")
-    add_nvenc_sdk_implementation(nvenc_sdk_1200 1200 "${NV_CODEC_HEADERS_12_INCLUDE_DIR}")
-    add_nvenc_sdk_implementation(nvenc_sdk_1300 1300 "${NV_CODEC_HEADERS_13_INCLUDE_DIR}")
-    add_nvenc_sdk_implementation(nvenc_sdk_1301 1301 "${NV_CODEC_HEADERS_13_1_INCLUDE_DIR}")
-
-    list(APPEND NVENC_SOURCES
-            $<TARGET_OBJECTS:nvenc_sdk_1100>
-            $<TARGET_OBJECTS:nvenc_sdk_1200>
-            $<TARGET_OBJECTS:nvenc_sdk_1300>
-            $<TARGET_OBJECTS:nvenc_sdk_1301>
-    )
-endif()
+set(NVENC_SOURCES
+        ${NVENC_PUBLIC_SOURCES}
+        $<TARGET_OBJECTS:nvenc_sdk_1100>
+        $<TARGET_OBJECTS:nvenc_sdk_1200>
+        $<TARGET_OBJECTS:nvenc_sdk_1300>
+        $<TARGET_OBJECTS:nvenc_sdk_1301>
+)
 
 list(APPEND PLATFORM_TARGET_FILES ${NVENC_SOURCES})
 
@@ -219,12 +185,10 @@ include_directories(
         ${OPENSSL_INCLUDE_DIR}
         ${Opus_INCLUDE_DIR}
         ${FFMPEG_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}  # has to be the last, or we get runtime error on macOS ffmpeg encoder
+        ${Boost_INCLUDE_DIRS}
 )
 
-if(NOT APPLE)
-    include_directories(BEFORE SYSTEM "${NV_CODEC_HEADERS_13_1_INCLUDE_DIR}")
-endif()
+include_directories(BEFORE SYSTEM "${NV_CODEC_HEADERS_13_1_INCLUDE_DIR}")
 
 list(APPEND SUNSHINE_EXTERNAL_LIBRARIES
         ${MINIUPNP_LIBRARIES}

@@ -25,10 +25,6 @@ location by modifying the configuration file.
 
 | OS      | Location                                        |
 |---------|-------------------------------------------------|
-| Docker  | @code{}/config@endcode                          |
-| FreeBSD | @code{}~/.config/sunshine@endcode               |
-| Linux   | @code{}~/.config/sunshine@endcode               |
-| macOS   | @code{}~/.config/sunshine@endcode               |
 | Windows | @code{}%ProgramFiles%\\Sunshine\\config@endcode |
 
 Although it is recommended to use the configuration UI, it is possible manually configure Sunshine by
@@ -37,17 +33,14 @@ editing the `conf` file in a text editor. Use the examples as reference.
 The web UI groups these settings into the sidebar categories documented below. Encoder categories are shown only when
 supported on the current platform.
 
-## Permissions on every platform
+## Permissions
 
-Open **Troubleshooting > Permissions** in the Web UI to see required and optional access for the current platform.
-The Home page flags verifiable required access that is missing. Sunshine checks for access granted while it is running
-and restarts once after all verifiable required access is available. On Unix, adding a user to a group takes effect only
-after a new login session; Sunshine cannot detect the new group membership in the existing process.
+Open **Troubleshooting > Permissions** in the Web UI to see required and optional access. The Home page flags
+verifiable required access that is missing. Sunshine checks for access granted while it is running and restarts
+once after all verifiable required access is available.
 
-On Linux and FreeBSD, virtual keyboard, mouse, and gamepad input need read and write access to `/dev/uinput` (Linux
-also checks `/dev/input/uinput`). The Web UI shows setup steps if that access is missing. On Windows, Sunshine checks
-whether its account can list and create files in the `config` directory beside the executable. Windows provides no
-consent prompt for directory ACLs, so the Web UI shows setup steps for correcting access.
+Sunshine checks whether its account can list and create files in the `config` directory beside the executable.
+Windows provides no consent prompt for directory ACLs, so the Web UI shows setup steps for correcting access.
 
 ## General
 
@@ -325,51 +318,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
     </tr>
 </table>
 
-### gamepad_driver
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Controls which virtual gamepad backend Sunshine may use on Windows and macOS. On Windows, the Web UI and
-            startup notification request a choice while this option is not set. If Sunshine detects an active Virtual
-            HID Broker license on Windows, it automatically sets this option to `all` when it is missing.
-            @warning{ViGEmBus has limited gamepad features, supports only Xbox 360 and DualShock 4 emulation, and has
-            reached end of life. Selecting `vigembus` also suppresses Virtual HID Broker startup notifications.}
-            @note{`all` and `vigembus` apply only to Windows. On macOS, an unset value uses Virtual HID Broker.}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            not set
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            gamepad_driver = all
-            @endcode</td>
-    </tr>
-    <tr>
-        <td rowspan="4">Choices</td>
-        <td>all</td>
-        <td>Windows only: prefer Virtual HID Broker when it is available and licensed, with ViGEmBus as a limited fallback.</td>
-    </tr>
-    <tr>
-        <td>virtualhid</td>
-        <td>Use Virtual HID Broker for gamepads. An active paid license is required; Windows ViGEmBus fallback is disabled.</td>
-    </tr>
-    <tr>
-        <td>vigembus</td>
-        <td>Windows only: use ViGEmBus for gamepads and hide Virtual HID Broker status and licensing details.</td>
-    </tr>
-    <tr>
-        <td>none</td>
-        <td>Disable virtual gamepads on Windows and macOS without changing keyboard or mouse input. Suppress broker and driver choice notices.</td>
-    </tr>
-</table>
-
 ### gamepad
 
 <table>
@@ -379,7 +327,7 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
             The type of gamepad to emulate on the host. Automatic selection uses the controller type
             reported by the client. If the type is unknown, Sunshine can select a PlayStation-style
             controller from reported motion or touchpad support; otherwise it uses an Xbox-style controller.
-            @note{When gamepad_driver is `vigembus` on Windows, only auto, x360, and ds4 are available.}
+            @note{ViGEmBus supports only the auto, x360, and ds4 profiles.}
         </td>
     </tr>
     <tr>
@@ -395,33 +343,17 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
             @endcode</td>
     </tr>
     <tr>
-        <td rowspan="7">Choices</td>
-        <td>generic</td>
-        <td>Generic HID gamepad</td>
-    </tr>
-    <tr>
+        <td rowspan="3">Choices</td>
         <td>ds4</td>
         <td>DualShock 4 controller (PS4)</td>
-    </tr>
-    <tr>
-        <td>ds5</td>
-        <td>DualShock 5 controller (PS5)</td>
-    </tr>
-    <tr>
-        <td>switch</td>
-        <td>Switch Pro controller</td>
     </tr>
     <tr>
         <td>x360</td>
         <td>Xbox 360 controller</td>
     </tr>
     <tr>
-        <td>xone</td>
-        <td>Xbox One controller</td>
-    </tr>
-    <tr>
-        <td>xseries</td>
-        <td>Xbox Series controller</td>
+        <td>auto</td>
+        <td>Select a profile from the client's reported controller type</td>
     </tr>
 </table>
 
@@ -433,7 +365,7 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
         <td colspan="2">
             Allow Select/Back inputs to also trigger a PlayStation-style gamepad touchpad click. Useful
             for clients looking to emulate touchpad click on XInput devices.
-            @hint{Applies to ds4, ds5, and automatically selected PlayStation-style gamepads.}
+            @hint{Applies to ds4 and automatically selected PlayStation-style gamepads.}
         </td>
     </tr>
     <tr>
@@ -502,29 +434,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
         <td>Example</td>
         <td colspan="2">@code{}
             touchpad_as_ds4 = enabled
-            @endcode</td>
-    </tr>
-</table>
-
-### virtualhid_randomize_mac
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Randomize the MAC address for PlayStation-style virtual controllers created by libvirtualhid.
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            enabled
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            virtualhid_randomize_mac = enabled
             @endcode</td>
     </tr>
 </table>
@@ -800,33 +709,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
             @tip{To find the name of the audio sink follow these instructions.
             <br>
             <br>
-            **FreeBSD/Linux + pulseaudio:**
-            <br>
-            @code{}
-            pacmd list-sinks | grep "name:"
-            @endcode
-            <br>
-            <br>
-            **FreeBSD/Linux + pipewire:**
-            <br>
-            @code{}
-            pactl list short sinks
-            @endcode
-            <br>
-            <br>
-            Copy the sink name (second column) into `audio_sink`.
-            <br>
-            <br>
-            **macOS:**
-            <br>
-            Sunshine can only access microphones on macOS due to system limitations.
-            To stream system audio use
-            [Soundflower](https://github.com/mattingalls/Soundflower) or
-            [BlackHole](https://github.com/ExistentialAudio/BlackHole).
-            <br>
-            <br>
-            **Windows:**
-            <br>
             Enter the following command in command prompt or PowerShell.
             @code{}
             %ProgramFiles%\Sunshine\tools\audio-info.exe
@@ -840,18 +722,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
     <tr>
         <td>Default</td>
         <td colspan="2">Sunshine will select the default audio device.</td>
-    </tr>
-    <tr>
-        <td>Example (FreeBSD/Linux)</td>
-        <td colspan="2">@code{}
-            audio_sink = alsa_output.pci-0000_09_00.3.analog-stereo
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example (macOS)</td>
-        <td colspan="2">@code{}
-            audio_sink = BlackHole 2ch
-            @endcode</td>
     </tr>
     <tr>
         <td>Example (Windows)</td>
@@ -983,19 +853,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
             @tip{To find the appropriate values follow these instructions.
             <br>
             <br>
-            **FreeBSD/Linux + VA-API:**
-            <br>
-            Unlike with *amdvce* and *nvenc*, it doesn't matter if video encoding is done on a different GPU.
-            @code{}
-            ls /dev/dri/renderD*  # to find all devices capable of VAAPI
-            # replace ``renderD129`` with the device from above to list the name and capabilities of the device
-            vainfo --display drm --device /dev/dri/renderD129 | \
-              grep -E "((VAProfileH264High|VAProfileHEVCMain|VAProfileHEVCMain10).*VAEntrypointEncSlice)|Driver version"
-            @endcode
-            To be supported by Sunshine, it needs to have at the very minimum:
-            `VAProfileH264High   : VAEntrypointEncSlice`
-            <br>
-            <br>
             **Windows:**
             <br>
             Enter the following command in command prompt or PowerShell.
@@ -1013,12 +870,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
         <td colspan="2">Sunshine will select the default video card.</td>
     </tr>
     <tr>
-        <td>Example (FreeBSD/Linux)</td>
-        <td colspan="2">@code{}
-            adapter_name = /dev/dri/renderD128
-            @endcode</td>
-    </tr>
-    <tr>
         <td>Example (Windows)</td>
         <td colspan="2">@code{}
             adapter_name = Radeon RX 580 Series
@@ -1034,35 +885,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
         <td colspan="2">
             Select the display you want to stream.
             @tip{To find the appropriate values follow these instructions.
-            <br>
-            <br>
-            **FreeBSD/Linux:**
-            <br>
-            During Sunshine startup, you should see the list of detected displays:
-            @code{}
-            Info: Detecting displays
-            Info: Detected display: DVI-D-0 (id: 0) connected: false
-            Info: Detected display: HDMI-0 (id: 1) connected: true
-            Info: Detected display: DP-0 (id: 2) connected: true
-            Info: Detected display: DP-1 (id: 3) connected: false
-            Info: Detected display: DVI-D-1 (id: 4) connected: false
-            @endcode
-            It is recommended to use the stable display connector name (text right before the parenthesis, e.g. DP-0) for this value.
-            With KMS (kmsgrab) or wlroots (wlgrab), use the exact connector name from the capture backend's monitor list
-            in the Sunshine log. If a numeric setting does not match an enumerated output, Sunshine selects the first
-            detected display instead. Replace the number with the connector name of the intended display.
-            With X11 (x11grab), the numeric id can also be used.
-            <br>
-            <br>
-            **macOS:**
-            <br>
-            During Sunshine startup, you should see the list of detected displays:
-            @code{}
-            Info: Detecting displays
-            Info: Detected display: Monitor-0 (id: 3) connected: true
-            Info: Detected display: Monitor-1 (id: 2) connected: true
-            @endcode
-            You need to use the id value inside the parenthesis, e.g. `3`.
             <br>
             <br>
             **Windows:**
@@ -1123,18 +945,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
     <tr>
         <td>Default</td>
         <td colspan="2">Sunshine will select the default display.</td>
-    </tr>
-    <tr>
-        <td>Example (FreeBSD/Linux)</td>
-        <td colspan="2">@code{}
-            output_name = DP-1
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example (macOS)</td>
-        <td colspan="2">@code{}
-            output_name = 3
-            @endcode</td>
     </tr>
     <tr>
         <td>Example (Windows)</td>
@@ -2298,55 +2108,17 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
     <tr>
         <td>Example</td>
         <td colspan="2">@code{}
-            capture = kms
+            capture = ddx
             @endcode</td>
     </tr>
     <tr>
-        <td rowspan="8">Choices</td>
-        <td>nvfbc</td>
-        <td>Use NVIDIA Frame Buffer Capture to capture direct to GPU memory. This is usually the fastest method for
-            NVIDIA cards. NvFBC does not have native Wayland support and does not work with XWayland.
-            @note{Applies to Linux only.}</td>
-    </tr>
-    <tr>
-        <td>wlr</td>
-        <td>Capture for wlroots based Wayland compositors via wlr-screencopy-unstable-v1. It is possible to capture
-            virtual displays in e.g. Hyprland using this method. On an output that refreshes at least 1.5 times
-            as fast as the stream, frames are captured when the compositor has a new one instead of on a clock of
-            Sunshine's own, which avoids repeated frames; a virtual display at twice the stream's frame rate
-            qualifies.
-            @note{Applies to Linux only.}</td>
-    </tr>
-    <tr>
-        <td>kms</td>
-        <td>DRM/KMS screen capture from the kernel. This requires that Sunshine has `cap_sys_admin` capability.
-            @note{Applies to Linux only.}</td>
-    </tr>
-    <tr>
-        <td>kwin</td>
-        <td>Capture with KDE/KWin Wayland compositor directly via KDE screencasting.
-            @note{Applies to Linux only.}
-            @warning{Flatpak users currently shouldn't use this capture method and use `portal` instead. KWIN_WAYLAND_NO_PERMISSION_CHECKS=1 is necessary to make this capture method work with Flatpak but that has security implications.}</td>
-    </tr>
-    <tr>
-        <td>portal</td>
-        <td>Capture via XDG Desktop Portal.
-            @note{Applies to Linux only.}</td>
-    </tr>
-    <tr>
-        <td>x11</td>
-        <td>Uses XCB. This is the slowest and most CPU intensive so should be avoided if possible.
-            @note{Applies to FreeBSD and Linux only.}</td>
-    </tr>
-    <tr>
+        <td rowspan="2">Choices</td>
         <td>ddx</td>
-        <td>Use DirectX Desktop Duplication API to capture the display. This is well-supported on Windows machines.
-            @note{Applies to Windows only.}</td>
+        <td>Use DirectX Desktop Duplication API to capture the display. This is well-supported on Windows machines.</td>
     </tr>
     <tr>
         <td>wgc</td>
         <td>(beta feature) Use Windows.Graphics.Capture to capture the display.
-            @note{Applies to Windows only.}
             @attention{This capture method is not compatible with the Sunshine service.}</td>
     </tr>
 </table>
@@ -2399,7 +2171,7 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
             @endcode</td>
     </tr>
     <tr>
-        <td rowspan="7">Choices</td>
+        <td rowspan="5">Choices</td>
         <td>nvenc</td>
         <td>For NVIDIA graphics cards</td>
     </tr>
@@ -2412,18 +2184,8 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
         <td>For AMD graphics cards</td>
     </tr>
     <tr>
-        <td>vaapi</td>
-        <td>Use VA-API (AMD, Intel)</td>
-    </tr>
-    <tr>
-        <td>vulkan</td>
-        <td>Use Vulkan encoder (AMD, Intel, NVIDIA).
-            @note{Applies to Linux only.}</td>
-    </tr>
-    <tr>
-        <td>videotoolbox</td>
-        <td>Use VideoToolbox.
-            @note{Applies to macOS only.}</td>
+        <td>mediafoundation</td>
+        <td>For any GPU through the Windows Media Foundation encoder</td>
     </tr>
     <tr>
         <td>software</td>
@@ -3129,348 +2891,6 @@ consent prompt for directory ACLs, so the Web UI shows setup steps for correctin
     <tr>
         <td>cavlc</td>
         <td>context adaptive variable-length coding - higher quality</td>
-    </tr>
-</table>
-
-## VideoToolbox Encoder
-
-### vt_coder
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            The entropy encoding to use for H.264.
-            @note{This option only applies when using macOS.}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            auto
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vt_coder = auto
-            @endcode</td>
-    </tr>
-    <tr>
-        <td rowspan="3">Choices</td>
-        <td>auto</td>
-        <td>let VideoToolbox decide</td>
-    </tr>
-    <tr>
-        <td>cabac</td>
-        <td>context adaptive binary arithmetic coding - higher quality</td>
-    </tr>
-    <tr>
-        <td>cavlc</td>
-        <td>context adaptive variable-length coding - faster decode</td>
-    </tr>
-</table>
-
-### vt_realtime
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Realtime encoding.
-            @note{This option only applies when using macOS.}
-            @warning{Disabling realtime encoding might result in a delayed frame encoding or frame drop.}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            enabled
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vt_realtime = enabled
-            @endcode</td>
-    </tr>
-</table>
-
-## VA-API Encoder
-
-### vaapi_blbrc
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Block level based bitrate control (BLBRC) can assign different bitrate on a per-block basis. May improve quality on supported devices.
-            @note{This option only applies when using the VA-API [encoder](#encoder).}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            disabled
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vaapi_blbrc = enabled
-            @endcode</td>
-    </tr>
-</table>
-
-### vaapi_quality
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            The quality profile controls the tradeoff between speed and quality of encoding.
-            @note{This option only applies when using the VA-API [encoder](#encoder).}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            auto
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vaapi_quality = auto
-            @endcode</td>
-    </tr>
-    <tr>
-        <td rowspan="4">Choices</td>
-        <td>auto</td>
-        <td>driver default quality</td>
-    </tr>
-    <tr>
-        <td>speed</td>
-        <td>prefer speed</td>
-    </tr>
-    <tr>
-        <td>balanced</td>
-        <td>balanced</td>
-    </tr>
-    <tr>
-        <td>quality</td>
-        <td>prefer quality</td>
-    </tr>
-</table>
-
-### vaapi_rc
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            The encoder rate control.
-            @note{This option only applies when using the VA-API [encoder](#encoder).}
-            @warning{The automatic setting may override the driver-default rate control method to VBR and force [vaapi_strict_rc_buffer](#vaapi_strict_rc_buffer) enabled on certain configurations. Selecting another rate control manually will override this behaviour.}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            auto
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vaapi_rc = vbr
-            @endcode</td>
-    </tr>
-    <tr>
-        <td rowspan="7">Choices</td>
-        <td>auto</td>
-        <td>driver default (or whitelisted override)</td>
-    </tr>
-        <tr>
-        <td>avbr</td>
-        <td>average variable bitrate</td>
-    </tr>
-    <tr>
-        <td>cbr</td>
-        <td>constant bitrate</td>
-    </tr>
-        <tr>
-        <td>cqp</td>
-        <td>constant qp mode</td>
-    </tr>
-    <tr>
-        <td>icq</td>
-        <td>intelligent qp mode</td>
-    </tr>
-    <tr>
-        <td>qvbr</td>
-        <td>quality-defined variable bitrate</td>
-    </tr>
-        <tr>
-        <td>vbr</td>
-        <td>variable bitrate</td>
-    </tr>
-</table>
-
-### vaapi_strict_rc_buffer
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Enabling this option can avoid dropped frames over the network during scene changes, but video quality may
-            be reduced during motion.
-            @note{This option only applies for H.264 and HEVC when using VA-API [encoder](#encoder) on AMD GPUs (or when overriding the default rate control on other devices).}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            disabled
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vaapi_strict_rc_buffer = enabled
-            @endcode</td>
-    </tr>
-</table>
-
-## Vulkan Encoder
-
-### vk_tune
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Encoder tuning preset. Low latency modes reduce encoding delay at the cost of quality.
-            @note{This option only applies when using Vulkan [encoder](#encoder).}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            2
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vk_tune = 1
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Options</td>
-        <td>0 (default)</td>
-        <td>Let the driver decide</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>1 (hq)</td>
-        <td>High Quality</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>2 (ll)</td>
-        <td>Low Latency</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>3 (ull)</td>
-        <td>Ultra Low Latency</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>4 (lossless)</td>
-        <td>Lossless</td>
-    </tr>
-</table>
-
-### vk_rc_mode
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Rate control mode for encoding. Auto lets the driver decide.
-            @note{This option only applies when using Vulkan [encoder](#encoder).}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            2
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vk_rc_mode = 4
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Options</td>
-        <td>0</td>
-        <td>Auto (driver decides)</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>1</td>
-        <td>CQP (Constant QP)</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>2</td>
-        <td>CBR (Constant Bitrate)</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>4</td>
-        <td>VBR (Variable Bitrate)</td>
-    </tr>
-</table>
-
-### vk_quality
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Determines encoder tradeoff between quality and speed.
-            @note{This option only applies when using Vulkan [encoder](#encoder).}
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}balanced@endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            vk_quality = quality
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Options</td>
-        <td>speed</td>
-        <td>Speed (prefer speed)</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>balanced</td>
-        <td>Balanced (default)</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>quality</td>
-        <td>Quality (prefer quality)</td>
     </tr>
 </table>
 

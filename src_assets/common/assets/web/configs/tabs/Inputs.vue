@@ -72,13 +72,6 @@ const props = defineProps({
 const config = ref(props.config)
 const keybindingPairs = ref(parseKeybindings(config.value.keybindings))
 
-const vigembusGamepads = new Set(['auto', 'x360', 'ds4'])
-const vigembusOnly = computed(() => props.platform === 'windows' && config.value.gamepad_driver === 'vigembus')
-const gamepadDriverSelection = computed({
-  get: () => props.platform === 'macos' && !config.value.gamepad_driver ? 'virtualhid' : config.value.gamepad_driver,
-  set: value => { config.value.gamepad_driver = value },
-})
-
 /**
  * @brief Add an empty keybinding row.
  */
@@ -103,14 +96,6 @@ watch(
   { deep: true },
 )
 
-watch(
-  () => config.value.gamepad_driver,
-  (gamepadDriver) => {
-    if (props.platform === 'windows' && gamepadDriver === 'vigembus' && !vigembusGamepads.has(config.value.gamepad)) {
-      config.value.gamepad = 'auto'
-    }
-  },
-)
 </script>
 
 <template>
@@ -123,39 +108,20 @@ watch(
               default="true"
     ></Checkbox>
 
-    <!-- Virtual gamepad backend policy -->
-    <div class="mb-3" v-if="platform === 'windows' || platform === 'macos'">
-      <label for="gamepad_driver" class="form-label">{{ $t('config.gamepad_driver') }}</label>
-      <select id="gamepad_driver" class="form-select" v-model="gamepadDriverSelection" required>
-        <option v-if="platform === 'windows'" value="" disabled>{{ $t('config.gamepad_driver_select') }}</option>
-        <option v-if="platform === 'windows'" value="all">{{ $t('config.gamepad_driver_all') }}</option>
-        <option value="virtualhid">{{ $t('config.gamepad_driver_virtualhid') }}</option>
-        <option v-if="platform === 'windows'" value="vigembus">{{ $t('config.gamepad_driver_vigembus') }}</option>
-        <option value="none">{{ $t('config.gamepad_driver_none') }}</option>
-      </select>
-      <div class="form-text">{{ $t(platform === 'macos' ? 'config.gamepad_driver_macos_desc' : 'config.gamepad_driver_desc') }}</div>
-    </div>
-
     <!-- Emulated Gamepad Type -->
-    <div class="mb-3" v-if="config.controller === 'enabled' && config.gamepad_driver !== 'none'">
+    <div class="mb-3" v-if="config.controller === 'enabled'">
       <label for="gamepad" class="form-label">{{ $t('config.gamepad') }}</label>
       <select id="gamepad" class="form-select" v-model="config.gamepad">
         <option value="auto">{{ $t('_common.auto') }}</option>
-
-        <option v-if="!vigembusOnly" value="generic">{{ $t("config.gamepad_generic") }}</option>
         <option value="x360">{{ $t('config.gamepad_x360') }}</option>
-        <option v-if="!vigembusOnly" value="xone">{{ $t("config.gamepad_xone") }}</option>
-        <option v-if="!vigembusOnly" value="xseries">{{ $t("config.gamepad_xseries") }}</option>
         <option value="ds4">{{ $t('config.gamepad_ds4') }}</option>
-        <option v-if="!vigembusOnly" value="ds5">{{ $t("config.gamepad_ds5") }}</option>
-        <option v-if="!vigembusOnly" value="switch">{{ $t("config.gamepad_switch") }}</option>
       </select>
       <div class="form-text">{{ $t('config.gamepad_desc') }}</div>
     </div>
 
     <!-- Additional options based on gamepad type -->
-    <template v-if="config.controller === 'enabled' && config.gamepad_driver !== 'none'">
-      <template v-if="config.gamepad === 'ds4' || config.gamepad === 'ds5' || config.gamepad === 'auto'">
+    <template v-if="config.controller === 'enabled'">
+      <template v-if="config.gamepad === 'ds4' || config.gamepad === 'auto'">
         <div class="mb-3 accordion">
           <div class="accordion-item">
             <h2 class="accordion-header">
@@ -185,23 +151,12 @@ watch(
                   ></Checkbox>
                 </template>
                 <!-- PlayStation-style option: Back/Select as touchpad click -->
-                <template v-if="config.gamepad === 'ds4' || config.gamepad === 'ds5' || config.gamepad === 'auto'">
-                  <Checkbox class="mb-3"
-                            id="ds4_back_as_touchpad_click"
-                            locale-prefix="config"
-                            v-model="config.ds4_back_as_touchpad_click"
-                            default="true"
-                  ></Checkbox>
-                </template>
-                <!-- Virtual HID option: Controller MAC randomization -->
-                <template v-if="config.gamepad_driver !== 'vigembus' && (config.gamepad === 'ds4' || config.gamepad === 'ds5' || config.gamepad === 'auto')">
-                  <Checkbox class="mb-3"
-                            id="virtualhid_randomize_mac"
-                            locale-prefix="config"
-                            v-model="config.virtualhid_randomize_mac"
-                            default="true"
-                  ></Checkbox>
-                </template>
+                <Checkbox class="mb-3"
+                          id="ds4_back_as_touchpad_click"
+                          locale-prefix="config"
+                          v-model="config.ds4_back_as_touchpad_click"
+                          default="true"
+                ></Checkbox>
               </div>
             </div>
           </div>
@@ -210,7 +165,7 @@ watch(
     </template>
 
     <!-- Home/Guide Button Emulation Timeout -->
-    <div class="mb-3" v-if="config.controller === 'enabled' && config.gamepad_driver !== 'none'">
+    <div class="mb-3" v-if="config.controller === 'enabled'">
       <label for="back_button_timeout" class="form-label">{{ $t('config.back_button_timeout') }}</label>
       <input type="text" class="form-control" id="back_button_timeout" placeholder="-1"
              v-model="config.back_button_timeout" />

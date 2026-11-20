@@ -34,7 +34,6 @@ extern "C" {
 #include "input.h"
 #include "logging.h"
 #include "platform/common.h"
-#include "platform/virtualhid_input.h"
 #include "thread_pool.h"
 #include "utility.h"
 
@@ -1407,7 +1406,7 @@ namespace input {
    * @param packet The controller arrival packet.
    */
   void passthrough(std::shared_ptr<input_t> &input, PSS_CONTROLLER_ARRIVAL_PACKET packet) {
-    if (!config::input.controller || config::input.gamepad_driver == config::GAMEPAD_DRIVER_NONE) {
+    if (!config::input.controller) {
       return;
     }
 
@@ -1561,7 +1560,7 @@ namespace input {
    * @param packet The controller touch packet.
    */
   void passthrough(std::shared_ptr<input_t> &input, PSS_CONTROLLER_TOUCH_PACKET packet) {
-    if (!config::input.controller || config::input.gamepad_driver == config::GAMEPAD_DRIVER_NONE) {
+    if (!config::input.controller) {
       return;
     }
 
@@ -1594,7 +1593,7 @@ namespace input {
    * @param packet The controller motion packet.
    */
   void passthrough(std::shared_ptr<input_t> &input, PSS_CONTROLLER_MOTION_PACKET packet) {
-    if (!config::input.controller || config::input.gamepad_driver == config::GAMEPAD_DRIVER_NONE) {
+    if (!config::input.controller) {
       return;
     }
 
@@ -1626,7 +1625,7 @@ namespace input {
    * @param packet The controller battery packet.
    */
   void passthrough(std::shared_ptr<input_t> &input, PSS_CONTROLLER_BATTERY_PACKET packet) {
-    if (!config::input.controller || config::input.gamepad_driver == config::GAMEPAD_DRIVER_NONE) {
+    if (!config::input.controller) {
       return;
     }
 
@@ -1657,7 +1656,7 @@ namespace input {
    * @param packet Protocol packet being processed.
    */
   void passthrough(std::shared_ptr<input_t> &input, PNV_MULTI_CONTROLLER_PACKET packet) {
-    if (!config::input.controller || config::input.gamepad_driver == config::GAMEPAD_DRIVER_NONE) {
+    if (!config::input.controller) {
       return;
     }
 
@@ -2457,20 +2456,6 @@ namespace input {
     const auto &gamepads = platf::supported_gamepads(std::addressof(platf_input));
     return std::ranges::none_of(gamepads, [](const auto &gamepad) {
       return gamepad.is_enabled && gamepad.name != "auto";
-    });
-  }
-
-  void refresh_virtual_input() {
-    dispatch_input_task([]() {
-      if (platf_input) {
-        task_pool.cancel(key_press_repeat_id);
-        key_press_repeat_id = nullptr;
-        reset_mouse_buttons();
-        reset_keyboard_keys();
-        auto &context = platf::virtualhid::get_input_context(platf_input);
-        context.refresh_keyboard();
-        context.refresh_mouse();
-      }
     });
   }
 

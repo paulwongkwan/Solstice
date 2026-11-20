@@ -3,7 +3,6 @@
  * @brief Declarations for runtime NVENC SDK selection on Windows.
  */
 #pragma once
-#ifdef _WIN32
 
 // standard includes
   #include <functional>
@@ -103,4 +102,3 @@ namespace nvenc {
   };
 
 }  // namespace nvenc
-#endif

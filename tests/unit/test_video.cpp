@@ -57,30 +57,19 @@ TEST(VideoEncoderProbingTest, AllowsProbingWithAnActiveDevice) {
   EXPECT_TRUE(video::allow_encoder_probing(devices));
 }
 
-TEST(VideoEncoderProbingTest, InactiveDevicesBlockProbingOnlyOnWindows) {
+TEST(VideoEncoderProbingTest, InactiveDevicesBlockProbing) {
   // A sleeping display enumerates without additional info, i.e. as inactive.
   const std::vector<display_device::EnumeratedDevice> devices(2);
-#ifdef _WIN32
   EXPECT_FALSE(video::allow_encoder_probing(devices));
-#else
-  EXPECT_TRUE(video::allow_encoder_probing(devices));
-#endif
 }
 
 TEST(VideoFormatMappingTest, MapsSupportedHardwareDevicesAndRejectsUnsupportedOnes) {
   using enum platf::mem_type_e;
   const std::array cases {
     std::pair {AV_HWDEVICE_TYPE_D3D11VA, dxgi},
-    std::pair {AV_HWDEVICE_TYPE_VAAPI, vaapi},
-    std::pair {AV_HWDEVICE_TYPE_CUDA, cuda},
     std::pair {AV_HWDEVICE_TYPE_NONE, system},
-#ifdef SUNSHINE_BUILD_VULKAN
-    std::pair {AV_HWDEVICE_TYPE_VULKAN, vulkan},
-#else
-    std::pair {AV_HWDEVICE_TYPE_VULKAN, unknown},
-#endif
     std::pair {AV_HWDEVICE_TYPE_DXVA2, unknown},
-    std::pair {AV_HWDEVICE_TYPE_VIDEOTOOLBOX, unknown},
+    std::pair {AV_HWDEVICE_TYPE_CUDA, unknown},
   };
 
   for (const auto &[format, expected] : cases) {
@@ -128,19 +117,10 @@ struct EncoderTest: PlatformTestSuite, testing::WithParamInterface<video::encode
  * @brief Available encoder backends for this platform.
  */
 const auto encoder_variants = std::to_array<video::encoder_t *>({
-#if !defined(__APPLE__)
   &video::nvenc,
-#endif
-#ifdef _WIN32
   &video::amdvce,
   &video::quicksync,
-#endif
-#if defined(__linux__) || defined(__FreeBSD__)
-  &video::vaapi,
-#endif
-#ifdef __APPLE__
-  &video::videotoolbox,
-#endif
+  &video::mediafoundation,
   &video::software
 });
 
@@ -153,7 +133,6 @@ INSTANTIATE_TEST_SUITE_P(
   }
 );
 
-#if !defined(_WIN32) && !defined(__APPLE__)
 TEST(NvencAvcodecOptionsTest, UsesVersionStablePresetAndSpatialAqNames) {
   const std::array codecs {
     &video::nvenc.av1,
@@ -178,7 +157,6 @@ TEST(NvencAvcodecOptionsTest, UsesVersionStablePresetAndSpatialAqNames) {
     );
   }
 }
-#endif
 
 TEST_P(EncoderTest, ValidateEncoder) {
   // todo:: test something besides fixture setup
@@ -331,7 +309,6 @@ TEST_F(EncoderProbeResultsTest, SubsequentProbeReplacesPriorResults) {
   }
 }
 
-#ifdef _WIN32
 TEST(AmfH264OptionsTest, CoderUsesConfiguredValue) {
   const auto coder_option = std::ranges::find(video::amdvce.h264.common_options, "coder"sv, &video::encoder_t::option_t::name);
 
@@ -368,7 +345,6 @@ INSTANTIATE_TEST_SUITE_P(
     std::make_tuple(&video::amdvce.av1, false)
   )
 );
-#endif
 
 using AmfMaxAuSizeConfigParam = std::tuple<std::string_view, std::optional<int>>;
 

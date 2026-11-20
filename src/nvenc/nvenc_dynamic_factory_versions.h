@@ -3,7 +3,6 @@
  * @brief Declarations for SDK-specific NVENC encoder constructors.
  */
 #pragma once
-#ifdef _WIN32
 
   // standard includes
   #include <memory>
@@ -80,4 +79,3 @@ namespace nvenc::detail {
   std::unique_ptr<nvenc_d3d11_interface> create_nvenc_d3d11_on_cuda_1301(ID3D11Device *device, shared_dll dll);
 
 }  // namespace nvenc::detail
-#endif

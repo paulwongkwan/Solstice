@@ -3,7 +3,6 @@
  * @brief Declarations for abstract Direct3D11 NVENC encoder.
  */
 #pragma once
-#ifdef _WIN32
 
   // standard includes
   #include <comdef.h>
@@ -70,4 +69,3 @@ namespace NVENC_NAMESPACE {
   };
 
 }  // namespace NVENC_NAMESPACE
-#endif

@@ -1773,12 +1773,6 @@ TEST(ConfigHttpDriverStatusTest, BuildsLiveVirtualInputDriverStatus) {
   EXPECT_TRUE(vigembus.contains("version_compatible"));
 }
 
-TEST(ConfigHttpLicenseStatusTest, ClearsSensitiveRequestString) {
-  std::string sensitive_value = "license-key";
-  confighttp::clear_sensitive_string_for_testing(sensitive_value);
-  EXPECT_TRUE(sensitive_value.empty());
-}
-
 TEST_F(ConfigHttpTest, VirtualInputStatusReturnsBothBackends) {
   SimpleWeb::CaseInsensitiveMultimap headers;
   headers.emplace("Authorization", create_auth_header("testuser", "testpass"));

@@ -3,7 +3,6 @@
  * @brief Windows module lifetime helpers shared by NVENC factories and encoders.
  */
 #pragma once
-#ifdef _WIN32
 
   // standard includes
   #include <memory>
@@ -46,4 +45,3 @@ namespace nvenc {
   }
 
 }  // namespace nvenc
-#endif

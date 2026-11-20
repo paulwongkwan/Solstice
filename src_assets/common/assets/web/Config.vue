@@ -164,7 +164,7 @@
     Volume2,
   } from '@lucide/vue'
 
-  const ENCODER_TAB_IDS = new Set(["nv", "amd", "qsv", "vaapi", "vt", "vulkan", "sw"]);
+  const ENCODER_TAB_IDS = new Set(["nv", "amd", "qsv", "sw"]);
 
   /**
    * Compare configuration values without coercing their types.
@@ -271,22 +271,6 @@
           this.config = r;
           this.platform = this.config.platform;
 
-          if (this.platform === "windows") {
-            this.tabs = this.tabs.filter((el) => {
-              return el.id !== "vt" && el.id !== "vaapi" && el.id !== "vulkan";
-            });
-          }
-          if (this.platform === "freebsd" || this.platform === "linux") {
-            this.tabs = this.tabs.filter((el) => {
-              return el.id !== "amd" && el.id !== "qsv" && el.id !== "vt";
-            });
-          }
-          if (this.platform === "macos") {
-            this.tabs = this.tabs.filter((el) => {
-              return el.id !== "amd" && el.id !== "nv" && el.id !== "qsv" && el.id !== "vaapi" && el.id !== "vulkan";
-            });
-          }
-
           // remove values we don't want in the config file
           delete this.config.platform;
           delete this.config.status;
@@ -323,9 +307,6 @@
           'nv': 'Gpu',
           'amd': 'Gpu',
           'qsv': 'Gpu',
-          'vaapi': 'Gpu',
-          'vt': 'Gpu',
-          'vulkan': 'Gpu',
           'sw': 'Cpu',
         };
         return iconMap[tabId] || 'Settings';

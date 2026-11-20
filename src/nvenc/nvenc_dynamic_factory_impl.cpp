@@ -2,7 +2,6 @@
  * @file src/nvenc/nvenc_dynamic_factory_impl.cpp
  * @brief SDK-specific constructors used by the runtime NVENC factory.
  */
-#ifdef _WIN32
 
   #ifndef NVENC_NAMESPACE
     #error NVENC_NAMESPACE must identify the version-specific implementation namespace
@@ -45,4 +44,3 @@ namespace nvenc::detail {
     #undef NVENC_CONCAT
     #undef NVENC_CONCAT_IMPL
   #endif
-#endif

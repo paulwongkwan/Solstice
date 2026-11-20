@@ -14,12 +14,6 @@ namespace safe {
   class event_t;
 }
 
-#if defined(_WIN32) || defined(__APPLE__)
-namespace lvh {
-  struct LicenseStatus;
-}
-#endif
-
 /**
  * @brief Handles the system tray icon and notification system.
  */
@@ -47,20 +41,6 @@ namespace system_tray {
    * @param item The tray menu item.
    */
   void tray_donate_paypal_cb([[maybe_unused]] struct tray_menu *item);
-
-#if defined(_WIN32) || defined(__APPLE__)
-  /**
-   * @brief Callback for opening Virtual HID Broker license settings in the Web UI.
-   * @param item The tray menu item.
-   */
-  void tray_virtualhid_license_cb([[maybe_unused]] struct tray_menu *item);
-
-  /**
-   * @brief Callback for opening the latest Virtual HID Broker release.
-   * @param item The tray menu item.
-   */
-  void tray_virtualhid_download_cb([[maybe_unused]] struct tray_menu *item);
-#endif
 
   /**
    * @brief Callback for resetting display device configuration.
@@ -131,32 +111,17 @@ namespace system_tray {
    */
   void update_tray_require_pin();
 
-#if defined(_WIN32) || defined(__APPLE__)
   /**
-   * @brief Update the Virtual HID Broker license submenu and optional notification.
+   * @brief Show an update notification when the installed ViGEmBus release is unsupported.
    *
-   * @param license Latest machine license details.
-   * @param notify_if_unlicensed Whether to notify the user when the broker needs a license.
-   */
-  void update_tray_virtualhid_license(const lvh::LicenseStatus &license, bool notify_if_unlicensed);
-
-  /**
-   * @brief Query the Virtual HID Broker license and prepare the startup tray state.
-   */
-  void prepare_tray_virtualhid_license();
-
-  /**
-   * @brief Show an update notification for an unsupported Virtual HID Broker.
+   * Existing notifications are preserved when ViGEmBus is absent or its version is supported.
    *
-   * Existing notifications are preserved when gamepad input is disabled, the broker is absent or supported,
-   * or the Windows backend choice does not use the broker.
-   *
-   * @param installed Whether the broker is installed.
-   * @param version Installed broker version.
+   * @param installed Whether ViGEmBus is installed.
+   * @param version Installed ViGEmBus version.
    * @param version_compatible Whether Sunshine supports the installed version.
    * @param supported_versions User-visible supported version range.
    */
-  void update_tray_virtualhid_driver(
+  void update_tray_vigembus_driver(
     bool installed,
     std::string_view version,
     bool version_compatible,
@@ -164,10 +129,9 @@ namespace system_tray {
   );
 
   /**
-   * @brief Query the Virtual HID Broker version and prepare its startup notification.
+   * @brief Query the ViGEmBus version and prepare its startup notification.
    */
-  void prepare_tray_virtualhid_driver();
-#endif
+  void prepare_tray_vigembus_driver();
 
   /**
    * @brief Initializes and runs the system tray in a separate thread.

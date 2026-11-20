@@ -4,13 +4,11 @@ Sunshine binaries are built using [CMake](https://cmake.org) and requires `cmake
 ## Building Locally
 
 ### Compiler
-It is recommended to use one of the following compilers:
+Use the MinGW-w64 GCC that ships with MSYS2 UCRT64:
 
-| Compiler    | Version |
-|:------------|:--------|
-| GCC         | 14+     |
-| Clang       | 17+     |
-| Apple Clang | 15+     |
+| Compiler      | Version |
+|:--------------|:--------|
+| MinGW-w64 GCC | 14+     |
 
 ### Dependencies
 
@@ -18,156 +16,14 @@ Boost `1.89.0` or newer can be supplied as a system package. When a compatible s
 downloads the project-locked Boost release through CPM. Static Boost libraries are preferred on every platform by
 default; pass `-DBOOST_USE_STATIC=OFF` to use shared system libraries instead.
 
-Sunshine's build and packaging automation uses packaged static Boost libraries on Arch Linux, Fedora 44 or newer,
-Ubuntu 26.04 or newer, macOS with Homebrew, Windows with MSYS2, and FreeBSD. Older supported distributions continue
-to use the CPM fallback because their repositories do not meet the minimum Boost version.
-
-On Linux and FreeBSD, Sunshine and the prebuilt FFmpeg libraries use the system's shared libva core and backends.
-These components share a private display-context ABI and must come from the same libva build. Sunshine also uses
-the system libva headers so its compatibility shims match the installed API. Bundled libva archives and headers
-are excluded from the build. The system provides libdrm, the GPU's VA-API driver, and libva's driver configuration.
-AppImages use the same system libraries at runtime; they do not bundle libva.
+Sunshine builds on Windows with MSYS2 UCRT64, which provides the packaged static Boost libraries. Configuring on any
+other host fails, because Sunshine supports Windows 11 only.
 
 #### Prebuilt Web UI
 
 Sunshine releases publish the platform-independent Web UI as the `@lizardbyte/sunshine` package to npm and GitHub
 Packages. The package contains the production assets under `build/assets/web`, so downstream packagers can install the
 Web UI without running Node.js or Vite during the native Sunshine build.
-
-#### FreeBSD
-> [!CAUTION]
-> Sunshine support for FreeBSD is experimental and may be incomplete or not work as expected
-
-##### Install dependencies
-```sh
-pkg install -y \
-  audio/opus \
-  audio/pulseaudio \
-  devel/cmake \
-  devel/doxygen \
-  devel/evdev-proto \
-  devel/git \
-  devel/libevdev \
-  devel/llvm19 \
-  devel/ninja \
-  devel/pkgconf \
-  devel/qt6-base \
-  ftp/curl \
-  graphics/graphviz \
-  graphics/libdrm \
-  graphics/qt6-svg \
-  graphics/wayland \
-  multimedia/libva \
-  net/miniupnpc \
-  ports-mgmt/pkg \
-  security/openssl \
-  shells/bash \
-  www/npm-node22 \
-  x11/libX11 \
-  x11/libxcb \
-  x11/libXfixes \
-  x11/libXrandr \
-  x11/libXtst
-```
-
-Use LLVM 19 when configuring a local FreeBSD build:
-
-```sh
-export CC=clang19
-export CXX=clang++19
-```
-
-#### Linux
-Dependencies vary depending on the distribution. You can reference our
-[linux_build.sh](https://github.com/SunshineStream/Sunshine/blob/master/scripts/linux_build.sh) script for a list of
-dependencies we use in Debian-based, Fedora-based and Arch-based distributions. Please submit a PR if you would like to extend the
-script to support other distributions.
-
-##### KMS Capture
-If you are using KMS, patching the Sunshine binary with `setcap` is required. Some post-install scripts handle this. If building
-from source and using the binary directly, this will also work:
-
-```bash
-sudo cp build/sunshine /tmp
-sudo setcap cap_sys_admin,cap_sys_nice+p /tmp/sunshine
-sudo getcap /tmp/sunshine
-sudo mv /tmp/sunshine build/sunshine
-```
-
-##### CUDA Toolkit
-When building Sunshine for a system with an NVIDIA GPU, install the CUDA Toolkit before configuring or compiling
-Sunshine. CUDA support is selected at compile time and is used for NVFBC capture and direct GPU-memory NVENC encoding.
-This applies to every source build, including builds made through the AUR or for third-party repositories such as
-Omarchy. Installing the CUDA Toolkit after Sunshine was compiled does not enable CUDA support; Sunshine must be rebuilt.
-
-> [!NOTE]
-> Users installing a prebuilt package supplied by LizardByte do not need to install the CUDA Toolkit. This includes the
-> Arch Linux package from LizardByte's [pacman-repo](https://github.com/LizardByte/pacman-repo), which is already built
-> with CUDA support.
-
-There are two caveats to CUDA:
-
-1. The version installed depends on the version of GCC.
-2. The version of CUDA you use will determine compatibility with various GPU generations.
-   At the time of writing, the recommended version to use is CUDA ~13.1.
-   See [CUDA compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/index.html) for more info.
-
-> [!NOTE]
-> To install older versions, select the appropriate run file based on your desired CUDA version and architecture
-> according to [CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive)
-
-#### macOS
-You can either use [Homebrew](https://brew.sh) or [MacPorts](https://www.macports.org) to install dependencies.
-
-##### Homebrew
-```bash
-dependencies=(
-  "boost"  # Optional
-  "cmake"
-  "doxygen"  # Optional, for docs
-  "graphviz"  # Optional, for docs
-  "icu4c"  # Optional, if boost is not installed
-  "miniupnpc"
-  "ninja"
-  "node"
-  "openssl@3"
-  "opus"
-  "pkg-config"
-  "qtbase"
-  "qtsvg"
-)
-brew install "${dependencies[@]}"
-```
-
-If there are issues with an SSL header that is not found:
-
-@tabs_grouped{mac-architecture|:|
-  @tab{ Intel |:| ```bash
-    ln -s /usr/local/opt/openssl/include/openssl /usr/local/include/openssl
-    ```}
-  @tab{ Apple Silicon |:| ```bash
-    ln -s /opt/homebrew/opt/openssl/include/openssl /opt/homebrew/include/openssl
-    ```
-  }
-}
-
-##### MacPorts
-```bash
-dependencies=(
-  "cmake"
-  "curl"
-  "doxygen"  # Optional, for docs
-  "graphviz"  # Optional, for docs
-  "libopus"
-  "miniupnpc"
-  "ninja"
-  "npm9"
-  "pkgconfig"
-  "qt6-qtbase"
-  "qt6-qtsvg"
-)
-sudo port install "${dependencies[@]}"
-```
 
 #### Windows
 
@@ -255,39 +111,13 @@ ninja -C build
 
 ### Package
 
-@tabs_grouped{platform|:|
-  @tab{FreeBSD |:| @tabs{
-    @tab{pkg |:| ```bash
-      cpack -G FREEBSD --config ./build/CPackConfig.cmake
-      ```}
-  }}
-  @tab{Linux |:| @tabs{
-    @tab{deb |:| ```bash
-      cpack -G DEB --config ./build/CPackConfig.cmake
-      ```}
-    @tab{rpm |:| ```bash
-      cpack -G RPM --config ./build/CPackConfig.cmake
-      ```}
-  }}
-  @tab{macOS |:| @tabs{
-    @tab{DragNDrop |:| ```bash
-      cpack -G DragNDrop --config ./build/CPackConfig.cmake
-      ```}
-  }}
-  @tab{Windows |:| @tabs{
-    @tab{NSIS Installer |:| ```bash
-      cpack -G NSIS --config ./build/CPackConfig.cmake
-      ```}
-    @tab{WiX Installer |:| ```bash
-      cpack -G WIX --config ./build/CPackConfig.cmake
-      ```}
-    @tab{Portable |:| ```bash
-      cpack -G ZIP --config ./build/CPackConfig.cmake
-      ```}
-  }}
-}
+```bash
+cpack -G NSIS --config ./build/CPackConfig.cmake
+cpack -G WIX --config ./build/CPackConfig.cmake
+cpack -G ZIP --config ./build/CPackConfig.cmake
+```
 
-### Remote Build
+
 It may be beneficial to build remotely in some cases. This will enable easier building on different operating systems.
 
 1. Fork the project

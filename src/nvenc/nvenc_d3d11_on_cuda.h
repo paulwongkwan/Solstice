@@ -3,7 +3,6 @@
  * @brief Declarations for CUDA NVENC encoder with Direct3D11 input surfaces.
  */
 #pragma once
-#ifdef _WIN32
   // local includes
   #include "nvenc_d3d11.h"
   #include "nvenc_sdk.h"
@@ -84,4 +83,3 @@ namespace NVENC_NAMESPACE {
   };
 
 }  // namespace NVENC_NAMESPACE
-#endif

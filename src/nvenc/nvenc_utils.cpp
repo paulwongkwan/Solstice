@@ -10,7 +10,6 @@
 
 namespace NVENC_NAMESPACE {
 
-#ifdef _WIN32
   /**
    * @brief Convert an NVENC buffer format to the matching DXGI format.
    */
@@ -32,7 +31,6 @@ namespace NVENC_NAMESPACE {
         return DXGI_FORMAT_UNKNOWN;
     }
   }
-#endif
 
   /**
    * @brief Convert a Sunshine pixel format to the matching NVENC buffer format.

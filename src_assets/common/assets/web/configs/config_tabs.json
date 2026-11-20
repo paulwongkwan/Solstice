@@ -16,12 +16,10 @@
     "nameKey": "config.category_input",
     "options": {
       "controller": "enabled",
-      "gamepad_driver": "",
       "gamepad": "auto",
       "ds4_back_as_touchpad_click": "enabled",
       "motion_as_ds4": "enabled",
       "touchpad_as_ds4": "enabled",
-      "virtualhid_randomize_mac": "enabled",
       "back_button_timeout": -1,
       "keyboard": "enabled",
       "key_repeat_delay": 500,
@@ -144,33 +142,6 @@
       "amd_preanalysis": "disabled",
       "amd_vbaq": "enabled",
       "amd_coder": "auto"
-    }
-  },
-  {
-    "id": "vt",
-    "nameKey": "config.category_videotoolbox_encoder",
-    "options": {
-      "vt_coder": "auto",
-      "vt_realtime": "enabled"
-    }
-  },
-  {
-    "id": "vaapi",
-    "nameKey": "config.category_vaapi_encoder",
-    "options": {
-      "vaapi_blbrc": "disabled",
-      "vaapi_quality": "auto",
-      "vaapi_rc": "auto",
-      "vaapi_strict_rc_buffer": "disabled"
-    }
-  },
-  {
-    "id": "vulkan",
-    "nameKey": "config.category_vulkan_encoder",
-    "options": {
-      "vk_tune": 2,
-      "vk_rc_mode": 2,
-      "vk_quality": "balanced"
     }
   },
   {

@@ -28,20 +28,10 @@
 #include <Simple-Web-Server/crypto.hpp>
 #include <Simple-Web-Server/server_https.hpp>
 
-#if defined(_WIN32) || defined(__APPLE__)
-  #include "platform/virtualhid_input.h"
-#endif
+#include "platform/windows/misc.h"
+#include "platform/windows/utf_utils.h"
 
-#ifdef _WIN32
-  #include "platform/windows/misc.h"
-  #include "platform/windows/utf_utils.h"
-
-  #include <Windows.h>
-#elif defined(__APPLE__)
-  #include "platform/macos/misc.h"
-
-  #include <CoreFoundation/CoreFoundation.h>
-#endif
+#include <Windows.h>
 
 // local includes
 #include "config.h"
@@ -90,54 +80,6 @@ namespace confighttp {
    */
   using https_handler_t = std::function<void(resp_https_t, req_https_t)>;
 
-  namespace {
-    using license_status_provider_t = std::function<lvh::LicenseResult()>;  ///< Provider for the current libvirtualhid license status.
-#ifdef SUNSHINE_TESTS
-    std::optional<nlohmann::json> permission_status_override;  ///< Deterministic permission statuses for HTTP tests.
-#endif
-#if defined(linux) || defined(__FreeBSD__) || defined(SUNSHINE_TESTS)
-    using portal_token_path_provider_t = std::function<fs::path()>;  ///< Provider for the XDG Portal token path.
-#endif
-
-    /**
-     * @brief Return the current libvirtualhid license status provider.
-     *
-     * Unit-test builds expose a mutable provider so the HTTP fixture can avoid
-     * contacting an installed Windows broker. Production builds keep the
-     * provider const and always call libvirtualhid directly.
-     *
-     * @return License status provider for the current build.
-     */
-    auto &virtual_input_license_status_provider() {
-#ifdef SUNSHINE_TESTS
-      static license_status_provider_t status_provider = lvh::get_license_status;
-#else
-      static const license_status_provider_t status_provider = lvh::get_license_status;
-#endif
-      return status_provider;
-    }
-
-#if defined(linux) || defined(__FreeBSD__) || defined(SUNSHINE_TESTS)
-    /**
-     * @brief Return the path provider for the saved XDG Portal restore token.
-     *
-     * @return Path provider for the current build.
-     */
-    auto &portal_token_path_provider() {
-  #ifdef SUNSHINE_TESTS
-      static portal_token_path_provider_t path_provider = []() {
-        return platf::get_xdg_restore_token_path();
-      };
-  #else
-      static const portal_token_path_provider_t path_provider = []() {
-        return platf::get_xdg_restore_token_path();
-      };
-  #endif
-      return path_provider;
-    }
-#endif
-  }  // namespace
-
   /**
    * @brief Client certificate operations accepted by the configuration API.
    */
@@ -145,58 +87,6 @@ namespace confighttp {
     ADD,  ///< Add client
     REMOVE  ///< Remove client
   };
-
-  /**
-   * @brief Overwrite a request-local sensitive string when leaving scope.
-   */
-  class scoped_sensitive_string_clear_t {
-  public:
-    /**
-     * @brief Register a sensitive string for best-effort clearing.
-     *
-     * @param value Mutable sensitive string.
-     */
-    explicit scoped_sensitive_string_clear_t(std::string &value):
-        value_ {value} {}
-
-    scoped_sensitive_string_clear_t(const scoped_sensitive_string_clear_t &) = delete;
-    scoped_sensitive_string_clear_t &operator=(const scoped_sensitive_string_clear_t &) = delete;
-
-    /**
-     * @brief Overwrite and clear the registered string.
-     */
-    ~scoped_sensitive_string_clear_t() {
-      std::fill(value_.begin(), value_.end(), '\0');
-      value_.clear();
-    }
-
-  private:
-    std::string &value_;  ///< Sensitive request-local string.
-  };
-
-#ifdef SUNSHINE_TESTS
-  void set_virtual_input_license_status_provider_for_testing(virtual_input_license_status_provider_t status_provider) {
-    virtual_input_license_status_provider() = std::move(status_provider);
-  }
-
-  void reset_virtual_input_license_status_provider_for_testing() {
-    virtual_input_license_status_provider() = lvh::get_license_status;
-  }
-
-  void set_portal_token_path_provider_for_testing(confighttp::portal_token_path_provider_t path_provider) {
-    portal_token_path_provider() = std::move(path_provider);
-  }
-
-  void reset_portal_token_path_provider_for_testing() {
-    portal_token_path_provider() = []() {
-      return platf::get_xdg_restore_token_path();
-    };
-  }
-
-  void clear_sensitive_string_for_testing(std::string &value) {
-    const scoped_sensitive_string_clear_t clear_value {value};
-  }
-#endif
 
   // CSRF token management
   /**
@@ -220,12 +110,6 @@ namespace confighttp {
    */
   constexpr auto CSRF_TOKEN_LIFETIME = std::chrono::hours(1);  // Tokens valid for 1 hour
 
-#ifndef __APPLE__
-  constexpr std::string_view libvirtualhid_minimum_version = LIBVIRTUALHID_MINIMUM_VERSION;  ///< Minimum supported Windows broker version.
-#endif
-#ifdef __APPLE__
-  constexpr std::string_view libvirtualhid_macos_minimum_version = LIBVIRTUALHID_MACOS_MINIMUM_VERSION;  ///< Minimum supported macOS broker bundle version.
-#endif
   constexpr auto VIGEMBUS_MINIMUM_VERSION = "1.17.0.0"sv;  ///< Minimum supported ViGEmBus fallback driver version.  // NOSONAR(cpp:S1313): not an IP address
 
   /**
@@ -322,245 +206,6 @@ namespace confighttp {
 
     return output_tree;
   }
-
-  /**
-   * @brief Return a stable Web UI name for a libvirtualhid license state.
-   *
-   * @param state License state.
-   * @return Lowercase state name.
-   */
-  std::string_view virtualhid_license_state_name(lvh::LicenseState state) {
-    using enum lvh::LicenseState;
-
-    switch (state) {
-      case unlicensed:
-        return "unlicensed";
-      case licensed:
-        return "licensed";
-      case expired:
-        return "expired";
-      case disabled:
-        return "disabled";
-      case invalid:
-        return "invalid";
-      case unavailable:
-      default:
-        return "unavailable";
-    }
-  }
-
-  nlohmann::json build_virtualhid_license_status(const lvh::LicenseResult &result) {
-    const auto &license = result.license;
-    nlohmann::json output_tree;
-    output_tree["operation_ok"] = result.status.ok();
-    output_tree["service_available"] = license.service_available;
-    output_tree["state"] = virtualhid_license_state_name(license.state);
-    output_tree["licensed"] = license.licensed();
-    output_tree["active_devices"] = license.active_devices;
-    output_tree["activation_limit"] = license.activation_limit;
-    output_tree["activation_usage"] = license.activation_usage;
-    output_tree["plan_name"] = license.plan_name;
-    output_tree["customer_email"] = license.customer_email;
-    output_tree["message"] = license.message;
-    output_tree["purchase_url"] = license.purchase_url;
-    output_tree["manage_account_url"] = license.manage_account_url;
-    output_tree["error"] = result.status.ok() ? "" : result.status.message();
-    return output_tree;
-  }
-
-  namespace {
-    /**
-     * @brief Handle a virtual-input license request using the configured status provider.
-     *
-     * @param response HTTP response object.
-     * @param request Authenticated HTTP request.
-     */
-    void get_virtual_input_license(const resp_https_t &response, const req_https_t &request) {
-      if (!authenticate(response, request)) {
-        return;
-      }
-
-      print_req(request);
-      send_response(response, build_virtualhid_license_status(virtual_input_license_status_provider()()));
-    }
-  }  // namespace
-
-#ifdef _WIN32
-  /**
-   * @brief RAII wrapper for a Windows registry key handle.
-   */
-  class registry_key_t {
-  public:
-    /**
-     * @brief Construct an empty registry key wrapper.
-     */
-    registry_key_t() = default;
-
-    /**
-     * @brief Copy construction is disabled because the wrapper owns a handle.
-     */
-    registry_key_t(const registry_key_t &) = delete;
-
-    /**
-     * @brief Copy assignment is disabled because the wrapper owns a handle.
-     *
-     * @return This registry key wrapper.
-     */
-    registry_key_t &operator=(const registry_key_t &) = delete;
-
-    /**
-     * @brief Close the owned registry key handle.
-     */
-    ~registry_key_t() {
-      close();
-    }
-
-    /**
-     * @brief Get the owned registry key handle.
-     *
-     * @return Registry key handle.
-     */
-    HKEY get() const {
-      return handle;
-    }
-
-    /**
-     * @brief Prepare the wrapper to receive a registry key handle.
-     *
-     * @return Address of the wrapped handle.
-     */
-    HKEY *put() {
-      close();
-      return &handle;
-    }
-
-  private:
-    /**
-     * @brief Close the owned registry key handle if one is open.
-     */
-    void close() {
-      if (handle) {
-        RegCloseKey(handle);
-        handle = nullptr;
-      }
-    }
-
-    HKEY handle = nullptr;  ///< Owned Windows registry key handle.
-  };
-
-  /**
-   * @brief Read a string value from a Windows registry key.
-   *
-   * @param key Registry key to query.
-   * @param value_name Registry value name.
-   * @return Registry string value, or empty when unavailable.
-   */
-  std::optional<std::wstring> read_registry_string_value(HKEY key, const wchar_t *value_name) {
-    DWORD value_type = 0;
-    DWORD value_size = 0;
-    if (RegGetValueW(key, nullptr, value_name, RRF_RT_REG_SZ, &value_type, nullptr, &value_size) != ERROR_SUCCESS || value_size == 0) {
-      return std::nullopt;
-    }
-
-    std::wstring value(value_size / sizeof(wchar_t), L'\0');
-    if (RegGetValueW(key, nullptr, value_name, RRF_RT_REG_SZ, &value_type, value.data(), &value_size) != ERROR_SUCCESS) {
-      return std::nullopt;
-    }
-
-    while (!value.empty() && value.back() == L'\0') {
-      value.pop_back();
-    }
-    return value;
-  }
-
-  /**
-   * @brief Read the installed libvirtualhid driver version from the Windows device registry.
-   *
-   * @return Driver version string, or empty when unavailable.
-   */
-  std::string read_libvirtualhid_driver_version() {
-    registry_key_t root_key;
-    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Enum\\ROOT\\LIBVIRTUALHID", 0, KEY_READ, root_key.put()) != ERROR_SUCCESS) {
-      return {};
-    }
-
-    for (DWORD index = 0;; ++index) {
-      std::wstring subkey_name(256, L'\0');
-      auto subkey_name_size = static_cast<DWORD>(subkey_name.size());
-      const auto enum_status = RegEnumKeyExW(root_key.get(), index, subkey_name.data(), &subkey_name_size, nullptr, nullptr, nullptr, nullptr);
-      if (enum_status == ERROR_NO_MORE_ITEMS) {
-        break;
-      }
-      if (enum_status != ERROR_SUCCESS) {
-        continue;
-      }
-
-      std::wstring device_key_path = L"SYSTEM\\CurrentControlSet\\Enum\\ROOT\\LIBVIRTUALHID\\";
-      device_key_path.append(subkey_name, 0, subkey_name_size);
-
-      registry_key_t device_key;
-      if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, device_key_path.c_str(), 0, KEY_READ, device_key.put()) != ERROR_SUCCESS) {
-        continue;
-      }
-
-      const auto driver_key_suffix = read_registry_string_value(device_key.get(), L"Driver");
-      if (!driver_key_suffix) {
-        continue;
-      }
-
-      std::wstring driver_key_path = L"SYSTEM\\CurrentControlSet\\Control\\Class\\";
-      driver_key_path += *driver_key_suffix;
-
-      registry_key_t driver_key;
-      if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, driver_key_path.c_str(), 0, KEY_READ, driver_key.put()) != ERROR_SUCCESS) {
-        continue;
-      }
-
-      if (const auto version = read_registry_string_value(driver_key.get(), L"DriverVersion")) {
-        return utf_utils::to_utf8(*version);
-      }
-    }
-
-    return {};
-  }
-
-#endif
-
-#ifdef __APPLE__
-  /**
-   * @brief Read the installed macOS Virtual HID Broker app version.
-   *
-   * @return Three-part bundle version, or empty when the app is unavailable.
-   */
-  std::string read_libvirtualhid_broker_version() {
-    const auto bundle_url = CFURLCreateWithFileSystemPath(
-      kCFAllocatorDefault,
-      CFSTR("/Applications/VirtualHIDBroker.app"),
-      kCFURLPOSIXPathStyle,
-      true
-    );
-    if (!bundle_url) {
-      return {};
-    }
-
-    const auto bundle = CFBundleCreate(kCFAllocatorDefault, bundle_url);
-    CFRelease(bundle_url);
-    if (!bundle) {
-      return {};
-    }
-
-    std::string version;
-    const auto value = CFBundleGetValueForInfoDictionaryKey(bundle, CFSTR("CFBundleShortVersionString"));
-    if (value && CFGetTypeID(value) == CFStringGetTypeID()) {
-      std::array<char, 64> buffer {};
-      if (CFStringGetCString(static_cast<CFStringRef>(value), buffer.data(), buffer.size(), kCFStringEncodingUTF8)) {
-        version = buffer.data();
-      }
-    }
-    CFRelease(bundle);
-    return version;
-  }
-#endif
 
   /**
    * @brief Log the request details.
@@ -2047,42 +1692,6 @@ namespace confighttp {
   }
 
   /**
-   * @brief Authenticate a Web UI request and delete the saved XDG Portal restore token.
-   * @details On platforms without XDG Portal capture, this operation succeeds without changing the filesystem.
-   *
-   * @param response HTTP response used for authentication, CSRF, and status output.
-   * @param request HTTP request carrying the client identity and CSRF token.
-   *
-   * @api_examples{/api/reset-portal-token|:| POST|:| null}
-   */
-  void resetPortalToken(const resp_https_t &response, const req_https_t &request) {
-    if (!authenticate(response, request)) {
-      return;
-    }
-
-    std::string client_id = get_client_id(request);
-    if (!validate_csrf_token(response, request, client_id)) {
-      return;
-    }
-
-    print_req(request);
-
-    bool status = true;
-#if defined(linux) || defined(__FreeBSD__)
-    std::error_code ec;
-    fs::remove(portal_token_path_provider()(), ec);
-    if (ec) {
-      BOOST_LOG(error) << "Failed to delete XDG Portal restore token: "sv << ec.message();
-      status = false;
-    }
-#endif
-
-    nlohmann::json output_tree;
-    output_tree["status"] = status;
-    send_response(response, output_tree);
-  }
-
-  /**
    * @brief Authenticate a Web UI request and restart the Sunshine process.
    *
    * @param response HTTP response used for authentication or CSRF failures.
@@ -2183,60 +1792,12 @@ namespace confighttp {
   }
 
   /**
-   * @brief Build Virtual HID Broker version and installation status.
-   *
-   * @return Virtual HID Broker status JSON.
-   */
-  nlohmann::json get_virtualhid_driver_status() {
-#if defined(_WIN32) || defined(__APPLE__)
-  #ifdef _WIN32
-    const auto version_str = read_libvirtualhid_driver_version();
-    const auto minimum_version = libvirtualhid_minimum_version;
-  #else
-    const auto version_str = read_libvirtualhid_broker_version();
-    const auto minimum_version = libvirtualhid_macos_minimum_version;
-  #endif
-    const auto driver_detected = !version_str.empty();
-    auto output_tree = build_driver_status(driver_detected, version_str, minimum_version);
-    bool requires_installed_driver = true;
-    std::string backend_name;
-    std::string runtime_error_message;
-
-    try {
-      const auto runtime = platf::virtualhid::create_runtime();
-      if (runtime) {
-        const auto &capabilities = runtime->capabilities();
-        backend_name = capabilities.backend_name;
-        requires_installed_driver = capabilities.requires_installed_driver;
-        output_tree = build_driver_status(driver_detected || capabilities.supports_gamepad, version_str, minimum_version);
-      }
-    } catch (const std::bad_alloc &exception) {
-      runtime_error_message = exception.what();
-    }
-
-    output_tree["backend_name"] = backend_name;
-    output_tree["requires_installed_driver"] = requires_installed_driver;
-    if (!runtime_error_message.empty()) {
-      output_tree["error"] = runtime_error_message;
-    }
-#else
-    auto output_tree = build_driver_status(false, "", libvirtualhid_minimum_version);
-    output_tree["error"] = "Virtual HID Broker status is only available on Windows and macOS";
-    output_tree["backend_name"] = "";
-    output_tree["requires_installed_driver"] = false;
-#endif
-
-    return output_tree;
-  }
-
-  /**
    * @brief Build ViGEmBus fallback driver version and installation status.
    *
    * @return ViGEmBus fallback driver status JSON.
    */
   nlohmann::json get_vigembus_driver_status() {
-#ifdef _WIN32
-    std::string version_str;
+  std::string version_str;
 
     // Check if ViGEmBus driver exists
     std::string system_root;
@@ -2249,13 +1810,9 @@ namespace confighttp {
       platf::getFileVersionInfo(driver_path, version_str);
     }
 
-    auto output_tree = build_driver_status(installed, version_str, VIGEMBUS_MINIMUM_VERSION);
-#else
-    auto output_tree = build_driver_status(false, "", VIGEMBUS_MINIMUM_VERSION);
-    output_tree["error"] = "ViGEmBus is only available on Windows";
-#endif
+  auto output_tree = build_driver_status(installed, version_str, VIGEMBUS_MINIMUM_VERSION);
 
-    return output_tree;
+  return output_tree;
   }
 
   /**
@@ -2273,87 +1830,8 @@ namespace confighttp {
     print_req(request);
 
     nlohmann::json output_tree;
-    output_tree["virtualhid"] = get_virtualhid_driver_status();
-    output_tree["vigembus"] = get_vigembus_driver_status();
+  output_tree["vigembus"] = get_vigembus_driver_status();
     send_response(response, output_tree);
-  }
-
-  /**
-   * @brief Get the current libvirtualhid machine license status.
-   *
-   * @param response HTTP response object.
-   * @param request Authenticated HTTP request.
-   *
-   * @api_examples{/api/virtual-input/license|:| GET|:| null}
-   */
-  void getVirtualInputLicense(const resp_https_t &response, const req_https_t &request) {
-    get_virtual_input_license(response, request);
-  }
-
-  /**
-   * @brief Activate, validate, or deactivate the libvirtualhid machine license.
-   *
-   * Submitted license keys are used only for the synchronous broker call. They are
-   * never logged or saved in Sunshine's configuration, and extracted mutable copies
-   * are overwritten before the handler returns.
-   *
-   * @param response HTTP response object.
-   * @param request Authenticated HTTP request with a JSON action.
-   *
-   * @api_examples{/api/virtual-input/license|:| POST|:| {"action":"validate"}}
-   */
-  void updateVirtualInputLicense(const resp_https_t &response, const req_https_t &request) {
-    if (!authenticate(response, request)) {
-      return;
-    }
-
-    const auto client_id = get_client_id(request);
-    if (!validate_csrf_token(response, request, client_id)) {
-      return;
-    }
-
-    print_req(request);
-    try {
-      std::stringstream content;
-      content << request->content.rdbuf();
-      auto input_tree = nlohmann::json::parse(content);
-      const auto action = input_tree.value("action", "");
-
-      lvh::LicenseResult result;
-      if (action == "activate") {
-        auto license_key = input_tree.value("license_key", "");
-        input_tree["license_key"] = "";
-        if (license_key.empty()) {
-          bad_request(response, "License key is required");
-          return;
-        }
-
-        const scoped_sensitive_string_clear_t clear_license_key {license_key};
-        result = lvh::activate_license(license_key);
-      } else if (action == "validate") {
-        result = lvh::validate_license();
-      } else if (action == "deactivate") {
-        result = lvh::deactivate_license();
-      } else {
-        bad_request(response, "Unknown license action");
-        return;
-      }
-
-#ifdef _WIN32
-      config::select_all_gamepad_drivers_if_licensed(result.license.licensed());
-#endif
-#if (defined(_WIN32) || defined(__APPLE__)) && defined(SUNSHINE_TRAY) && SUNSHINE_TRAY >= 1
-      system_tray::update_tray_virtualhid_license(result.license, false);
-#endif
-#ifdef _WIN32
-      if (result.status.ok()) {
-        input::refresh_virtual_input();
-      }
-#endif
-      send_response(response, build_virtualhid_license_status(result));
-    } catch (const nlohmann::json::exception &) {
-      bad_request(response, "Invalid license request");
-    }
   }
 
   /**
@@ -2363,19 +1841,11 @@ namespace confighttp {
    * @return True if the file should be included in an executable-type listing.
    */
   bool is_browsable_executable([[maybe_unused]] const fs::directory_entry &entry, [[maybe_unused]] const fs::file_status &status) {
-#ifdef _WIN32
     auto ext = entry.path().extension().string();
     boost::algorithm::to_lower(ext);
     return ext == ".exe" || ext == ".bat" || ext == ".cmd" || ext == ".com" || ext == ".ps1";
-#else
-    const auto perms = status.permissions();
-    return (perms & fs::perms::owner_exec) != fs::perms::none ||
-           (perms & fs::perms::group_exec) != fs::perms::none ||
-           (perms & fs::perms::others_exec) != fs::perms::none;
-#endif
   }
 
-#ifdef _WIN32
   /**
    * @brief Builds a JSON array of available Windows drive letters.
    * @return JSON array of drive-letter entries.
@@ -2396,7 +1866,6 @@ namespace confighttp {
     }
     return entries;
   }
-#endif
 
   /**
    * @brief Lists, filters, and sorts the entries of a directory for the browse API.
@@ -2489,7 +1958,6 @@ namespace confighttp {
 
       nlohmann::json output_tree;
 
-#ifdef _WIN32
       // On Windows with an empty or root path, return the list of available drive letters
       if (path_str.empty() || path_str == "/" || path_str == "\\") {
         output_tree["path"] = "";
@@ -2498,12 +1966,6 @@ namespace confighttp {
         send_response(response, output_tree);
         return;
       }
-#else
-      // On non-Windows, default an empty path to the filesystem root
-      if (path_str.empty()) {
-        path_str = "/";
-      }
-#endif
 
       // Normalize the path
       fs::path dir_path = fs::weakly_canonical(fs::path(path_str));
@@ -2528,12 +1990,8 @@ namespace confighttp {
 
       // Determine the parent path for the "Up" navigation
       const fs::path parent = dir_path.parent_path();
-#ifdef _WIN32
       // At a drive root (e.g., C:\) the parent equals itself; signal the drive list with an empty string
       output_tree["parent"] = (parent == dir_path) ? "" : parent.string();
-#else
-      output_tree["parent"] = parent.string();
-#endif
 
       output_tree["entries"] = build_browse_entries(dir_path, type_str);
       send_response(response, output_tree);
@@ -2599,12 +2057,9 @@ namespace confighttp {
     server.resource["^/api/pin$"]["POST"] = savePin;
     server.resource["^/api/logs$"]["GET"] = getLogs;
     server.resource["^/api/reset-display-device-persistence$"]["POST"] = resetDisplayDevicePersistence;
-    server.resource["^/api/reset-portal-token$"]["POST"] = resetPortalToken;
     server.resource["^/api/restart$"]["POST"] = restart;
     server.resource["^/api/permissions$"]["GET"] = getPermissions;
     server.resource["^/api/permissions/request$"]["POST"] = requestPermission;
-    server.resource["^/api/virtual-input/license$"]["GET"] = getVirtualInputLicense;
-    server.resource["^/api/virtual-input/license$"]["POST"] = updateVirtualInputLicense;
     server.resource["^/api/virtual-input/status$"]["GET"] = getVirtualInputStatus;
 
     // static/dynamic resources

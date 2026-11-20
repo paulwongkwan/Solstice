@@ -2,7 +2,6 @@
  * @file src/nvenc/nvenc_dynamic_factory.cpp
  * @brief Definitions for runtime NVENC SDK selection on Windows.
  */
-#ifdef _WIN32
 
   // this include
   #include "nvenc_dynamic_factory.h"
@@ -136,4 +135,3 @@ namespace nvenc {
   }
 
 }  // namespace nvenc
-#endif

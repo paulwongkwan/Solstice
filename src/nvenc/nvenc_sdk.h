@@ -31,9 +31,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#ifdef _WIN32
   #include <Windows.h>
-#endif
 
 // The version-specific namespace is populated by the SDK headers included below.
 namespace NVENC_NAMESPACE {  // NOSONAR(cpp:S3261)

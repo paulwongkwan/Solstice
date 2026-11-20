@@ -5,7 +5,6 @@
 // local includes
 #include "src/logging.h"
 
-#ifdef _WIN32
   #include "nvenc_d3d11.h"
 
 namespace NVENC_NAMESPACE {
@@ -51,4 +50,3 @@ namespace NVENC_NAMESPACE {
   }
 
 }  // namespace NVENC_NAMESPACE
-#endif

@@ -39,11 +39,6 @@ namespace config {
   constexpr int PACKETSIZE_SMALL = 500;  ///< Conservative packet size used for low-MTU links.
   constexpr int PACKETSIZE_LARGE = 1456;  ///< Default large packet size that avoids common MTU fragmentation.
 
-  inline constexpr std::string_view GAMEPAD_DRIVER_ALL = "all";  ///< Allow every available Windows virtual gamepad driver.
-  inline constexpr std::string_view GAMEPAD_DRIVER_VIRTUALHID = "virtualhid";  ///< Use Virtual HID Broker for gamepads on Windows or macOS.
-  inline constexpr std::string_view GAMEPAD_DRIVER_VIGEMBUS = "vigembus";  ///< Allow only ViGEmBus for Windows gamepads.
-  inline constexpr std::string_view GAMEPAD_DRIVER_NONE = "none";  ///< Disable virtual gamepads on Windows and macOS.
-
   // track modified config options
   inline config_map_t modified_config_settings;  ///< Configuration keys changed during the current parse or UI update.
 
@@ -122,25 +117,6 @@ namespace config {
       std::optional<int> amd_max_au_size;  ///< Maximum AMF H.264/HEVC access unit size in bits; unset uses the encoder default.
       int amd_coder;  ///< AMF entropy-coding mode.
     } amd;  ///< AMD AMF encoder options.
-
-    struct {
-      int vt_realtime;  ///< Whether VideoToolbox uses realtime encoding mode.
-      int vt_coder;  ///< VideoToolbox entropy-coding mode.
-    } vt;  ///< VideoToolbox encoder options.
-
-    struct {
-      std::optional<int> blbrc;  ///< VA-API block-level bitrate-control setting; unset uses the encoder default.
-      std::optional<int> vaapi_quality;  ///< VA-API quality setting; unset uses the encoder default.
-      std::optional<int> vaapi_rc;  ///< VA-API rate-control mode; unset uses the encoder default.
-      std::string vaapi_rc_str;  ///< Text representation of the selected VA-API rate-control mode.
-      bool strict_rc_buffer;  ///< Whether VA-API must strictly enforce the rate-control buffer.
-    } vaapi;  ///< VA-API encoder options.
-
-    struct {
-      int tune;  ///< Vulkan encoder tuning mode: default, HQ, LL, ULL, or lossless.
-      int rc_mode;  ///< Vulkan encoder rate-control mode: driver, CQP, CBR, or VBR.
-      int quality;  ///< Vulkan encoder quality preset: 1 = speed, 2 = balanced (default), 3 = quality.
-    } vk;  ///< Vulkan encoder options.
 
     std::string capture;  ///< Capture backend name selected by configuration.
     bool fp16_sdr_gamma_encoded;  ///< Treat FP16 captures of SDR displays as already sRGB gamma-encoded (Windows).
@@ -306,11 +282,9 @@ namespace config {
     std::chrono::duration<double> key_repeat_period;  ///< Interval between repeated keyboard key events.
 
     std::string gamepad;  ///< Virtual controller profile selected by configuration.
-    std::string gamepad_driver;  ///< Virtual gamepad backend policy on Windows and macOS.
     bool ds4_back_as_touchpad_click;  ///< Map Back/Select to touchpad click for PlayStation-style gamepads.
     bool motion_as_ds4;  ///< Prefer PlayStation-style emulation for client gamepads with motion controls.
     bool touchpad_as_ds4;  ///< Prefer PlayStation-style emulation for client gamepads with touchpad input.
-    bool virtualhid_randomize_mac;  ///< Randomize the libvirtualhid virtual controller MAC address.
 
     bool keyboard;  ///< Enable keyboard input from clients.
     bool key_rightalt_to_key_win;  ///< Map the client Right Alt key to the Windows key.
@@ -441,26 +415,6 @@ namespace config {
    * @return Parsed configuration key-value entries.
    */
   config_map_t parse_config(const std::string_view &file_content);
-
-  /**
-   * @brief Persist a configuration option when the active file does not already define it.
-   *
-   * Existing text and comments are retained because the new setting is appended rather
-   * than serializing the complete configuration again.
-   *
-   * @param name Configuration option name.
-   * @param value Configuration option value.
-   * @return True when the option was appended successfully; otherwise, false.
-   */
-  bool persist_config_option_if_missing(std::string_view name, std::string_view value);
-
-  /**
-   * @brief Select all available gamepad drivers when a licensed user has not made a choice.
-   *
-   * @param virtualhid_licensed Whether Virtual HID Driver has an active machine license.
-   * @return True when the `all` preference was persisted and applied; otherwise, false.
-   */
-  bool select_all_gamepad_drivers_if_licensed(bool virtualhid_licensed);
 
   /**
    * @brief Apply the configured stream resolution cap to a client-requested resolution.

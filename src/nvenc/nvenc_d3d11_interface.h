@@ -3,7 +3,6 @@
  * @brief Declarations for the SDK-neutral Direct3D11 NVENC interface.
  */
 #pragma once
-#ifdef _WIN32
 
   // lib includes
   #include <d3d11.h>
@@ -33,4 +32,3 @@ namespace nvenc {
   };
 
 }  // namespace nvenc
-#endif

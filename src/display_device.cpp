@@ -29,18 +29,9 @@
 #include "rtsp.h"
 
 // platform-specific includes
-#ifdef _WIN32
-  #include <display_device/windows/settings_manager.h>
-  #include <display_device/windows/win_api_layer.h>
-  #include <display_device/windows/win_display_device.h>
-#endif
-
-#ifdef __APPLE__
-  #include <display_device/macos/display_power.h>
-  #include <display_device/macos/mac_api_layer.h>
-  #include <display_device/macos/mac_display_device.h>
-  #include <display_device/macos/settings_manager.h>
-#endif
+#include <display_device/windows/settings_manager.h>
+#include <display_device/windows/win_api_layer.h>
+#include <display_device/windows/win_display_device.h>
 
 namespace display_device {
   namespace {
@@ -211,14 +202,6 @@ namespace display_device {
       }
       return (int) result;
     }
-
-#ifdef __APPLE__
-    bool is_unsigned_integer(std::string_view value) {
-      return !value.empty() && std::ranges::all_of(value, [](unsigned char character) {
-        return std::isdigit(character);
-      });
-    }
-#endif
 
     std::string_view apply_result_name(SettingsManagerInterface::ApplyResult result) {
       using enum SettingsManagerInterface::ApplyResult;
@@ -718,7 +701,6 @@ namespace display_device {
       return true;
     }
 
-#if defined(_WIN32) || defined(__APPLE__)
     /**
      * @brief Create the persistence object shared by the settings manager and the revert loop.
      * @param persistence_filepath File location for saving persistent state.
@@ -729,7 +711,6 @@ namespace display_device {
       DD_DATA.persistence_watch = watch;
       return watch;
     }
-#endif
 
     /**
      * @brief Construct a settings manager interface to manage display device settings.
@@ -737,9 +718,8 @@ namespace display_device {
      * @param video_config User's video related configuration.
      * @return An interface or nullptr if the OS does not support the interface.
      */
-    std::unique_ptr<SettingsManagerInterface> make_settings_manager([[maybe_unused]] const std::filesystem::path &persistence_filepath, [[maybe_unused]] const config::video_t &video_config) {
+    std::unique_ptr<SettingsManagerInterface> make_settings_manager(const std::filesystem::path &persistence_filepath, const config::video_t &video_config) {
       DD_DATA.persistence_watch.reset();
-#ifdef _WIN32
       return std::make_unique<SettingsManager>(
         std::make_shared<WinDisplayDevice>(std::make_shared<WinApiLayer>(), false),
         std::make_shared<sunshine_audio_context_t>(),
@@ -748,24 +728,10 @@ namespace display_device {
           .m_hdr_blank_delay = video_config.dd.wa.hdr_toggle_delay != std::chrono::milliseconds::zero() ? std::make_optional(video_config.dd.wa.hdr_toggle_delay) : std::nullopt
         }
       );
-#elif defined(__APPLE__)
-      return std::make_unique<MacSettingsManager>(
-        std::make_shared<MacDisplayDevice>(std::make_shared<MacApiLayer>()),
-        std::make_shared<sunshine_audio_context_t>(),
-        std::make_unique<MacPersistentState>(make_persistence_watch(persistence_filepath)),
-        MacWorkarounds {}
-      );
-#else
-      return nullptr;
-#endif
     }
 
     std::unique_ptr<DisplayPowerInterface> make_display_power() {
-#ifdef __APPLE__
-      return std::make_unique<MacDisplayPower>(std::make_shared<MacApiLayer>());
-#else
       return nullptr;
-#endif
     }
 
     /**
@@ -940,12 +906,6 @@ namespace display_device {
       return settings_iface.getDisplayName(output_name);
     })};
 
-#ifdef __APPLE__
-    if (mapped_name.empty() && is_unsigned_integer(output_name)) {
-      return output_name;
-    }
-#endif
-
     return mapped_name;
   }
 
@@ -1041,19 +1001,7 @@ namespace display_device {
     config.m_device_prep = *device_prep;
 
     const auto hdr_state {parse_hdr_option(video_config, session)};
-#ifdef __APPLE__
-    if (hdr_state) {
-      BOOST_LOG(info) << "Ignoring HDR display device request on macOS because macOS HDR changes are not supported by libdisplaydevice.";
-    }
-#else
     config.m_hdr_state = hdr_state;
-#endif
-
-#ifdef __APPLE__
-    if (config.m_device_prep != SingleDisplayConfiguration::DevicePreparation::VerifyOnly) {
-      BOOST_LOG(warning) << "macOS libdisplaydevice currently supports only VerifyOnly display preparation. The requested preparation mode will fail.";
-    }
-#endif
 
     if (!parse_resolution_option(video_config, session, config)) {
       // Error already logged

@@ -12,7 +12,6 @@
 #include <string_view>
 
 // lib includes
-#include <libvirtualhid/license.hpp>
 #include <nlohmann/json.hpp>
 #include <Simple-Web-Server/server_https.hpp>
 
@@ -151,21 +150,6 @@ namespace confighttp {
   nlohmann::json build_driver_status(bool installed, const std::string &version, std::string_view minimum_version);
 
   /**
-   * @brief Convert a libvirtualhid license result into a Web UI response.
-   *
-   * @param result License operation result.
-   * @return License status JSON object without the submitted license key.
-   */
-  nlohmann::json build_virtualhid_license_status(const lvh::LicenseResult &result);
-
-  /**
-   * @brief Build Virtual HID Broker version and installation status.
-   *
-   * @return Virtual HID Broker status JSON.
-   */
-  nlohmann::json get_virtualhid_driver_status();
-
-  /**
    * @brief Build ViGEmBus fallback driver version and installation status.
    *
    * @return ViGEmBus fallback driver status JSON.
@@ -190,12 +174,6 @@ namespace confighttp {
    */
   void requestPermission(const resp_https_t &response, const req_https_t &request);
 
-  void getVirtualInputLicense(const resp_https_t &response, const req_https_t &request);
-
-  void updateVirtualInputLicense(const resp_https_t &response, const req_https_t &request);
-
-  void resetPortalToken(const resp_https_t &response, const req_https_t &request);
-
   /**
    * @brief Save an application with optional fields normalized before persistence.
    */
@@ -214,39 +192,6 @@ namespace confighttp {
    */
   void reset_permission_statuses_for_testing();
 
-  using virtual_input_license_status_provider_t = std::function<lvh::LicenseResult()>;  ///< Test provider for current libvirtualhid license status.
-  using portal_token_path_provider_t = std::function<std::filesystem::path()>;  ///< Test provider for the XDG Portal token path.
-
-  /**
-   * @brief Replace the virtual-input license status provider for unit tests.
-   *
-   * @param status_provider Provider returning the license status for the response.
-   */
-  void set_virtual_input_license_status_provider_for_testing(virtual_input_license_status_provider_t status_provider);
-
-  /**
-   * @brief Restore the production virtual-input license status provider after a unit test.
-   */
-  void reset_virtual_input_license_status_provider_for_testing();
-
-  /**
-   * @brief Replace the XDG Portal token path provider for unit tests.
-   *
-   * @param path_provider Provider returning the token path used by the reset endpoint.
-   */
-  void set_portal_token_path_provider_for_testing(portal_token_path_provider_t path_provider);
-
-  /**
-   * @brief Restore the production XDG Portal token path provider after a unit test.
-   */
-  void reset_portal_token_path_provider_for_testing();
-
-  /**
-   * @brief Exercise request-local sensitive string clearing for unit tests.
-   *
-   * @param value Mutable sensitive string to overwrite and clear.
-   */
-  void clear_sensitive_string_for_testing(std::string &value);
 #endif
 
   // Browse helper functions (also exposed for unit testing)
@@ -266,13 +211,11 @@ namespace confighttp {
    */
   nlohmann::json build_browse_entries(const std::filesystem::path &dir_path, const std::string &type_str);
 
-#ifdef _WIN32
   /**
    * @brief Builds a JSON array of available Windows drive letters.
    * @return JSON array of drive-letter entries.
    */
   nlohmann::json get_windows_drives();
-#endif
 }  // namespace confighttp
 
 // mime types map

@@ -3,33 +3,26 @@
  * @brief Definitions for the main entry point for Sunshine.
  */
 // standard includes
+#include <array>
 #include <cerrno>
 #include <codecvt>
 #include <csignal>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
-// platform includes
-#ifdef __APPLE__
-  #include "platform/macos/misc.h"
-
-  #include <mach-o/dyld.h>
-#endif
-#ifdef __linux__
-  #include "platform/common.h"
-  #include "platform/linux/graphics.h"
-  #include "platform/linux/misc.h"
-
-  #include <sys/auxv.h>
-#endif
-
 // lib includes
 #include <rs.h>
-#ifdef _WIN32
-  #include <libvirtualhid/license.hpp>
-#endif
+
+// platform includes
+/**
+ * @def WIN32_LEAN_AND_MEAN
+ * @brief Excludes the Winsock 1 headers so Boost.Asio can include Winsock 2.
+ */
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 // local includes
 #include "confighttp.h"
@@ -49,6 +42,29 @@
 using namespace std::literals;
 
 std::map<int, std::function<void()>> signal_handlers;  ///< Signal handlers.
+
+/**
+ * @brief Read the Windows build number of the running operating system.
+ *
+ * @return Build number, or zero when it cannot be determined.
+ */
+DWORD windows_build_number() {
+  std::array<wchar_t, 32> buffer {};
+  DWORD size = static_cast<DWORD>(buffer.size() * sizeof(wchar_t));
+  if (RegGetValueW(
+        HKEY_LOCAL_MACHINE,
+        L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+        L"CurrentBuildNumber",
+        RRF_RT_REG_SZ,
+        nullptr,
+        buffer.data(),
+        &size
+      ) != ERROR_SUCCESS) {
+    return 0;
+  }
+
+  return static_cast<DWORD>(std::wcstoul(buffer.data(), nullptr, 10));
+}
 
 /**
  * @brief Forward a POSIX signal to the registered Sunshine handler.
@@ -85,14 +101,11 @@ std::map<std::string_view, std::function<int(const char *name, int argc, char **
   {"version"sv, [](const char *, int, char **) {
      return args::version();
    }},
-#ifdef _WIN32
   {"restore-nvprefs-undo"sv, [](const char *, int, char **) {
      return args::restore_nvprefs_undo();
    }},
-#endif
 };
 
-#ifdef _WIN32
 /**
  * @brief Handle Windows session-change messages for the monitor window.
  *
@@ -135,7 +148,6 @@ WINAPI BOOL ConsoleCtrlHandler(DWORD type) {
   }
   return FALSE;
 }
-#endif
 
 #if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
 constexpr bool tray_is_enabled = true;  ///< Compile-time flag indicating tray support is enabled.
@@ -149,26 +161,9 @@ constexpr bool tray_is_enabled = false;
  * @param shutdown_event Shutdown event.
  */
 void mainThreadLoop(const std::shared_ptr<safe::event_t<bool>> &shutdown_event) {
-  bool run_loop = false;
-
-  // Conditions that would require the main thread event loop
-#ifndef _WIN32
-  run_loop = tray_is_enabled && config::sunshine.system_tray;  // On Windows, tray runs in separate thread, so no main loop needed for tray
-#endif
-
-  if (!run_loop) {
-    BOOST_LOG(info) << "No main thread features enabled, skipping event loop"sv;
-    // Wait for shutdown
-    shutdown_event->view();
-    return;
-  }
-
-  // Main thread event loop
-  BOOST_LOG(info) << "Starting main loop"sv;
-#if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
-  system_tray::run_tray_until_exit(shutdown_event);
-#endif
-  BOOST_LOG(info) << "Main loop has exited"sv;
+  // The Windows tray runs in its own thread, so there is no main-thread event loop to run.
+  BOOST_LOG(info) << "No main thread features enabled, skipping event loop"sv;
+  shutdown_event->view();
 }
 
 /**
@@ -179,64 +174,21 @@ void mainThreadLoop(const std::shared_ptr<safe::event_t<bool>> &shutdown_event) 
  * @return Process or platform callback exit code.
  */
 int main(int argc, char *argv[]) {
-#ifdef __linux__
-  const bool privileged_execution = getauxval(AT_SECURE) != 0 || platf::has_elevated_privileges(true);
-  if (privileged_execution && !platf::sanitize_process_environment()) {
-    std::cerr << "Failed to sanitize the environment for privileged execution: " << std::strerror(errno) << '\n';
-    return 1;
-  }
-#endif
-
-#ifdef __APPLE__
-  // Bundle assets are referenced relative to the executable
-  // (e.g. ../Resources/assets), so anchor cwd to Contents/MacOS.
-  {
-    char executable[2048];
-    uint32_t size = sizeof(executable);
-    if (_NSGetExecutablePath(executable, &size) == 0) {
-      std::error_code ec;
-      auto exec_dir = std::filesystem::weakly_canonical(std::filesystem::path {executable}, ec).parent_path();
-      if (!ec) {
-        std::filesystem::current_path(exec_dir, ec);
-      }
-      if (ec) {
-        std::cerr << "Failed to set working directory to executable path: " << ec.message() << '\n';
-      }
-    }
-  }
-#endif
-#if defined(__linux__)
-  // On Linux, child threads inherit capabilities from the parent at creation time.
-  // We ensure the privileged worker starts while capabilities are still held,
-  // and then immediately strip global privileges from the main thread and future tasks.
-  // Please ensure that these calls remain ordered as early as possible in startup initialization.
-  #if defined(SUNSHINE_BUILD_DRM)
-  platf::kms::ensure_privileged_drm_worker_started();
-  #endif
-  // Check and drop capabilities but use 'false' to retain CAP_SYS_NICE for EGL high priority contexts
-  if (platf::has_elevated_privileges(false)) {
-    platf::drop_elevated_privileges(false);
-  }
-
-  // Next, initialize privileged EGL worker thread
-  egl::ensure_privileged_egl_worker_started();
-  // Finally, check and drop all capabilities via 'true', which includes CAP_SYS_NICE.
-  if (platf::has_elevated_privileges(true)) {
-    platf::drop_elevated_privileges(true);
-  }
-#endif
-
   lifetime::argv = argv;
 
   task_pool_util::TaskPool::task_id_t force_shutdown = nullptr;
 
-#ifdef _WIN32
   // Avoid searching the PATH in case a user has configured their system insecurely
   // by placing a user-writable directory in the system-wide PATH variable.
   SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
 
   setlocale(LC_ALL, "C");
-#endif
+
+  // Sunshine requires Windows 11 (build 22000) or newer.
+  if (const auto build_number = windows_build_number(); build_number != 0 && build_number < 22000) {
+    BOOST_LOG(fatal) << "Sunshine requires Windows 11 or newer. Detected Windows build "sv << build_number << '.';
+    return 1;
+  }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -284,10 +236,6 @@ int main(int argc, char *argv[]) {
     return fn->second(argv[0], config::sunshine.cmd.argc, config::sunshine.cmd.argv);
   }
 
-#ifdef _WIN32
-  config::select_all_gamepad_drivers_if_licensed(lvh::get_license_status().license.licensed());
-#endif
-
   // Adding guard here first as it also performs recovery after crash,
   // otherwise people could theoretically end up without display output.
   // It also should be destroyed before forced shutdown to expedite the cleanup.
@@ -296,7 +244,6 @@ int main(int argc, char *argv[]) {
     BOOST_LOG(error) << "Display device session failed to initialize"sv;
   }
 
-#ifdef _WIN32
   // Modify relevant NVIDIA control panel settings if the system has corresponding gpu
   if (nvprefs_instance.load()) {
     // Restore global settings to the undo file left by improper termination of sunshine.exe
@@ -382,8 +329,6 @@ int main(int argc, char *argv[]) {
     session_monitor_thread.detach();
   });
 
-#endif
-
   task_pool.start(1);
 
   // Create signal handler after logging has been initialized
@@ -428,10 +373,8 @@ int main(int argc, char *argv[]) {
     display_device_deinit_guard = nullptr;
   });
 
-#ifdef _WIN32
   // Terminate gracefully on Windows when console window is closed
   SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
-#endif
 
   proc::refresh(config::stream.file_apps);
 
@@ -446,9 +389,6 @@ int main(int argc, char *argv[]) {
   // Capture the pre-request state so access granted during this launch causes
   // one clean restart after every verifiable required permission is available.
   const bool permission_restart_needed = !platf::required_permissions_granted(platf::get_permission_statuses());
-#ifdef __APPLE__
-  platf::request_startup_permissions(tray_is_enabled && config::sunshine.system_tray);
-#endif
 
   auto proc_deinit_guard = proc::init();
   if (!proc_deinit_guard) {
@@ -469,10 +409,8 @@ int main(int argc, char *argv[]) {
   if (http::init()) {
     BOOST_LOG(fatal) << "HTTP interface failed to initialize"sv;
 
-#ifdef _WIN32
     BOOST_LOG(fatal) << "To relaunch Sunshine successfully, use the shortcut in the Start Menu. Do not run Sunshine.exe manually."sv;
     std::this_thread::sleep_for(10s);
-#endif
 
     return -1;
   }
@@ -496,40 +434,21 @@ int main(int argc, char *argv[]) {
   std::jthread configThread {confighttp::start};
   std::jthread rtspThread {rtsp_stream::start};
 
-#ifdef _WIN32
   // If we're using the default port and GameStream is enabled, warn the user
   if (config::sunshine.port == 47989 && is_gamestream_enabled()) {
     BOOST_LOG(fatal) << "GameStream is still enabled in GeForce Experience! This *will* cause streaming problems with Sunshine!"sv;
     BOOST_LOG(fatal) << "Disable GameStream on the SHIELD tab in GeForce Experience or change the Port setting on the Advanced tab in the Sunshine Web UI."sv;
   }
-#endif
 
   if (tray_is_enabled && config::sunshine.system_tray) {
     BOOST_LOG(info) << "Starting system tray"sv;
-#if defined(_WIN32) || defined(__APPLE__)
-    system_tray::prepare_tray_virtualhid_license();
-    system_tray::prepare_tray_virtualhid_driver();
-#endif
-#ifdef _WIN32
+    system_tray::prepare_tray_vigembus_driver();
     // TODO: Windows has a weird bug where when running as a service and on the first Windows boot,
     // the tray icon would not appear even though Sunshine is running correctly otherwise.
     // Restarting the service would allow the icon to appear normally.
     // For now we will keep the Windows tray icon on a separate thread.
-    // Ideally, we would run the system tray on the main thread for all platforms.
     system_tray::init_tray_threaded();
-#else
-    system_tray::init_tray();
-#endif
   }
-
-#ifdef __APPLE__
-  std::jthread macos_audio_permission_requester;
-  if (!permission_restart_needed) {
-    macos_audio_permission_requester = std::jthread([]() {
-      platf::request_startup_system_audio_permission();
-    });
-  }
-#endif
 
   std::jthread permission_watcher;
   if (permission_restart_needed) {
@@ -551,11 +470,6 @@ int main(int argc, char *argv[]) {
   if (permission_watcher.joinable()) {
     permission_watcher.join();
   }
-#ifdef __APPLE__
-  if (macos_audio_permission_requester.joinable()) {
-    macos_audio_permission_requester.join();
-  }
-#endif
 
   httpThread.join();
   configThread.join();
@@ -564,13 +478,11 @@ int main(int argc, char *argv[]) {
   task_pool.stop();
   task_pool.join();
 
-#ifdef _WIN32
   // Restore global NVIDIA control panel settings
   if (nvprefs_instance.owning_undo_file() && nvprefs_instance.load()) {
     nvprefs_instance.restore_global_profile();
     nvprefs_instance.unload();
   }
-#endif
 
   return lifetime::desired_exit_code;
 }

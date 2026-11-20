@@ -32,11 +32,9 @@
 #include "rtsp.h"
 #include "utility.h"
 
-#ifdef _WIN32
-  #include <shellapi.h>
-#endif
+#include <shellapi.h>
 
-#if defined(_WIN32) && !defined(DOXYGEN)
+#if !defined(DOXYGEN)
   #ifdef _GLIBCXX_USE_C99_INTTYPES
     #undef _GLIBCXX_USE_C99_INTTYPES
   #endif
@@ -45,15 +43,8 @@
   #include <AMF/components/VideoEncoderVCE.h>
 #endif
 
-#if !defined(__ANDROID__) && !defined(__APPLE__)
-  // For NVENC legacy constants
-  #include <ffnvcodec/nvEncodeAPI.h>
-#endif
-
-#if defined(SUNSHINE_BUILD_VAAPI) && !defined(DOXYGEN)
-  // For VAAPI rate control types
-  #include <va/va.h>
-#endif
+// For NVENC legacy constants
+#include <ffnvcodec/nvEncodeAPI.h>
 
 namespace fs = std::filesystem;
 using namespace std::literals;
@@ -116,49 +107,6 @@ namespace config {
   }  // namespace nv
 
   namespace amd {
-#if !defined(_WIN32) || defined(DOXYGEN)
-    // values accurate as of 27/12/2022, but aren't strictly necessary for MacOS build
-    constexpr int AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_SPEED = 100;  ///< Fallback AMF enum value for av1 quality preset speed.
-    constexpr int AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_QUALITY = 30;  ///< Fallback AMF enum value for av1 quality preset quality.
-    constexpr int AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_BALANCED = 70;  ///< Fallback AMF enum value for av1 quality preset balanced.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED = 10;  ///< Fallback AMF enum value for hevc quality preset speed.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_QUALITY = 0;  ///< Fallback AMF enum value for hevc quality preset quality.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED = 5;  ///< Fallback AMF enum value for hevc quality preset balanced.
-    constexpr int AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED = 1;  ///< Fallback AMF enum value for quality preset speed.
-    constexpr int AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY = 2;  ///< Fallback AMF enum value for quality preset quality.
-    constexpr int AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED = 0;  ///< Fallback AMF enum value for quality preset balanced.
-    constexpr int AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP = 0;  ///< Fallback AMF enum value for av1 rate control method constant qp.
-    constexpr int AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CBR = 3;  ///< Fallback AMF enum value for av1 rate control method cbr.
-    constexpr int AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR = 2;  ///< Fallback AMF enum value for av1 rate control method peak constrained vbr.
-    constexpr int AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR = 1;  ///< Fallback AMF enum value for av1 rate control method latency constrained vbr.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP = 0;  ///< Fallback AMF enum value for hevc rate control method constant qp.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR = 3;  ///< Fallback AMF enum value for hevc rate control method cbr.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR = 2;  ///< Fallback AMF enum value for hevc rate control method peak constrained vbr.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR = 1;  ///< Fallback AMF enum value for hevc rate control method latency constrained vbr.
-    constexpr int AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP = 0;  ///< Fallback AMF enum value for rate control method constant qp.
-    constexpr int AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR = 1;  ///< Fallback AMF enum value for rate control method cbr.
-    constexpr int AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR = 2;  ///< Fallback AMF enum value for rate control method peak constrained vbr.
-    constexpr int AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR = 3;  ///< Fallback AMF enum value for rate control method latency constrained vbr.
-    constexpr int AMF_VIDEO_ENCODER_AV1_USAGE_TRANSCODING = 0;  ///< Fallback AMF enum value for av1 usage transcoding.
-    constexpr int AMF_VIDEO_ENCODER_AV1_USAGE_LOW_LATENCY = 1;  ///< Fallback AMF enum value for av1 usage low latency.
-    constexpr int AMF_VIDEO_ENCODER_AV1_USAGE_ULTRA_LOW_LATENCY = 2;  ///< Fallback AMF enum value for av1 usage ultra low latency.
-    constexpr int AMF_VIDEO_ENCODER_AV1_USAGE_WEBCAM = 3;  ///< Fallback AMF enum value for av1 usage webcam.
-    constexpr int AMF_VIDEO_ENCODER_AV1_USAGE_LOW_LATENCY_HIGH_QUALITY = 5;  ///< Fallback AMF enum value for av1 usage low latency high quality.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_USAGE_TRANSCODING = 0;  ///< Fallback AMF enum value for hevc usage transcoding.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_USAGE_ULTRA_LOW_LATENCY = 1;  ///< Fallback AMF enum value for hevc usage ultra low latency.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_USAGE_LOW_LATENCY = 2;  ///< Fallback AMF enum value for hevc usage low latency.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_USAGE_WEBCAM = 3;  ///< Fallback AMF enum value for hevc usage webcam.
-    constexpr int AMF_VIDEO_ENCODER_HEVC_USAGE_LOW_LATENCY_HIGH_QUALITY = 5;  ///< Fallback AMF enum value for hevc usage low latency high quality.
-    constexpr int AMF_VIDEO_ENCODER_USAGE_TRANSCODING = 0;  ///< Fallback AMF enum value for usage transcoding.
-    constexpr int AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY = 1;  ///< Fallback AMF enum value for usage ultra low latency.
-    constexpr int AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY = 2;  ///< Fallback AMF enum value for usage low latency.
-    constexpr int AMF_VIDEO_ENCODER_USAGE_WEBCAM = 3;  ///< Fallback AMF enum value for usage webcam.
-    constexpr int AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY_HIGH_QUALITY = 5;  ///< Fallback AMF enum value for usage low latency high quality.
-    constexpr int AMF_VIDEO_ENCODER_UNDEFINED = 0;  ///< Fallback AMF enum value for undefined.
-    constexpr int AMF_VIDEO_ENCODER_CABAC = 1;  ///< Fallback AMF enum value for cabac.
-    constexpr int AMF_VIDEO_ENCODER_CALV = 2;  ///< Fallback AMF enum value for calv.
-#endif
-
     /**
      * @brief Enumerates supported quality AV1 options.
      */
@@ -420,136 +368,6 @@ namespace config {
 
   }  // namespace qsv
 
-  namespace vaapi {
-#if !defined(SUNSHINE_BUILD_VAAPI) || defined(DOXYGEN)
-    constexpr int VA_RC_CBR = 0x00000002;  ///< CBR rate control
-    constexpr int VA_RC_VBR = 0x00000004;  ///< VBR rate control
-    constexpr int VA_RC_CQP = 0x00000010;  ///< CQP rate control
-    constexpr int VA_RC_ICQ = 0x00000040;  ///< ICQ rate control
-    constexpr int VA_RC_QVBR = 0x00000400;  ///< QVBR rate control
-    constexpr int VA_RC_AVBR = 0x00000800;  ///< AVBR rate control
-#endif
-    /**
-     * @brief Enumerates supported VA-API quality options.
-     */
-    enum class quality_e : int {
-      _auto = 0,  ///< Auto quality level
-      speed = 1,  ///< Speed level
-      balanced = 2,  ///< Balanced level
-      quality = 3  ///< Quality level
-    };
-
-    /**
-     * @brief Enumerates supported VA-API rc options.
-     */
-    enum class rc_e : int {
-      _auto = 0,  ///< Auto rate control
-      avbr = VA_RC_AVBR,  ///< AVBR - average variable bitrate
-      cbr = VA_RC_CBR,  ///< CBR - constant bitrate
-      cqp = VA_RC_CQP,  ///< CQP - constant QP
-      icq = VA_RC_ICQ,  ///< ICQ - intelligent QP
-      qvbr = VA_RC_QVBR,  ///< QVBR - quality-defined variable bitrate
-      vbr = VA_RC_VBR  ///< VBR - variable bitrate
-    };
-
-    /**
-     * @brief Parse a VA-API quality preset while preserving the current value on invalid input.
-     *
-     * @param quality_type Configuration text naming the VA-API quality preset.
-     * @param original Original text value used when reporting a parsing failure.
-     * @return Parsed enum value, or the setting-specific default when the text is unknown.
-     */
-    template<class T>
-    ::std::optional<int> quality_from_view(const ::std::string_view &quality_type, const ::std::optional<int>(&original)) {
-#ifndef DOXYGEN
-  #define _CONVERT_(x) \
-    if (quality_type == #x##sv) \
-    return (int) T::x
-#endif
-      _CONVERT_(balanced);
-      _CONVERT_(quality);
-      _CONVERT_(speed);
-#ifdef _CONVERT_
-  #undef _CONVERT_
-#endif
-      return original;
-    }
-
-    /**
-     * @brief Parse a VA-API rate-control mode while preserving the current value on invalid input.
-     *
-     * @param rc Rate-control mode selected in the configuration.
-     * @param original Original text value used when reporting a parsing failure.
-     * @return Parsed enum value, or the setting-specific default when the text is unknown.
-     */
-    template<class T>
-    ::std::optional<int> rc_from_view(const ::std::string_view &rc, const ::std::optional<int>(&original)) {
-#ifndef DOXYGEN
-  #define _CONVERT_(x) \
-    if (rc == #x##sv) \
-    return (int) T::x
-#endif
-      _CONVERT_(avbr);
-      _CONVERT_(cbr);
-      _CONVERT_(cqp);
-      _CONVERT_(icq);
-      _CONVERT_(qvbr);
-      _CONVERT_(vbr);
-#ifdef _CONVERT_
-  #undef _CONVERT_
-#endif
-      return original;
-    }
-
-  }  // namespace vaapi
-
-  namespace vt {
-
-    /**
-     * @brief Enumerates supported coder options.
-     */
-    enum coder_e : int {
-      _auto = 0,  ///< Auto
-      cabac,  ///< CABAC
-      cavlc  ///< CAVLC
-    };
-
-    /**
-     * @brief Parse an entropy-coder mode from configuration text.
-     *
-     * @param coder Entropy-coder mode selected in the configuration.
-     * @return Parsed enum value, or the setting-specific default when the text is unknown.
-     */
-    int coder_from_view(const std::string_view &coder) {
-      if (coder == "auto"sv) {
-        return _auto;
-      }
-      if (coder == "cabac"sv || coder == "ac"sv) {
-        return cabac;
-      }
-      if (coder == "cavlc"sv || coder == "vlc"sv) {
-        return cavlc;
-      }
-
-      return -1;
-    }
-
-    /**
-     * @brief Parse the VideoToolbox realtime encoder flag.
-     *
-     * @param rt Real-time encoder usage selector.
-     * @return Parsed enum value, or the setting-specific default when the text is unknown.
-     */
-    int rt_from_view(const std::string_view &rt) {
-      if (rt == "disabled" || rt == "off" || rt == "0") {
-        return 0;
-      }
-
-      return 1;
-    }
-
-  }  // namespace vt
-
   namespace sw {
     /**
      * @brief Parse an SVT-AV1 speed preset from configuration text.
@@ -753,25 +571,6 @@ namespace config {
       std::to_underlying(amd::coder_e::_auto),  // coder
     },  // amd
 
-    {
-      1,
-      -1,
-    },  // vt
-
-    {
-      0,  // blbrc
-      std::to_underlying(vaapi::quality_e::_auto),  // quality
-      std::to_underlying(vaapi::rc_e::_auto),  // rate control
-      {},  // rate control string
-      false,  // strict_rc_buffer
-    },  // vaapi
-
-    {
-      2,  // vk.tune (default: ll - low latency)
-      2,  // vk.rc_mode (default: cbr)
-      2,  // vk.quality (default: 2 = balanced, 1 = speed, 3 = quality)
-    },
-
     {},  // capture
     false,  // fp16_sdr_gamma_encoded
     {},  // encoder
@@ -850,11 +649,9 @@ namespace config {
     std::chrono::duration<double> {1 / 24.9},  // key_repeat_period
 
     "auto",  // Default gamepad profile.
-    {},  // Windows requests a backend choice; macOS defaults to Virtual HID Broker.
     true,  // back as touchpad click enabled for PlayStation-style gamepads
     true,  // client gamepads with motion events use PlayStation-style emulation
     true,  // client gamepads with touchpads use PlayStation-style emulation
-    true,  // virtualhid_randomize_mac
 
     true,  // keyboard enabled
     false,  // key_rightalt_to_key_win
@@ -1055,15 +852,6 @@ namespace config {
     }
 
     BOOST_LOG(info) << "Automatically selected config option '"sv << name << "' = "sv << value;
-    return true;
-  }
-
-  bool select_all_gamepad_drivers_if_licensed(const bool virtualhid_licensed) {
-    if (!virtualhid_licensed || !input.gamepad_driver.empty() || !persist_config_option_if_missing("gamepad_driver", GAMEPAD_DRIVER_ALL)) {
-      return false;
-    }
-
-    input.gamepad_driver = GAMEPAD_DRIVER_ALL;
     return true;
   }
 
@@ -1685,7 +1473,6 @@ namespace config {
     bool_f(vars, "nvenc_opengl_vulkan_on_dxgi", video.nv_opengl_vulkan_on_dxgi);
     bool_f(vars, "nvenc_latency_over_power", video.nv_sunshine_high_power_mode);
 
-#if !defined(__ANDROID__) && !defined(__APPLE__)
     video.nv_legacy.preset = nv::ffmpeg_preset_from_quality(video.nv.quality_preset);
     video.nv_legacy.multipass = video.nv.two_pass == nvenc::nvenc_two_pass::quarter_resolution ? NV_ENC_TWO_PASS_QUARTER_RESOLUTION :
                                 video.nv.two_pass == nvenc::nvenc_two_pass::full_resolution    ? NV_ENC_TWO_PASS_FULL_RESOLUTION :
@@ -1693,7 +1480,6 @@ namespace config {
     video.nv_legacy.h264_coder = video.nv.h264_cavlc ? NV_ENC_H264_ENTROPY_CODING_MODE_CAVLC : NV_ENC_H264_ENTROPY_CODING_MODE_CABAC;
     video.nv_legacy.spatial_aq = video.nv.adaptive_quantization;
     video.nv_legacy.vbv_percentage_increase = video.nv.vbv_percentage_increase;
-#endif
 
     int_f(vars, "qsv_preset", video.qsv.qsv_preset, qsv::preset_from_view);
     int_f(vars, "qsv_coder", video.qsv.qsv_cavlc, qsv::coder_from_view);
@@ -1733,34 +1519,6 @@ namespace config {
       if (!max_au_size || *max_au_size >= -1) {
         video.amd.amd_max_au_size = max_au_size;
       }
-    }
-
-    int_f(vars, "vt_coder", video.vt.vt_coder, vt::coder_from_view);
-    int_f(vars, "vt_realtime", video.vt.vt_realtime, vt::rt_from_view);
-
-    std::string vaapi_quality;
-    string_f(vars, "vaapi_quality", vaapi_quality);
-    if (!vaapi_quality.empty()) {
-      video.vaapi.vaapi_quality = vaapi::quality_from_view<vaapi::quality_e>(vaapi_quality, video.vaapi.vaapi_quality);
-    }
-    string_f(vars, "vaapi_rc", video.vaapi.vaapi_rc_str);
-    if (!video.vaapi.vaapi_rc_str.empty()) {
-      video.vaapi.vaapi_rc = vaapi::rc_from_view<vaapi::rc_e>(video.vaapi.vaapi_rc_str, video.vaapi.vaapi_rc);
-    }
-    bool_f(vars, "vaapi_blbrc", (bool &) video.vaapi.blbrc);
-    bool_f(vars, "vaapi_strict_rc_buffer", video.vaapi.strict_rc_buffer);
-
-    int_f(vars, "vk_tune", video.vk.tune);
-    int_f(vars, "vk_rc_mode", video.vk.rc_mode);
-    std::string vk_quality;
-    string_f(vars, "vk_quality", vk_quality);
-    static const std::unordered_map<std::string_view, int> vk_quality_map = {
-      {"speed"sv, 1},
-      {"balanced"sv, 2},
-      {"quality"sv, 3}
-    };
-    if (auto it = vk_quality_map.find(vk_quality); it != vk_quality_map.end()) {
-      video.vk.quality = it->second;
     }
 
     string_f(vars, "capture", video.capture);
@@ -1851,8 +1609,6 @@ namespace config {
     bool_f(vars, "dscp_tagging", stream.dscp_tagging);
 
     path_f(vars, "file_apps", stream.file_apps);
-#ifndef __ANDROID__
-    // TODO: Android can possibly support this
     if (!fs::exists(stream.file_apps.c_str())) {
       fs::copy_file(SUNSHINE_ASSETS_DIR "/apps.json", stream.file_apps);
       fs::permissions(
@@ -1861,7 +1617,6 @@ namespace config {
         fs::perm_options::add
       );
     }
-#endif
 
     int_between_f(vars, "fec_percentage", stream.fec_percentage, {0, 100});
 
@@ -1896,23 +1651,14 @@ namespace config {
       input.key_repeat_delay = std::chrono::milliseconds {to};
     }
 
-    string_restricted_f(vars, "gamepad_driver", input.gamepad_driver, {
-                                                                        GAMEPAD_DRIVER_ALL,
-                                                                        GAMEPAD_DRIVER_VIRTUALHID,
-                                                                        GAMEPAD_DRIVER_VIGEMBUS,
-                                                                        GAMEPAD_DRIVER_NONE,
-                                                                      });
     string_restricted_f(vars, "gamepad"s, input.gamepad, get_supported_gamepad_options());
-#ifdef _WIN32
-    if (input.gamepad_driver == GAMEPAD_DRIVER_VIGEMBUS && input.gamepad != "auto"sv && input.gamepad != "x360"sv && input.gamepad != "ds4"sv) {
+    if (input.gamepad != "auto"sv && input.gamepad != "x360"sv && input.gamepad != "ds4"sv) {
       BOOST_LOG(warning) << "Gamepad type '"sv << input.gamepad << "' is not supported by ViGEmBus; using automatic selection"sv;
       input.gamepad = "auto";
     }
-#endif
     bool_f(vars, "ds4_back_as_touchpad_click", input.ds4_back_as_touchpad_click);
     bool_f(vars, "motion_as_ds4", input.motion_as_ds4);
     bool_f(vars, "touchpad_as_ds4", input.touchpad_as_ds4);
-    bool_f(vars, "virtualhid_randomize_mac", input.virtualhid_randomize_mac);
 
     bool_f(vars, "mouse", input.mouse);
     bool_f(vars, "keyboard", input.keyboard);
@@ -2029,10 +1775,8 @@ namespace config {
    */
   int parse(int argc, char *argv[]) {
     config_map_t cmd_vars;
-#ifdef _WIN32
     bool shortcut_launch = false;
     bool service_admin_launch = false;
-#endif
 
     for (auto x = 1; x < argc; ++x) {
       auto line = argv[x];
@@ -2041,13 +1785,11 @@ namespace config {
         logging::print_help(*argv);
         return 1;
       }
-#ifdef _WIN32
       else if (line == "--shortcut"sv) {
         shortcut_launch = true;
       } else if (line == "--shortcut-admin"sv) {
         service_admin_launch = true;
       }
-#endif
       else if (*line == '-') {
         if (*(line + 1) == '-') {
           sunshine.cmd.name = line + 2;
@@ -2113,7 +1855,6 @@ namespace config {
       BOOST_LOG(fatal) << "Failed to apply config: "sv << err.what();
     }
 
-#ifdef _WIN32
     // UCRT64 raises an access denied exception if launching from the shortcut
     // as non-admin and the config folder is not yet present; we can defer
     // so that service instance will do the work instead.
@@ -2121,13 +1862,9 @@ namespace config {
     if (!config_loaded && !shortcut_launch) {
       BOOST_LOG(fatal) << "To relaunch Sunshine successfully, use the shortcut in the Start Menu. Do not run Sunshine.exe manually."sv;
       std::this_thread::sleep_for(10s);
-#else
-    if (!config_loaded) {
-#endif
       return -1;
     }
 
-#ifdef _WIN32
     // We have to wait until the config is loaded to handle these launches,
     // because we need to have the correct base port loaded in our config.
     // Exception: UCRT64 shortcut_launch instances may have no config loaded due to
@@ -2169,7 +1906,6 @@ namespace config {
       // Always return 1 to ensure Sunshine doesn't start normally
       return 1;
     }
-#endif
 
     return 0;
   }

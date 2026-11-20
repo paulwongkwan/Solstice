@@ -19,9 +19,7 @@
 #include "platform/common.h"
 
 extern "C" {
-#ifdef _WIN32
   #include <iphlpapi.h>
-#endif
 }
 
 using namespace std::literals;
@@ -59,7 +57,6 @@ namespace args {
     return 0;
   }
 
-#ifdef _WIN32
   int restore_nvprefs_undo() {
     if (nvprefs_instance.load()) {
       nvprefs_instance.restore_from_and_delete_undo_file_if_exists();
@@ -67,7 +64,6 @@ namespace args {
     }
     return 0;
   }
-#endif
 }  // namespace args
 
 namespace lifetime {
@@ -90,11 +86,7 @@ namespace lifetime {
   }
 
   void debug_trap() {
-#ifdef _WIN32
     DebugBreak();
-#else
-    std::raise(SIGTRAP);
-#endif
   }
 
   char **get_argv() {
@@ -108,7 +100,6 @@ void log_publisher_data() {
   BOOST_LOG(info) << "Get support: "sv << SUNSHINE_PUBLISHER_ISSUE_URL;
 }
 
-#ifdef _WIN32
 bool is_gamestream_enabled() {
   DWORD enabled;
   DWORD size = sizeof(enabled);
@@ -289,4 +280,3 @@ namespace service_ctrl {
     return false;
   }
 }  // namespace service_ctrl
-#endif

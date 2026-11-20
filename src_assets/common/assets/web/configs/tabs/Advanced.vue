@@ -101,25 +101,9 @@ const config = ref(props.config)
       <label for="encoder" class="form-label">{{ $t('config.encoder') }}</label>
       <select id="encoder" class="form-select" v-model="config.encoder">
         <option value="">{{ $t('_common.autodetect') }}</option>
-        <PlatformLayout :platform="platform">
-          <template #windows>
-            <option value="nvenc">NVIDIA NVENC</option>
-            <option value="quicksync">Intel QuickSync</option>
-            <option value="amdvce">AMD AMF/VCE</option>
-          </template>
-          <template #freebsd>
-            <option value="vulkan">Vulkan</option>
-            <option value="vaapi">VA-API</option>
-          </template>
-          <template #linux>
-            <option value="nvenc">NVIDIA NVENC</option>
-            <option value="vaapi">VA-API</option>
-            <option value="vulkan">Vulkan</option>
-          </template>
-          <template #macos>
-            <option value="videotoolbox">VideoToolbox</option>
-          </template>
-        </PlatformLayout>
+        <option value="nvenc">NVIDIA NVENC</option>
+        <option value="quicksync">Intel QuickSync</option>
+        <option value="amdvce">AMD AMF/VCE</option>
         <option value="software">{{ $t('config.encoder_software') }}</option>
       </select>
       <div class="form-text">{{ $t('config.encoder_desc') }}</div>

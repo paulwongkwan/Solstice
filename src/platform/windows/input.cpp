@@ -18,12 +18,13 @@
 #include <Windows.h>
 
 // standard includes
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <thread>
 #include <vector>
 
 // lib includes
-#include <libvirtualhid/license.hpp>
 #include <ViGEm/Client.h>
 
 // local includes
@@ -33,7 +34,7 @@
 #include "src/globals.h"
 #include "src/logging.h"
 #include "src/platform/common.h"
-#include "src/platform/virtualhid_input.h"
+#include "utf_utils.h"
 
 namespace platf {
   using namespace std::literals;
@@ -517,31 +518,11 @@ namespace platf {
   }
 
   /**
-   * @brief Global virtual input device handles shared by clients.
+   * @brief Global input backend handles shared by clients.
    */
   struct input_raw_t {
-    virtualhid::input_context_t virtualhid;  ///< libvirtualhid input context.
-    std::unique_ptr<vigem_t> vigem;  ///< ViGEm fallback context.
+    std::unique_ptr<vigem_t> vigem;  ///< ViGEm gamepad context.
   };
-
-  /**
-   * @brief Check whether the libvirtualhid runtime should receive gamepad allocations.
-   *
-   * Backends that do not require the installed Windows driver, such as the fake
-   * test backend, do not require a machine license.
-   *
-   * @param raw Global Windows input context.
-   * @return True when Virtual HID Driver gamepads are available and selected.
-   */
-  bool should_use_virtualhid_gamepads(const input_raw_t &raw) {
-    if (!raw.virtualhid.runtime) {
-      return false;
-    }
-
-    const auto &capabilities = raw.virtualhid.runtime->capabilities();
-    const auto licensed = !capabilities.requires_installed_driver || lvh::get_license_status().license.licensed();
-    return virtualhid::should_use_gamepad_runtime(capabilities, config::input.gamepad_driver, licensed);
-  }
 
   /**
    * @brief Return the gamepad choices supported by ViGEmBus.
@@ -561,12 +542,7 @@ namespace platf {
   input_t input() {
     input_t result {new input_raw_t {}};
 
-    if (auto &raw = *result; config::input.controller && !should_use_virtualhid_gamepads(raw) && virtualhid::should_try_vigembus_fallback(config::input.gamepad, false, config::input.gamepad_driver)) {
-      if (config::input.gamepad_driver == config::GAMEPAD_DRIVER_VIGEMBUS) {
-        BOOST_LOG(info) << "ViGEmBus is selected as the only virtual gamepad driver"sv;
-      } else if (raw.virtualhid.runtime && raw.virtualhid.runtime->capabilities().supports_gamepad) {
-        BOOST_LOG(info) << "Virtual HID Driver license is not valid; using the ViGEmBus gamepad fallback"sv;
-      }
+    if (auto &raw = *result; config::input.controller) {
       auto vigem = std::make_unique<vigem_t>();
       if (!vigem->init()) {
         raw.vigem = std::move(vigem);
@@ -577,10 +553,10 @@ namespace platf {
   }
 
   /**
-   * @brief Create the ViGEm fallback context if it is not already available.
+   * @brief Create the ViGEm context if it is not already available.
    *
    * @param raw Platform input context.
-   * @return True when ViGEm fallback is available.
+   * @return True when ViGEm is available.
    */
   bool ensure_vigem(input_raw_t *raw) {
     if (raw->vigem) {
@@ -597,30 +573,38 @@ namespace platf {
   }
 
   /**
-   * @brief Check and explain whether a gamepad allocation may use ViGEmBus.
+   * @brief Submit an input event through SendInput.
    *
-   * @param virtualhid_selected Whether Virtual HID Driver was selected for the allocation.
-   * @return True when the allocation may continue through ViGEmBus.
+   * @param input_event Keyboard or mouse event to submit.
    */
-  bool should_allocate_vigembus_gamepad(const bool virtualhid_selected) {
-    if (!virtualhid::should_try_vigembus_fallback(config::input.gamepad, virtualhid_selected, config::input.gamepad_driver)) {
-      if (config::input.gamepad_driver == config::GAMEPAD_DRIVER_VIRTUALHID && !virtualhid_selected) {
-        BOOST_LOG(warning) << "Virtual HID Driver is selected but is unavailable or unlicensed; ViGEmBus fallback is disabled by configuration"sv;
-      } else {
-        BOOST_LOG(warning) << "libvirtualhid could not create the requested gamepad profile, and ViGEm fallback cannot emulate "sv << config::input.gamepad;
-      }
-      return false;
+  void submit_input(INPUT &input_event) {
+    if (SendInput(1, &input_event, sizeof(INPUT)) == 0) {
+      BOOST_LOG(warning) << "SendInput failed with error ["sv << GetLastError() << ']';
     }
-
-    if (!virtualhid_selected && !virtualhid::should_try_vigembus_fallback(config::input.gamepad, true, config::input.gamepad_driver)) {
-      BOOST_LOG(warning) << "Configured gamepad profile '"sv << config::input.gamepad
-                         << "' is unavailable; using ViGEmBus automatic selection because Virtual HID Driver is not usable"sv;
-    }
-    return true;
   }
 
-  virtualhid::input_context_t &virtualhid::get_input_context(input_t &input) {
-    return input->virtualhid;
+  /**
+   * @brief Submit a keyboard scancode event.
+   *
+   * @param modcode Virtual key code reported by the client.
+   * @param release Whether this is a key release.
+   * @param extended Whether the client identified an extended key.
+   */
+  void send_keyboard_scancode(const uint16_t modcode, const bool release, const bool extended) {
+    const auto scancode = static_cast<WORD>(MapVirtualKeyW(modcode, MAPVK_VK_TO_VSC));
+
+    INPUT input_event {};
+    input_event.type = INPUT_KEYBOARD;
+    input_event.ki.wScan = scancode;
+    input_event.ki.dwFlags = KEYEVENTF_SCANCODE;
+    if (extended) {
+      input_event.ki.dwFlags |= KEYEVENTF_EXTENDEDKEY;
+    }
+    if (release) {
+      input_event.ki.dwFlags |= KEYEVENTF_KEYUP;
+    }
+
+    submit_input(input_event);
   }
 
   std::optional<util::point_t> get_mouse_loc(input_t & /*input*/) {
@@ -636,44 +620,52 @@ namespace platf {
   }
 
   /**
-   * @brief Per-client virtual devices for touch and pen input.
+   * @brief Per-client native touch and pen injection state.
    */
   struct client_input_raw_t: public client_input_t {
     /**
-     * @brief Create per-client raw input devices for touch and pen events.
+     * @brief Create per-client native pointer state.
      *
      * @param input Platform input backend that receives the event.
      */
-    explicit client_input_raw_t(input_t &input):
-        virtualhid {input->virtualhid} {}
+    explicit client_input_raw_t(input_t &) {}
 
-    virtualhid::client_context_t virtualhid;  ///< libvirtualhid client context.
+    /**
+     * @brief Destroy the synthetic pen device.
+     */
+    ~client_input_raw_t() override {
+      if (pen_device) {
+        DestroySyntheticPointerDevice(pen_device);
+      }
+    }
+
+    std::uint32_t next_touch_frame {};  ///< Frame counter reported to the touch injector.
+    HSYNTHETICPOINTERDEVICE pen_device {};  ///< Synthetic pen device used for pen events.
   };
 
   /**
-   * @brief Allocates a context to store per-client input data.
-   * @param input The global input context.
-   * @return A unique pointer to a per-client input data context.
+   * @brief Convert a normalized client touch coordinate to a desktop pixel coordinate.
+   *
+   * @param touch_port Current stream viewport and desktop bounds.
+   * @param x Horizontal normalized coordinate.
+   * @param y Vertical normalized coordinate.
+   * @return Desktop pixel coordinate.
    */
+  POINT normalized_to_desktop(const touch_port_t &touch_port, const float x, const float y) {
+    const auto width = touch_port.width ? touch_port.width : 1;
+    const auto height = touch_port.height ? touch_port.height : 1;
+    return {
+      touch_port.env_offset_x + touch_port.offset_x + static_cast<LONG>(x * width),
+      touch_port.env_offset_y + touch_port.offset_y + static_cast<LONG>(y * height),
+    };
+  }
+
   std::unique_ptr<client_input_t> allocate_client_input_context(input_t &input) {
     return std::make_unique<client_input_raw_t>(input);
   }
 
-  virtualhid::client_context_t &virtualhid::get_client_context(client_input_t *input) {
-    return static_cast<client_input_raw_t *>(input)->virtualhid;
-  }
-
   int alloc_gamepad(input_t &input, const gamepad_id_t &id, const gamepad_arrival_t &metadata, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
-    const auto use_virtualhid = should_use_virtualhid_gamepads(*raw);
-
-    if (use_virtualhid && virtualhid::alloc_gamepad(raw->virtualhid, id, metadata, feedback_queue) == 0) {
-      return 0;
-    }
-
-    if (!should_allocate_vigembus_gamepad(use_virtualhid)) {
-      return -1;
-    }
 
     if (!ensure_vigem(raw)) {
       return -1;
@@ -729,10 +721,6 @@ namespace platf {
   int rebind_gamepad(input_t &input, const gamepad_id_t &id, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
 
-    if (virtualhid::has_gamepad(raw->virtualhid, id.globalIndex)) {
-      return virtualhid::rebind_gamepad(raw->virtualhid, id, std::move(feedback_queue));
-    }
-
     if (!raw->vigem) {
       return -1;
     }
@@ -742,11 +730,6 @@ namespace platf {
 
   void free_gamepad(input_t &input, int nr) {
     auto raw = (input_raw_t *) input.get();
-
-    if (virtualhid::has_gamepad(raw->virtualhid, nr)) {
-      virtualhid::free_gamepad(raw->virtualhid, nr);
-      return;
-    }
 
     if (!raw->vigem) {
       return;
@@ -925,7 +908,7 @@ namespace platf {
     }
 
     // PlayStation-style emulation: check if BACK should also trigger touchpad click
-    if (config::input.ds4_back_as_touchpad_click && virtualhid::configured_gamepad_supports_touchpad() && (gamepad_state.buttonFlags & BACK)) {
+    if (config::input.ds4_back_as_touchpad_click && (gamepad_state.buttonFlags & BACK)) {
       buttons |= DS4_SPECIAL_BUTTON_TOUCHPAD;
     }
 
@@ -1006,10 +989,6 @@ namespace platf {
    */
   void gamepad_update(input_t &input, int nr, const gamepad_state_t &gamepad_state) {
     auto raw = (input_raw_t *) input.get();
-    if (virtualhid::has_gamepad(raw->virtualhid, nr)) {
-      virtualhid::gamepad_update(raw->virtualhid, nr, gamepad_state);
-      return;
-    }
 
     auto *vigem = raw->vigem.get();
 
@@ -1184,10 +1163,6 @@ namespace platf {
    */
   void gamepad_touch(input_t &input, const gamepad_touch_t &touch) {
     auto raw = (input_raw_t *) input.get();
-    if (virtualhid::has_gamepad(raw->virtualhid, touch.id.globalIndex)) {
-      virtualhid::gamepad_touch(raw->virtualhid, touch);
-      return;
-    }
 
     auto *vigem = raw->vigem.get();
 
@@ -1218,10 +1193,6 @@ namespace platf {
    */
   void gamepad_motion(input_t &input, const gamepad_motion_t &motion) {
     auto raw = (input_raw_t *) input.get();
-    if (virtualhid::has_gamepad(raw->virtualhid, motion.id.globalIndex)) {
-      virtualhid::gamepad_motion(raw->virtualhid, motion);
-      return;
-    }
 
     auto *vigem = raw->vigem.get();
 
@@ -1251,10 +1222,6 @@ namespace platf {
    */
   void gamepad_battery(input_t &input, const gamepad_battery_t &battery) {
     auto raw = (input_raw_t *) input.get();
-    if (virtualhid::has_gamepad(raw->virtualhid, battery.id.globalIndex)) {
-      virtualhid::gamepad_battery(raw->virtualhid, battery);
-      return;
-    }
 
     auto *vigem = raw->vigem.get();
 
@@ -1284,43 +1251,220 @@ namespace platf {
   std::vector<supported_gamepad_t> &supported_gamepads(input_t *input) {
     static std::vector<supported_gamepad_t> gps;
     if (!input || !input->get()) {
-      gps = virtualhid::static_supported_gamepads();
+      gps = vigembus_supported_gamepads(false);
       return gps;
     }
 
     const auto raw = (input_raw_t *) input->get();
-    if (config::input.gamepad_driver == config::GAMEPAD_DRIVER_NONE) {
-      gps.clear();
-      return gps;
-    }
-
-    if (config::input.gamepad_driver == config::GAMEPAD_DRIVER_VIGEMBUS) {
-      gps = vigembus_supported_gamepads(raw->vigem != nullptr);
-      return gps;
-    }
-
-    if (!raw->virtualhid.runtime) {
-      if (config::input.gamepad_driver == config::GAMEPAD_DRIVER_VIRTUALHID) {
-        gps = virtualhid::static_supported_gamepads();
-        for (auto &gamepad : gps) {
-          gamepad.is_enabled = false;
-          gamepad.reason_disabled = "gamepads.virtualhid-not-available";
-        }
-      } else {
-        gps = vigembus_supported_gamepads(raw->vigem != nullptr);
-      }
-      return gps;
-    }
-
-    const auto &capabilities = raw->virtualhid.runtime->capabilities();
-    const auto licensed = !capabilities.requires_installed_driver || lvh::get_license_status().license.licensed();
-    if (const auto use_virtualhid = virtualhid::should_use_gamepad_runtime(capabilities, config::input.gamepad_driver, licensed); !use_virtualhid && config::input.gamepad_driver != config::GAMEPAD_DRIVER_VIRTUALHID) {
-      gps = vigembus_supported_gamepads(raw->vigem != nullptr);
-      return gps;
-    }
-
-    gps = virtualhid::supported_gamepads(raw->virtualhid.runtime.get(), raw->vigem != nullptr, licensed);
+    gps = vigembus_supported_gamepads(raw->vigem != nullptr);
     return gps;
+  }
+
+  void move_mouse(input_t & /*input*/, const int deltaX, const int deltaY) {
+    INPUT input_event {};
+    input_event.type = INPUT_MOUSE;
+    input_event.mi.dx = deltaX;
+    input_event.mi.dy = deltaY;
+    input_event.mi.dwFlags = MOUSEEVENTF_MOVE;
+    submit_input(input_event);
+  }
+
+  void move_mouse(input_t &input, const touch_port_t & /*touch_port*/, const int deltaX, const int deltaY) {
+    move_mouse(input, deltaX, deltaY);
+  }
+
+  void abs_mouse(input_t & /*input*/, const touch_port_t &touch_port, const float x, const float y) {
+    // MOUSEEVENTF_VIRTUALDESK normalizes the coordinates against the virtual desktop, so the
+    // display origin and the virtual desktop extents are both needed to reach the right pixel.
+    const auto virtual_x = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    const auto virtual_y = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    const auto virtual_width = std::max(GetSystemMetrics(SM_CXVIRTUALSCREEN), 1);
+    const auto virtual_height = std::max(GetSystemMetrics(SM_CYVIRTUALSCREEN), 1);
+    const auto desktop_x = touch_port.env_offset_x + touch_port.offset_x + x * touch_port.width;
+    const auto desktop_y = touch_port.env_offset_y + touch_port.offset_y + y * touch_port.height;
+
+    INPUT input_event {};
+    input_event.type = INPUT_MOUSE;
+    input_event.mi.dx = static_cast<LONG>(std::lround((desktop_x - virtual_x) * 65535.0 / virtual_width));
+    input_event.mi.dy = static_cast<LONG>(std::lround((desktop_y - virtual_y) * 65535.0 / virtual_height));
+    input_event.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
+    submit_input(input_event);
+  }
+
+  void button_mouse(input_t & /*input*/, const int button, const bool release) {
+    DWORD flags {};
+    DWORD mouse_data {};
+
+    switch (button) {
+      case 0x01:
+        flags = release ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_LEFTDOWN;
+        break;
+      case 0x02:
+        flags = release ? MOUSEEVENTF_MIDDLEUP : MOUSEEVENTF_MIDDLEDOWN;
+        break;
+      case 0x03:
+        flags = release ? MOUSEEVENTF_RIGHTUP : MOUSEEVENTF_RIGHTDOWN;
+        break;
+      case 0x04:
+        flags = release ? MOUSEEVENTF_XUP : MOUSEEVENTF_XDOWN;
+        mouse_data = XBUTTON1;
+        break;
+      case 0x05:
+        flags = release ? MOUSEEVENTF_XUP : MOUSEEVENTF_XDOWN;
+        mouse_data = XBUTTON2;
+        break;
+      default:
+        return;
+    }
+
+    INPUT input_event {};
+    input_event.type = INPUT_MOUSE;
+    input_event.mi.dwFlags = flags;
+    input_event.mi.mouseData = mouse_data;
+    submit_input(input_event);
+  }
+
+  void scroll(input_t & /*input*/, const int distance) {
+    INPUT input_event {};
+    input_event.type = INPUT_MOUSE;
+    input_event.mi.dwFlags = MOUSEEVENTF_WHEEL;
+    input_event.mi.mouseData = static_cast<DWORD>(distance);
+    submit_input(input_event);
+  }
+
+  void hscroll(input_t & /*input*/, const int distance) {
+    INPUT input_event {};
+    input_event.type = INPUT_MOUSE;
+    input_event.mi.dwFlags = MOUSEEVENTF_HWHEEL;
+    input_event.mi.mouseData = static_cast<DWORD>(distance);
+    submit_input(input_event);
+  }
+
+  void keyboard_update(input_t & /*input*/, const uint16_t modcode, const bool release, uint8_t /*flags*/, const bool extended) {
+    if (modcode == VK_LWIN || modcode == VK_RWIN || modcode == VK_APPS) {
+      // Windows key and the context menu key must be injected as extended keys.
+      send_keyboard_scancode(modcode, release, true);
+      return;
+    }
+
+    send_keyboard_scancode(modcode, release, extended);
+  }
+
+  void unicode(input_t & /*input*/, const char *utf8, const int size) {
+    // Convert UTF-8 to UTF-16 and inject each code unit as a Unicode key event.
+    const auto utf16 = utf_utils::from_utf8(std::string {utf8, static_cast<std::size_t>(size)});
+    for (const auto code_unit : utf16) {
+      INPUT input_event {};
+      input_event.type = INPUT_KEYBOARD;
+      input_event.ki.wScan = code_unit;
+      input_event.ki.dwFlags = KEYEVENTF_UNICODE;
+      submit_input(input_event);
+
+      input_event.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+      submit_input(input_event);
+    }
+  }
+
+  void touch_update(client_input_t *input, const touch_port_t &touch_port, const touch_input_t &touch) {
+    auto raw = static_cast<client_input_raw_t *>(input);
+    if (!raw) {
+      return;
+    }
+
+    static std::once_flag touch_init_flag;
+    static bool touch_available = false;
+    std::call_once(touch_init_flag, []() {
+      touch_available = InitializeTouchInjection(10, TOUCH_FEEDBACK_DEFAULT) != FALSE;
+      if (!touch_available) {
+        BOOST_LOG(warning) << "Native touch injection is unavailable ["sv << GetLastError() << ']';
+      }
+    });
+    if (!touch_available) {
+      return;
+    }
+
+    POINTER_TOUCH_INFO contact {};
+    contact.pointerInfo.pointerType = PT_TOUCH;
+    contact.pointerInfo.pointerId = touch.pointerId;
+    contact.pointerInfo.ptPixelLocation = normalized_to_desktop(touch_port, touch.x, touch.y);
+    contact.pointerInfo.pointerFlags = POINTER_FLAG_INRANGE | POINTER_FLAG_INCONTACT;
+    if (touch.eventType == LI_TOUCH_EVENT_DOWN) {
+      contact.pointerInfo.pointerFlags |= POINTER_FLAG_DOWN;
+    } else if (touch.eventType == LI_TOUCH_EVENT_UP || touch.eventType == LI_TOUCH_EVENT_CANCEL) {
+      contact.pointerInfo.pointerFlags |= POINTER_FLAG_UP;
+    } else if (touch.eventType == LI_TOUCH_EVENT_CANCEL_ALL) {
+      // Lifting the contact is the closest native equivalent of a cancel-all event.
+      contact.pointerInfo.pointerFlags |= POINTER_FLAG_UP;
+    } else {
+      contact.pointerInfo.pointerFlags |= POINTER_FLAG_UPDATE;
+    }
+
+    contact.touchFlags = TOUCH_FLAG_NONE;
+    contact.touchMask = TOUCH_MASK_CONTACTAREA | TOUCH_MASK_ORIENTATION | TOUCH_MASK_PRESSURE;
+    const auto half_width = static_cast<LONG>(std::max(touch.contactAreaMajor, 0.0f) / 2.0f);
+    const auto half_height = static_cast<LONG>(std::max(touch.contactAreaMinor, 0.0f) / 2.0f);
+    contact.rcContact = {
+      contact.pointerInfo.ptPixelLocation.x - half_width,
+      contact.pointerInfo.ptPixelLocation.y - half_height,
+      contact.pointerInfo.ptPixelLocation.x + half_width,
+      contact.pointerInfo.ptPixelLocation.y + half_height,
+    };
+    contact.orientation = touch.rotation;
+    contact.pressure = static_cast<UINT32>(std::clamp(touch.pressureOrDistance, 0.0f, 1.0f) * 1024);
+
+    if (!InjectTouchInput(1, &contact)) {
+      BOOST_LOG(warning) << "InjectTouchInput failed with error ["sv << GetLastError() << ']';
+    }
+  }
+
+  void pen_update(client_input_t *input, const touch_port_t &touch_port, const pen_input_t &pen) {
+    auto raw = static_cast<client_input_raw_t *>(input);
+    if (!raw) {
+      return;
+    }
+
+    if (!raw->pen_device) {
+      raw->pen_device = CreateSyntheticPointerDevice(PT_PEN, 1, POINTER_FEEDBACK_DEFAULT);
+      if (!raw->pen_device) {
+        BOOST_LOG(warning) << "Native pen injection is unavailable ["sv << GetLastError() << ']';
+        return;
+      }
+    }
+
+    POINTER_TYPE_INFO pointer_info {};
+    pointer_info.type = PT_PEN;
+    auto &pen_info = pointer_info.penInfo;
+    pen_info.pointerInfo.pointerType = PT_PEN;
+    pen_info.pointerInfo.pointerId = 1;
+    pen_info.pointerInfo.ptPixelLocation = normalized_to_desktop(touch_port, pen.x, pen.y);
+    pen_info.pointerInfo.pointerFlags = POINTER_FLAG_INRANGE;
+    if (pen.eventType == LI_TOUCH_EVENT_DOWN) {
+      pen_info.pointerInfo.pointerFlags |= POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN;
+    } else if (pen.eventType == LI_TOUCH_EVENT_UP || pen.eventType == LI_TOUCH_EVENT_CANCEL) {
+      pen_info.pointerInfo.pointerFlags |= POINTER_FLAG_UP;
+    } else {
+      pen_info.pointerInfo.pointerFlags |= POINTER_FLAG_UPDATE;
+    }
+
+    if (pen.penButtons & LI_PEN_BUTTON_PRIMARY) {
+      pen_info.pointerInfo.pointerFlags |= POINTER_FLAG_FIRSTBUTTON;
+    }
+    if (pen.penButtons & LI_PEN_BUTTON_SECONDARY) {
+      pen_info.pointerInfo.pointerFlags |= POINTER_FLAG_SECONDBUTTON;
+    }
+    if (pen.penButtons & LI_PEN_BUTTON_TERTIARY) {
+      pen_info.pointerInfo.pointerFlags |= POINTER_FLAG_THIRDBUTTON;
+    }
+
+    pen_info.penMask = PEN_MASK_PRESSURE | PEN_MASK_ROTATION | PEN_MASK_TILT_X | PEN_MASK_TILT_Y;
+    pen_info.pressure = static_cast<UINT32>(std::clamp(pen.pressureOrDistance, 0.0f, 1.0f) * 1024);
+    pen_info.rotation = pen.rotation;
+    pen_info.tiltX = pen.tilt;
+    pen_info.tiltY = 0;
+
+    if (!InjectSyntheticPointerInput(raw->pen_device, &pointer_info, 1)) {
+      BOOST_LOG(warning) << "InjectSyntheticPointerInput failed with error ["sv << GetLastError() << ']';
+    }
   }
 
   /**
@@ -1330,20 +1474,12 @@ namespace platf {
   platform_caps::caps_t get_capabilities() {
     platform_caps::caps_t caps = 0;
 
-    if (config::input.gamepad_driver != config::GAMEPAD_DRIVER_NONE && virtualhid::configured_gamepad_supports_controller_extensions()) {
+    if (config::input.controller) {
       caps |= platform_caps::controller_touch;
     }
 
     if (config::input.native_pen_touch) {
-      const auto runtime = virtualhid::create_runtime();
-      if (runtime) {
-        const auto &capabilities = runtime->capabilities();
-        if (capabilities.supports_touchscreen || capabilities.supports_pen_tablet) {
-          caps |= platform_caps::pen_touch;
-        }
-      } else {
-        BOOST_LOG(warning) << "Unable to create libvirtualhid runtime for touch/pen capability detection"sv;
-      }
+      caps |= platform_caps::pen_touch;
     }
 
     return caps;
