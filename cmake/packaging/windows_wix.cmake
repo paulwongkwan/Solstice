@@ -19,16 +19,22 @@ set(WIX_BUILD_DIRECTORY "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/win64/WIX")
 set(WIX_TOOL_PATH "${CMAKE_BINARY_DIR}/.wix")
 file(MAKE_DIRECTORY ${WIX_TOOL_PATH})
 
-# Install WiX locally using dotnet
-execute_process(
-        COMMAND ${DOTNET_EXECUTABLE} tool install --tool-path ${WIX_TOOL_PATH} wix --version ${WIX_VERSION}
-        ERROR_VARIABLE WIX_INSTALL_OUTPUT
-        RESULT_VARIABLE WIX_INSTALL_RESULT
-)
+set(WIX_EXECUTABLE "${WIX_TOOL_PATH}/wix.exe")
 
-if(NOT WIX_INSTALL_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to install WiX tools locally.
+# dotnet tool install fails when the tool already exists, so only provision the
+# tools when they are missing. Delete ${WIX_TOOL_PATH} to install a new version.
+if(NOT EXISTS "${WIX_EXECUTABLE}")
+    # Install WiX locally using dotnet
+    execute_process(
+            COMMAND ${DOTNET_EXECUTABLE} tool install --tool-path ${WIX_TOOL_PATH} wix --version ${WIX_VERSION}
+            ERROR_VARIABLE WIX_INSTALL_OUTPUT
+            RESULT_VARIABLE WIX_INSTALL_RESULT
+    )
+
+    if(NOT WIX_INSTALL_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to install WiX tools locally.
      WiX packaging may not work correctly, error: ${WIX_INSTALL_OUTPUT}")
+    endif()
 endif()
 
 # Install WiX UI Extension
