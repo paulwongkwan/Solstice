@@ -598,18 +598,7 @@
   } from '@lucide/vue'
 
   /**
-   * Return the GameDB bucket for an application name.
-   *
-   * @param {string} name Application name to categorize.
-   * @returns {string} The normalized GameDB bucket name.
-   */
-  function getSearchBucket(name) {
-    const bucket = name.substring(0, Math.min(name.length, 2)).toLowerCase().replaceAll(/[^a-z\d]/g, '');
-    return bucket || '@';
-  }
-
-  /**
-   * Search GameDB for cover candidates matching an application name.
+   * Search IGDB and the Steam store for cover candidates.
    *
    * @param {string} name Application name to search for.
    * @returns {Promise<object[]>} Matching cover candidates.
@@ -618,40 +607,21 @@
     if (!name) {
       return Promise.resolve([]);
     }
-    let searchName = name.replaceAll(/\s+/g, '.').toLowerCase();
-
-    // Use raw.githubusercontent.com to avoid CORS issues as we migrate the CNAME
-    let dbUrl = "https://raw.githubusercontent.com/Solstice/GameDB/gh-pages";
-    let bucket = getSearchBucket(name);
-    return fetch(`${dbUrl}/buckets/${bucket}.json`).then(function (r) {
-      if (!r.ok) throw new Error("Failed to search covers");
-      return r.json();
-    }).then(maps => Promise.all(Object.keys(maps).map(id => {
-      let item = maps[id];
-      if (item.name.replaceAll(/\s+/g, '.').toLowerCase().startsWith(searchName)) {
-        return fetch(`${dbUrl}/games/${id}.json`).then(function (r) {
-          return r.json();
-        }).catch(() => null);
-      }
-      return null;
-    }).filter(Boolean)))
-      .then(results => results
-        .filter(item => item && item.cover && item.cover.url)
-        .map(game => {
-          const thumb = game.cover.url;
-          const dotIndex = thumb.lastIndexOf('.');
-          const slashIndex = thumb.lastIndexOf('/');
-          if (dotIndex < 0 || slashIndex < 0) {
-            return null;
-          }
-          const slug = thumb.substring(slashIndex + 1, dotIndex);
+    return apiFetch(`./api/covers/search?q=${encodeURIComponent(name.trim())}`)
+      .then(function (response) {
+        if (!response.ok) throw new Error("Failed to search covers");
+        return response.json();
+      })
+      .then(function (result) {
+        return (result.candidates || []).map(function (candidate) {
           return {
-            name: game.name,
-            key: `igdb_${game.id}`,
-            url: `https://images.igdb.com/igdb/image/upload/t_cover_big/${slug}.jpg`,
-            saveUrl: `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${slug}.png`,
-          }
-        }).filter(Boolean));
+            name: candidate.title,
+            key: candidate.key,
+            url: candidate.thumbnail,
+            saveUrl: candidate.image,
+          };
+        });
+      });
   }
 
   export default {

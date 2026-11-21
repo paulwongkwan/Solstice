@@ -53,7 +53,7 @@
     "cmd_prep_desc": "A list of commands to be run before/after this application. If any of the prep-commands fail, starting the application is aborted.",
     "cmd_prep_name": "Command Preparations",
     "covers_found": "Covers Found",
-    "cover_search_hint": "Search names should match IGDB naming conventions.",
+    "cover_search_hint": "Covers come from IGDB and the Steam store. Search names should match the game's official title.",
     "delete": "Delete",
     "delete_confirm": "Are you sure you want to delete {name}?",
     "delete_title": "Delete Application",

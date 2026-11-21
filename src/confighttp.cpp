@@ -35,6 +35,7 @@
 #include <Windows.h>
 
 // local includes
+#include "app_json.h"
 #include "config.h"
 #include "confighttp.h"
 #include "cover_finder.h"
@@ -1114,7 +1115,7 @@ namespace confighttp {
       input_tree.erase("index");
 
       if (index == -1) {
-        apps_node.push_back(input_tree);
+        app_json::append(file_tree, nlohmann::json::array({input_tree}));
       } else {
         nlohmann::json newApps = nlohmann::json::array();
         for (size_t i = 0; i < apps_node.size(); ++i) {
@@ -1125,12 +1126,8 @@ namespace confighttp {
           }
         }
         file_tree["apps"] = newApps;
+        app_json::append(file_tree, nlohmann::json::array());
       }
-
-      // Sort the apps array by name
-      std::sort(apps_node.begin(), apps_node.end(), [](const nlohmann::json &a, const nlohmann::json &b) {
-        return a["name"].get<std::string>() < b["name"].get<std::string>();
-      });
 
       file_handler::write_file(config::stream.file_apps.c_str(), file_tree.dump(4));
       proc::refresh(config::stream.file_apps);
@@ -1139,6 +1136,74 @@ namespace confighttp {
       send_response(response, output_tree);
     } catch (std::exception &e) {
       BOOST_LOG(warning) << "SaveApp: "sv << e.what();
+      bad_request(response, e.what());
+    }
+  }
+
+  /**
+   * @brief Add several applications in one write.
+   * @param response The HTTP response object.
+   * @param request The HTTP request object.
+   * The body for the post request should be JSON serialized in the following format:
+   * @code{.json}
+   * {
+   *   "apps": [
+   *     {"name": "Application Name", "cmd": "Command to run the application"}
+   *   ]
+   * }
+   * @endcode
+   *
+   * Entries without a usable name are skipped. The application list is written once and reloaded once.
+   *
+   * @api_examples{/api/apps/batch|:| POST|:| {"apps":[{"name":"Hello, World!","cmd":"\"C:\\Games\\Hello.exe\""}]}}
+   */
+  void saveApps(const resp_https_t &response, const req_https_t &request) {
+    if (!check_content_type(response, request, "application/json")) {
+      return;
+    }
+    if (!authenticate(response, request)) {
+      return;
+    }
+
+    std::string client_id = get_client_id(request);
+    if (!validate_csrf_token(response, request, client_id)) {
+      return;
+    }
+
+    print_req(request);
+
+    std::stringstream ss;
+    ss << request->content.rdbuf();
+    try {
+      nlohmann::json input_tree = nlohmann::json::parse(ss);
+      const auto entries = input_tree.find("apps");
+      if (entries == input_tree.end() || !entries->is_array()) {
+        bad_request(response, "An apps array is required");
+        return;
+      }
+
+      nlohmann::json file_tree = nlohmann::json::parse(file_handler::read_file(config::stream.file_apps.c_str()));
+      for (auto &entry : *entries) {
+        if (!entry.is_object()) {
+          continue;
+        }
+        normalize_optional_app_fields(entry);
+        entry.erase("index");
+      }
+
+      const auto added = app_json::append(file_tree, *entries);
+      if (added == 0) {
+        send_response(response, {{"status", true}, {"added", 0}});
+        return;
+      }
+
+      file_handler::write_file(config::stream.file_apps.c_str(), file_tree.dump(4));
+      proc::refresh(config::stream.file_apps);
+
+      BOOST_LOG(info) << "Added "sv << added << " applications"sv;
+      send_response(response, {{"status", true}, {"added", added}});
+    } catch (std::exception &e) {
+      BOOST_LOG(warning) << "SaveApps: "sv << e.what();
       bad_request(response, e.what());
     }
   }
@@ -2492,6 +2557,7 @@ namespace confighttp {
     server.resource["^/api/apps$"]["POST"] = saveApp;
     server.resource["^/api/apps/([0-9]+)$"]["DELETE"] = deleteApp;
     server.resource["^/api/apps/close$"]["POST"] = closeApp;
+    server.resource["^/api/apps/batch$"]["POST"] = saveApps;
     server.resource["^/api/games/scan$"]["POST"] = scanGames;
     server.resource["^/api/clients/list$"]["GET"] = getClients;
     server.resource["^/api/clients/unpair$"]["POST"] = unpair;

@@ -317,13 +317,14 @@ export default {
     async addSelected() {
       this.busy = true
       this.error = ''
-      let added = 0
       try {
-        for (const game of this.selectedGames) {
-          if (game.added) {
-            continue
-          }
+        const pending = this.selectedGames.filter(game => !game.added)
+        if (pending.length === 0) {
+          return
+        }
 
+        const apps = []
+        for (const game of pending) {
           let imagePath = null
           if (game.cover) {
             const upload = await apiFetch('./api/covers/upload', {
@@ -340,26 +341,28 @@ export default {
           const app = {
             name: game.name,
             cmd: `"${game.path}"`,
-            index: -1,
           }
           if (imagePath) {
             app['image-path'] = imagePath
           }
+          apps.push(app)
+        }
 
-          const response = await apiFetch('./api/apps', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(app),
-          })
-          if (!response.ok) {
-            throw new Error(await response.text())
-          }
+        const response = await apiFetch('./api/apps/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apps }),
+        })
+        if (!response.ok) {
+          throw new Error(await response.text())
+        }
 
+        const result = await response.json()
+        pending.forEach(game => {
           game.added = true
           game.selected = false
-          added++
-        }
-        this.status = this.$t('games.added_count', { count: added })
+        })
+        this.status = this.$t('games.added_count', { count: result.added ?? pending.length })
       } catch (e) {
         this.error = `${this.$t('games.add_failed')}: ${e.message}`
       } finally {

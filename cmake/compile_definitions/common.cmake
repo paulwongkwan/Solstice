@@ -127,6 +127,8 @@ set(SOLSTICE_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/crypto.h"
         "${CMAKE_SOURCE_DIR}/src/nvhttp.cpp"
         "${CMAKE_SOURCE_DIR}/src/nvhttp.h"
+        "${CMAKE_SOURCE_DIR}/src/app_json.cpp"
+        "${CMAKE_SOURCE_DIR}/src/app_json.h"
         "${CMAKE_SOURCE_DIR}/src/cover_finder.cpp"
         "${CMAKE_SOURCE_DIR}/src/cover_finder.h"
         "${CMAKE_SOURCE_DIR}/src/game_scanner.cpp"
