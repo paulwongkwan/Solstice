@@ -6,6 +6,11 @@ foreach(dep ${SOLSTICE_TARGET_DEPENDENCIES})
     add_dependencies(solstice ${dep})  # compile these before solstice
 endforeach()
 
+# The HIDMaestro bridge is published next to the executable and packaged with it.
+if(TARGET hidmaestro_bridge)
+    add_dependencies(solstice hidmaestro_bridge)
+endif()
+
 # platform specific target definitions
 include(${CMAKE_MODULE_PATH}/targets/windows.cmake)
 
