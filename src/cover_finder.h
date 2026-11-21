@@ -5,6 +5,7 @@
 #pragma once
 
 // standard includes
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -20,6 +21,35 @@ namespace cover_finder {
     std::string image_url;  ///< Full-size cover downloaded when the candidate is chosen.
     std::string key;  ///< Stable key used to name the stored cover file.
   };
+
+  /**
+   * @brief Reduce a title to a form that compares well between sources.
+   *
+   * Case, trademark symbols, punctuation, edition suffixes such as `Definitive Edition`, and trailing roman numerals
+   * are removed, so `Hades II` and `Hades 2` normalize to the same value.
+   *
+   * @param title Title to normalize.
+   * @return Normalized title with single spaces between words.
+   */
+  std::string normalize_title(std::string_view title);
+
+  /**
+   * @brief Whether a stored cover image may be served to a client.
+   *
+   * Only images inside the downloaded cover directory or the bundled assets directory qualify, so a crafted
+   * `image-path` cannot read arbitrary files through the cover endpoint.
+   *
+   * @param path Path to the resolved cover image.
+   * @param covers_directory Directory where downloaded covers are stored.
+   * @param assets_directory Directory holding the bundled artwork.
+   * @return True when the path is inside either directory.
+   */
+  bool is_allowed_cover_path(std::string_view path, const std::filesystem::path &covers_directory, const std::filesystem::path &assets_directory);
+
+  /**
+   * @brief Drop cached cover results and IGDB access tokens.
+   */
+  void clear_caches();
 
   /**
    * @brief Whether a host may serve a cover image.

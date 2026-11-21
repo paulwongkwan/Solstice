@@ -8,11 +8,15 @@
 #include "config.h"
 #include "httpcommon.h"
 #include "logging.h"
+#include "ttl_cache.h"
 
 // standard includes
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <chrono>
+#include <functional>
+#include <utility>
 
 // lib includes
 #include <nlohmann/json.hpp>
@@ -32,6 +36,57 @@ namespace cover_finder {
     };
 
     /**
+     * @brief Edition suffixes that do not change which game a title refers to.
+     */
+    constexpr std::array<std::string_view, 14> edition_suffixes {
+      "definitive edition",
+      "deluxe edition",
+      "ultimate edition",
+      "complete edition",
+      "gold edition",
+      "enhanced edition",
+      "game of the year edition",
+      "goty edition",
+      "special edition",
+      "collectors edition",
+      "anniversary edition",
+      "directors cut",
+      "remastered",
+      "remake",
+    };
+
+    /**
+     * @brief Trailing roman numerals and their arabic equivalents.
+     */
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 10> roman_numerals {
+      std::pair {"i"sv, "1"sv},
+      std::pair {"ii"sv, "2"sv},
+      std::pair {"iii"sv, "3"sv},
+      std::pair {"iv"sv, "4"sv},
+      std::pair {"v"sv, "5"sv},
+      std::pair {"vi"sv, "6"sv},
+      std::pair {"vii"sv, "7"sv},
+      std::pair {"viii"sv, "8"sv},
+      std::pair {"ix"sv, "9"sv},
+      std::pair {"x"sv, "10"sv},
+    };
+
+    /**
+     * @brief Download covers and cover searches are cached for a day.
+     */
+    constexpr auto cover_cache_lifetime = std::chrono::hours {24};
+
+    /**
+     * @brief Cover search results keyed by the title that was searched for.
+     */
+    ttl_cache::cache_t<std::vector<candidate_t>> search_cache {cover_cache_lifetime, 256};
+
+    /**
+     * @brief IGDB access tokens keyed by the credentials they were issued for.
+     */
+    ttl_cache::cache_t<std::string> token_cache {cover_cache_lifetime, 8};
+
+    /**
      * @brief Lowercase a string using the C locale.
      *
      * @param value String to lowercase.
@@ -46,21 +101,37 @@ namespace cover_finder {
     }
 
     /**
-     * @brief Rank a candidate title against the query.
+     * @brief Remove leading and trailing spaces.
+     *
+     * @param text Text to trim in place.
+     * @return Trimmed text.
+     */
+    std::string trim(std::string text) {
+      const auto first = text.find_first_not_of(' ');
+      if (first == std::string::npos) {
+        return {};
+      }
+      text.erase(0, first);
+      text.erase(text.find_last_not_of(' ') + 1);
+      return text;
+    }
+
+    /**
+     * @brief Rank a candidate title against a normalized query.
      *
      * @param title Candidate title.
-     * @param query Lowercased query.
+     * @param query Normalized query.
      * @return 0 for an exact match, 1 for a prefix, 2 for a substring, and 3 otherwise.
      */
     int title_rank(std::string_view title, std::string_view query) {
-      const auto lower = lowercase(title);
-      if (lower == query) {
+      const auto normalized = normalize_title(title);
+      if (normalized == query) {
         return 0;
       }
-      if (lower.starts_with(query)) {
+      if (normalized.starts_with(query)) {
         return 1;
       }
-      if (lower.find(query) != std::string::npos) {
+      if (normalized.find(query) != std::string::npos) {
         return 2;
       }
       return 3;
@@ -70,7 +141,7 @@ namespace cover_finder {
      * @brief Sort candidates so the closest title matches come first.
      *
      * @param candidates Candidates to order in place.
-     * @param query Lowercased query.
+     * @param query Normalized query.
      */
     void sort_by_relevance(std::vector<candidate_t> &candidates, std::string_view query) {
       std::stable_sort(candidates.begin(), candidates.end(), [query](const candidate_t &left, const candidate_t &right) {
@@ -86,6 +157,11 @@ namespace cover_finder {
      * @return Access token, or an empty string when the request fails.
      */
     std::string igdb_access_token(const std::string &client_id, const std::string &client_secret) {
+      const std::string cache_key = client_id + '|' + std::to_string(std::hash<std::string> {}(client_secret));
+      if (const auto cached = token_cache.get(cache_key)) {
+        return *cached;
+      }
+
       std::string body;
       const std::string form = "client_id="s + http::url_escape(client_id) +
                                "&client_secret="s + http::url_escape(client_secret) +
@@ -97,7 +173,11 @@ namespace cover_finder {
 
       try {
         const auto tree = nlohmann::json::parse(body);
-        return tree.value("access_token", ""s);
+        const auto token = tree.value("access_token", ""s);
+        if (!token.empty()) {
+          token_cache.put(cache_key, token);
+        }
+        return token;
       } catch (const std::exception &e) {
         BOOST_LOG(warning) << "Couldn't parse the IGDB access token response: "sv << e.what();
         return {};
@@ -136,6 +216,107 @@ namespace cover_finder {
       return parse_igdb_results(body);
     }
   }  // namespace
+
+  std::string normalize_title(std::string_view title) {
+    // Trademark signs and typographic apostrophes are dropped rather than turned into word breaks.
+    static constexpr std::array<std::string_view, 4> decorations {
+      "\xE2\x84\xA2"sv,
+      "\xC2\xAE"sv,
+      "\xC2\xA9"sv,
+      "\xE2\x80\x99"sv,
+    };
+
+    std::string cleaned {title};
+    for (const auto decoration : decorations) {
+      std::size_t found = 0;
+      while ((found = cleaned.find(decoration, found)) != std::string::npos) {
+        cleaned.erase(found, decoration.size());
+      }
+    }
+
+    std::string text;
+    text.reserve(cleaned.size());
+    for (const char character : cleaned) {
+      const auto byte = static_cast<unsigned char>(character);
+      if (byte >= 0x80) {
+        // Keep multi-byte characters intact so accented titles still match.
+        text.push_back(character);
+      } else if (std::isalnum(byte) != 0) {
+        text.push_back(static_cast<char>(std::tolower(byte)));
+      } else if (character != '\'') {
+        text.push_back(' ');
+      }
+    }
+
+    text = trim(std::move(text));
+
+    bool stripped = true;
+    while (stripped) {
+      stripped = false;
+      for (const auto suffix : edition_suffixes) {
+        if (text.size() <= suffix.size() + 1 || !text.ends_with(suffix)) {
+          continue;
+        }
+        if (text[text.size() - suffix.size() - 1] != ' ') {
+          continue;
+        }
+        text.erase(text.size() - suffix.size() - 1);
+        text = trim(std::move(text));
+        stripped = true;
+        break;
+      }
+    }
+
+    if (const auto space = text.find_last_of(' '); space != std::string::npos) {
+      const std::string_view last {text.data() + space + 1, text.size() - space - 1};
+      for (const auto &[roman, arabic] : roman_numerals) {
+        if (last == roman) {
+          text.replace(space + 1, std::string::npos, arabic);
+          break;
+        }
+      }
+    }
+
+    return text;
+  }
+
+  bool is_allowed_cover_path(std::string_view path, const std::filesystem::path &covers_directory, const std::filesystem::path &assets_directory) {
+    if (path.empty()) {
+      return false;
+    }
+
+    const auto key = [](const std::filesystem::path &path_to_normalize) {
+      std::error_code error;
+      auto text = std::filesystem::weakly_canonical(path_to_normalize, error).string();
+      if (error) {
+        text = path_to_normalize.lexically_normal().string();
+      }
+      std::ranges::replace(text, '\\', '/');
+      std::ranges::transform(text, text.begin(), [](unsigned char character) {
+        return static_cast<char>(std::tolower(character));
+      });
+      while (text.size() > 1 && text.ends_with('/')) {
+        text.pop_back();
+      }
+      return text;
+    };
+
+    const auto target = key(std::filesystem::path {std::string {path}});
+    if (target.empty()) {
+      return false;
+    }
+
+    const auto is_inside = [&target](const std::string &directory) {
+      return !directory.empty() && (target == directory || target.starts_with(directory + '/'));
+    };
+
+    return is_inside(key(covers_directory)) || is_inside(key(assets_directory));
+  }
+
+  void clear_caches() {
+    search_cache.clear();
+    token_cache.clear();
+  }
 
   bool is_allowed_cover_host(std::string_view host) {
     const auto lower = lowercase(host);
@@ -266,6 +447,11 @@ namespace cover_finder {
       return candidates;
     }
 
+    const std::string cache_key {name};
+    if (const auto cached = search_cache.get(cache_key)) {
+      return *cached;
+    }
+
     std::string body;
     const auto url = "https://store.steampowered.com/api/storesearch/?term="s + http::url_escape(std::string {name}) +
                      "&l=english&cc=us"s;
@@ -279,7 +465,8 @@ namespace cover_finder {
     auto igdb = search_igdb(name);
     candidates.insert(candidates.end(), igdb.begin(), igdb.end());
 
-    sort_by_relevance(candidates, lowercase(name));
+    sort_by_relevance(candidates, normalize_title(name));
+    search_cache.put(cache_key, candidates);
     return candidates;
   }
 }  // namespace cover_finder

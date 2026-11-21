@@ -137,6 +137,7 @@ set(SOLSTICE_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/game_scanner.h"
         "${CMAKE_SOURCE_DIR}/src/rate_limiter.cpp"
         "${CMAKE_SOURCE_DIR}/src/rate_limiter.h"
+        "${CMAKE_SOURCE_DIR}/src/ttl_cache.h"
         "${CMAKE_SOURCE_DIR}/src/httpcommon.cpp"
         "${CMAKE_SOURCE_DIR}/src/httpcommon.h"
         "${CMAKE_SOURCE_DIR}/src/confighttp.cpp"

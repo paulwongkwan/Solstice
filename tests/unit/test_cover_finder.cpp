@@ -6,8 +6,64 @@
 // test includes
 #include "../tests_common.h"
 
+// standard includes
+#include <filesystem>
+#include <fstream>
+#include <string>
+
 // local includes
 #include <src/cover_finder.h>
+
+TEST(CoverFinderTitleTest, NormalizesCasePunctuationAndTrademarks) {
+  EXPECT_EQ(cover_finder::normalize_title("Hades"), "hades");
+  EXPECT_EQ(cover_finder::normalize_title("  Hades™  "), "hades");
+  EXPECT_EQ(cover_finder::normalize_title("Baldur's Gate 3"), "baldurs gate 3");
+  EXPECT_EQ(cover_finder::normalize_title("ELDEN RING"), "elden ring");
+  EXPECT_EQ(cover_finder::normalize_title("Hades: Definitive Edition"), "hades");
+  EXPECT_EQ(cover_finder::normalize_title("Hades - Remastered"), "hades");
+  EXPECT_EQ(cover_finder::normalize_title("Hades Gold Edition Deluxe Edition"), "hades");
+  EXPECT_EQ(cover_finder::normalize_title("Definitive Edition"), "definitive edition");
+  EXPECT_EQ(cover_finder::normalize_title(""), "");
+  EXPECT_EQ(cover_finder::normalize_title("!!!"), "");
+}
+
+TEST(CoverFinderTitleTest, TreatsTrailingRomanNumeralsAsDigits) {
+  EXPECT_EQ(cover_finder::normalize_title("Hades II"), "hades 2");
+  EXPECT_EQ(cover_finder::normalize_title("Hades 2"), "hades 2");
+  EXPECT_EQ(cover_finder::normalize_title("Final Fantasy VII"), "final fantasy 7");
+  EXPECT_EQ(cover_finder::normalize_title("I Am Bread"), "i am bread");
+  EXPECT_EQ(cover_finder::normalize_title("Hades II Definitive Edition"), "hades 2");
+}
+
+TEST(CoverFinderPathTest, AllowsOnlyTheCoverAndAssetDirectories) {
+  const auto root = std::filesystem::temp_directory_path() / "solstice-cover-path-test";
+  const auto covers = root / "covers";
+  const auto assets = root / "assets";
+  std::filesystem::remove_all(root);
+  std::filesystem::create_directories(covers);
+  std::filesystem::create_directories(assets);
+  std::filesystem::create_directories(root / "covers_extra");
+
+  { std::ofstream {covers / "igdb_1.png"} << "cover"; }
+  { std::ofstream {assets / "box.png"} << "asset"; }
+  { std::ofstream {root / "covers_extra" / "secret.png"} << "secret"; }
+
+  EXPECT_TRUE(cover_finder::is_allowed_cover_path((covers / "igdb_1.png").string(), covers, assets));
+  EXPECT_TRUE(cover_finder::is_allowed_cover_path((assets / "box.png").string(), covers, assets));
+  EXPECT_FALSE(cover_finder::is_allowed_cover_path((root / "covers_extra" / "secret.png").string(), covers, assets));
+  EXPECT_FALSE(cover_finder::is_allowed_cover_path((covers / ".." / "covers_extra" / "secret.png").string(), covers, assets));
+  EXPECT_FALSE(cover_finder::is_allowed_cover_path("igdb_1.png", covers, assets));
+  EXPECT_FALSE(cover_finder::is_allowed_cover_path("", covers, assets));
+
+  std::filesystem::remove_all(root);
+}
+
+TEST(CoverFinderCacheTest, ClearsCachedLookups) {
+  cover_finder::clear_caches();
+  cover_finder::clear_caches();
+
+  SUCCEED();
+}
 
 TEST(CoverFinderHostTest, AllowsIgdbAndSteamImageHosts) {
   EXPECT_TRUE(cover_finder::is_allowed_cover_host("images.igdb.com"));

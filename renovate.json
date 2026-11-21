@@ -3,5 +3,19 @@
   "extends": [
     "local>Solstice/.github:renovate-config"
   ],
-  "forkProcessing": "enabled"
+  "forkProcessing": "enabled",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the HIDMaestro SDK release pinned by the Windows build.",
+      "fileMatch": [
+        "^cmake/compile_definitions/windows\\.cmake$"
+      ],
+      "matchStrings": [
+        "set\\(HIDMAESTRO_VERSION \"(?<currentValue>[^\"]+)\"\\)"
+      ],
+      "depNameTemplate": "hifihedgehog/HIDMaestro",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
 }

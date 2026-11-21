@@ -1808,6 +1808,9 @@ namespace confighttp {
    * @param response The HTTP response object.
    * @param request The HTTP request object.
    *
+   * Only images inside the downloaded cover directory or the bundled assets directory are served, so an
+   * `image-path` cannot be used to read other files.
+   *
    * @note{The index in the url path is the application index.}
    *
    * @api_examples{/api/covers/9999 |:| GET|:| null}
@@ -1844,6 +1847,14 @@ namespace confighttp {
       // Check if we got the default image path (means validation failed or no image configured)
       if (validated_path == DEFAULT_APP_IMAGE_PATH) {
         BOOST_LOG(debug) << "Application at index " << index << " does not have a valid cover image";
+        not_found(response, "Cover image not found");
+        return;
+      }
+
+      // Only stored covers and bundled artwork may be served, so an image-path cannot expose other files.
+      const auto cover_directory = std::filesystem::path {platf::appdata().string()} / "covers";
+      if (!cover_finder::is_allowed_cover_path(validated_path, cover_directory, SOLSTICE_ASSETS_DIR)) {
+        BOOST_LOG(warning) << "Refusing to serve an app image outside the cover directories: "sv << validated_path;
         not_found(response, "Cover image not found");
         return;
       }
