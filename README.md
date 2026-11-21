@@ -5,7 +5,7 @@
 Solstice is a self-hosted game stream host for [Moonlight](https://moonlight-stream.org). It captures your Windows
 desktop or a single application, encodes it in hardware, and streams it with low latency to any Moonlight client —
 phone, tablet, TV, or another computer. A web UI handles pairing, configuration, and logging from any browser on your
-network.
+network. Project website: <https://paulwongkwan.github.io/Solstice/>.
 
 [![GitHub stars](https://img.shields.io/github/stars/paulwongkwan/Solstice.svg?logo=github&style=for-the-badge)](https://github.com/paulwongkwan/Solstice)
 [![Latest release](https://img.shields.io/github/v/release/paulwongkwan/Solstice.svg?style=for-the-badge&logo=github)](https://github.com/paulwongkwan/Solstice/releases/latest)
@@ -56,7 +56,7 @@ them alone.
 
 ## Install
 
-1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Solstice/releases/download/v2026.1120.194334/Solstice.exe)
+1. Download [`Solstice.exe`](https://github.com/paulwongkwan/Solstice/releases/latest)
    from the [releases page](https://github.com/paulwongkwan/Solstice/releases).
 2. Run the installer. It installs to `%ProgramFiles%\Solstice`, adds the firewall rules, and registers
    `SolsticeService`, so Solstice keeps streaming after you sign out of Windows.

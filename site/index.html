@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solstice — self-hosted game stream host for Moonlight</title>
+  <meta name="description" content="Solstice is a self-hosted game stream host for Moonlight on Windows 11, with hardware encoding, a signed-in web UI, and three virtual gamepad backends.">
+  <meta name="theme-color" content="#0a1220">
+  <link rel="icon" href="assets/solstice.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <img src="assets/solstice.svg" alt="" width="30" height="30">
+        Solstice
+      </a>
+      <nav class="site-nav" aria-label="Sections">
+        <a href="#features">Features</a>
+        <a href="#requirements">Requirements</a>
+        <a href="#install">Install</a>
+        <a href="#gamepads">Gamepads</a>
+        <a href="https://github.com/paulwongkwan/Solstice">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div class="wrap">
+        <img class="hero-logo" src="assets/solstice.svg" alt="Solstice logo" width="96" height="96">
+        <h1>Your PC, streamed to anywhere.</h1>
+        <p class="tagline">
+          Solstice is a self-hosted game stream host for Moonlight. It captures your Windows desktop or a single
+          application, encodes it in hardware, and streams it with low latency to a phone, tablet, TV, or another
+          computer. Pairing, settings, and logs live in a web UI on your own network.
+        </p>
+        <div class="actions">
+          <a class="button button-primary" href="https://github.com/paulwongkwan/Solstice/releases/latest">Download the latest release</a>
+          <a class="button button-secondary" href="https://github.com/paulwongkwan/Solstice#readme">Read the documentation</a>
+        </div>
+      </div>
+    </div>
+
+    <section id="features">
+      <div class="wrap">
+        <h2>What you get</h2>
+        <p class="section-lead">
+          A Windows 11 host built for Moonlight clients, with the capture, encoding, and input paths handled by the
+          hardware that is already in your machine.
+        </p>
+        <div class="grid">
+          <article class="card">
+            <h3>Hardware encoding</h3>
+            <p>NVENC on NVIDIA, AMF on AMD, QuickSync on Intel, and Media Foundation on Qualcomm, with a software encoder as a fallback.</p>
+          </article>
+          <article class="card">
+            <h3>Desktop capture</h3>
+            <p>DXGI Desktop Duplication in portable and service mode, plus Windows.Graphics.Capture in portable mode.</p>
+          </article>
+          <article class="card">
+            <h3>Virtual gamepads</h3>
+            <p>Xbox 360, Xbox One, Xbox Series, DualShock 4, DualSense, Switch Pro, and Steam Controller, fixed or chosen from the client's controller.</p>
+          </article>
+          <article class="card">
+            <h3>Signed-in web UI</h3>
+            <p>Pair clients, change settings, and read logs from <code>https://localhost:47990</code>, with an optional "remember me" session.</p>
+          </article>
+          <article class="card">
+            <h3>Keyboard, mouse, touch, pen</h3>
+            <p>Injected with the Windows <code>SendInput</code> and pointer APIs. No extra driver is needed for those devices.</p>
+          </article>
+          <article class="card">
+            <h3>Sunshine-compatible</h3>
+            <p>Existing Sunshine configuration is picked up automatically, and the client, application, and state file formats are unchanged.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="requirements">
+      <div class="wrap">
+        <h2>Requirements</h2>
+        <p class="section-lead">Windows 11 only. Older versions exit at startup with an explanatory message.</p>
+        <div class="table-scroll">
+          <table>
+            <caption class="visually-hidden">Host requirements</caption>
+            <tbody>
+              <tr>
+                <th scope="row">OS</th>
+                <td>Windows 11 build 22000 or newer, x64 or ARM64</td>
+              </tr>
+              <tr>
+                <th scope="row">GPU</th>
+                <td>NVIDIA NVENC, AMD VCE 1.0 or newer, Intel Skylake or newer with QuickSync, or Qualcomm with Media Foundation encoding</td>
+              </tr>
+              <tr>
+                <th scope="row">CPU</th>
+                <td>AMD Ryzen 3 / Intel Core i3 or better</td>
+              </tr>
+              <tr>
+                <th scope="row">RAM</th>
+                <td>4 GB or more</td>
+              </tr>
+              <tr>
+                <th scope="row">Network</th>
+                <td>5 GHz 802.11ac or wired Ethernet on both host and client</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">
+          <strong>4K or HDR?</strong> A modern mid-range GPU (GTX 1080 / VCE 3.1 / HD Graphics 730 or better), a Ryzen 5
+          or Core i5, and wired Ethernet on both ends are a better starting point. These recommendations are a work in
+          progress — do not buy hardware based on them alone.
+        </p>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="wrap">
+        <h2>Install</h2>
+        <p class="section-lead">
+          The installer is a single executable. It registers the service, the firewall rules, and the web UI.
+        </p>
+        <ol class="steps">
+          <li>
+            <strong>Download the installer</strong>
+            <span>Grab <code>Solstice.exe</code> from the <a href="https://github.com/paulwongkwan/Solstice/releases/latest">latest release</a>.</span>
+          </li>
+          <li>
+            <strong>Run it and follow the prompts</strong>
+            <span>Approve the elevation prompt so Solstice can install its service and the streaming firewall rules.</span>
+          </li>
+          <li>
+            <strong>Open the web UI</strong>
+            <span>Browse to <code>https://localhost:47990</code>, create the first account, and pair your Moonlight client.</span>
+          </li>
+          <li>
+            <strong>Optionally, add a virtual gamepad driver</strong>
+            <span>HIDMaestro, libvirtualgamepad, or ViGEmBus. Without one, keyboard, mouse, touch, and pen input still work.</span>
+          </li>
+        </ol>
+        <p class="note">
+          <strong>Portable mode</strong> is available too: run <code>solstice.exe</code> from an extracted folder and it
+          keeps its configuration alongside the executable.
+        </p>
+      </div>
+    </section>
+
+    <section id="gamepads">
+      <div class="wrap">
+        <h2>Virtual gamepads</h2>
+        <p class="section-lead">
+          Solstice can present the client's controller to games as a different pad. Three backends are supported, and
+          ViGEmBus is always the fallback when the preferred one cannot create the profile.
+        </p>
+        <div class="grid">
+          <article class="card">
+            <h3>libvirtualgamepad</h3>
+            <p>A user-mode Virtual HID Framework driver bundled with the installer under <code>drivers\vhf-gamepad</code>. Adds Xbox One, Xbox Series, DualSense, Switch Pro, and Steam Controller profiles.</p>
+          </article>
+          <article class="card">
+            <h3>HIDMaestro</h3>
+            <p>Supports every profile, including Xbox 360. Solstice drives it through a self-contained bridge under <code>drivers\hidmaestro</code>; install the HIDMaestro driver and it is used automatically.</p>
+          </article>
+          <article class="card">
+            <h3>ViGEmBus</h3>
+            <p>The always-available fallback, covering Xbox 360 and DualShock 4. Pin any backend with the <code>gamepad_backend</code> configuration option.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="docs">
+      <div class="wrap">
+        <h2>Documentation</h2>
+        <p class="section-lead">
+          Guides live in the repository and are versioned with the code.
+        </p>
+        <div class="grid">
+          <article class="card">
+            <h3><a href="https://github.com/paulwongkwan/Solstice/blob/master/docs/getting_started.md">Getting started</a></h3>
+            <p>Install, first run, and connecting a client.</p>
+          </article>
+          <article class="card">
+            <h3><a href="https://github.com/paulwongkwan/Solstice/blob/master/docs/configuration.md">Configuration</a></h3>
+            <p>Every option in <code>sunshine.conf</code>, including <code>gamepad</code> and <code>gamepad_backend</code>.</p>
+          </article>
+          <article class="card">
+            <h3><a href="https://github.com/paulwongkwan/Solstice/blob/master/docs/troubleshooting.md">Troubleshooting</a></h3>
+            <p>Driver status, capture problems, and audio issues.</p>
+          </article>
+          <article class="card">
+            <h3><a href="https://github.com/paulwongkwan/Solstice/blob/master/docs/building.md">Building from source</a></h3>
+            <p>Toolchain setup, dependencies, and packaging.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-links">
+        <a href="https://github.com/paulwongkwan/Solstice">Repository</a>
+        <a href="https://github.com/paulwongkwan/Solstice/releases">Releases</a>
+        <a href="https://github.com/paulwongkwan/Solstice/issues">Issues</a>
+        <a href="https://moonlight-stream.org">Moonlight</a>
+        <a href="https://github.com/paulwongkwan/Solstice/blob/master/LICENSE.txt">License</a>
+      </div>
+      <p>Solstice is licensed under the GNU General Public License v3.0. Moonlight is a separate project.</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -108,8 +108,8 @@ are translated.
 #### Clang Format
 Source code is tested against the `.clang-format` file for linting errors.
 
-From the repository root, apply clang-format locally with the installed lizardbyte-common script. This will modify
-files in place.
+From the repository root, apply clang-format locally with the repository's formatting helper. This will modify files
+in place.
 
 ```bash
 uv sync --locked

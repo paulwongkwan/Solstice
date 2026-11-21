@@ -8,7 +8,6 @@
 
 # Renovate-bot will update the versions and hashes in this file when a new version of a dependency is released.
 # The comments above each dependency are used by renovate to identify the dependencies and extract the version numbers.
-# See https://github.com/LizardByte/.github/blob/master/renovate-config.json5 for the configuration of renovate.
 #
 # Expected dependency structure for new entries:
 # - Start each block with a human-readable comment, for example `# Example dependency`.
