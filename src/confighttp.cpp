@@ -568,6 +568,13 @@ namespace confighttp {
     rate_limiter::limiter_t cover_search_limiter {std::chrono::milliseconds {1000}, 5};
   }  // namespace
 
+#ifdef SOLSTICE_TESTS
+  void reset_rate_limits_for_testing() {
+    scan_limiter.reset();
+    cover_search_limiter.reset();
+  }
+#endif
+
   /**
    * @brief Validate the request content type and send a bad request when mismatched.
    */

@@ -331,6 +331,9 @@ protected:
     server->resource["^/pairing-test$"]["GET"] = confighttp::getPendingPairings;
     server->resource["^/pairing-test$"]["POST"] = confighttp::savePin;
     server->resource["^/api/apps$"]["POST"] = confighttp::saveApp;
+    server->resource["^/api/games/scan$"]["POST"] = confighttp::scanGames;
+    server->resource["^/api/covers/search$"]["GET"] = confighttp::searchCovers;
+    server->resource["^/api/covers/([0-9]+)$"]["GET"] = confighttp::getCover;
     server->default_resource["GET"] = confighttp::getFallbackPage;
 
     // Start server
@@ -1927,4 +1930,143 @@ TEST_F(ConfigHttpTest, SaveAppOmitsNullOptionalFieldsAndPreservesConfiguredValue
     EXPECT_FALSE(app.at("prep-cmd").at(0).contains("undo"));
     EXPECT_FALSE(app.at("prep-cmd").at(0).contains("elevated"));
   }
+}
+
+namespace {
+  /**
+   * @brief PNG signature, enough for the cover image validation.
+   */
+  constexpr std::array<unsigned char, 8> PNG_SIGNATURE {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+
+  /**
+   * @brief Write a file that only contains the PNG signature.
+   *
+   * @param path File to create.
+   */
+  void write_png_signature(const std::filesystem::path &path) {
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream file {path, std::ios::binary};
+    file.write(reinterpret_cast<const char *>(PNG_SIGNATURE.data()), static_cast<std::streamsize>(PNG_SIGNATURE.size()));
+  }
+}  // namespace
+
+TEST_F(ConfigHttpTest, ScanRejectsRelativeAndNetworkPaths) {
+  confighttp::reset_rate_limits_for_testing();
+  const auto headers = authenticated_json_headers();
+
+  const auto relative = client->request("POST", "/api/games/scan", R"({"path":"Games"})", headers);
+  ASSERT_EQ(relative->status_code, "400 Bad Request");
+  assert_json_error_response(relative, "Only absolute paths on local drives can be scanned", "400");
+
+  confighttp::reset_rate_limits_for_testing();
+  const auto share = client->request("POST", "/api/games/scan", R"({"path":"\\\\server\\share\\Games"})", headers);
+  ASSERT_EQ(share->status_code, "400 Bad Request");
+  assert_json_error_response(share, "Only absolute paths on local drives can be scanned", "400");
+
+  confighttp::reset_rate_limits_for_testing();
+  const auto missing = client->request("POST", "/api/games/scan", R"({"path":""})", headers);
+  ASSERT_EQ(missing->status_code, "400 Bad Request");
+  assert_json_error_response(missing, "A folder path is required", "400");
+}
+
+TEST_F(ConfigHttpTest, ScanRejectsUnauthenticatedAndCrossOriginRequests) {
+  confighttp::reset_rate_limits_for_testing();
+  SimpleWeb::CaseInsensitiveMultimap headers;
+  headers.emplace("Content-Type", "application/json");
+
+  const auto unauthenticated = client->request("POST", "/api/games/scan", R"({"path":"C:\\Games"})", headers);
+  EXPECT_EQ(unauthenticated->status_code, "401 Unauthorized");
+
+  SimpleWeb::CaseInsensitiveMultimap cross_origin;
+  cross_origin.emplace("Authorization", create_auth_header("testuser", "testpass"));
+  cross_origin.emplace("Content-Type", "application/json");
+  cross_origin.emplace("Origin", "https://example.invalid");
+
+  const auto rejected = client->request("POST", "/api/games/scan", R"({"path":"C:\\Games"})", cross_origin);
+  ASSERT_EQ(rejected->status_code, "400 Bad Request");
+  EXPECT_TRUE(rejected->content.string().contains("Missing CSRF token"));
+}
+
+TEST_F(ConfigHttpTest, ScanFindsGamesAndRateLimitsTheNextRequest) {
+  confighttp::reset_rate_limits_for_testing();
+  const auto headers = authenticated_json_headers();
+
+  const auto folder = std::filesystem::path(SOLSTICE_TEST_BIN_DIR) / "scan_rate_limit";
+  std::filesystem::remove_all(folder);
+  std::filesystem::create_directories(folder);
+  {
+    std::ofstream {folder / "Hades.exe"} << "game";
+  }
+
+  const nlohmann::json body {{"path", folder.string()}};
+  const auto first = client->request("POST", "/api/games/scan", body.dump(), headers);
+  ASSERT_EQ(first->status_code, "200 OK");
+  const auto games = nlohmann::json::parse(first->content.string()).at("games");
+  ASSERT_EQ(games.size(), 1U);
+  EXPECT_EQ(games.at(0).at("name"), "Hades");
+
+  const auto second = client->request("POST", "/api/games/scan", body.dump(), headers);
+  ASSERT_EQ(second->status_code, "429 Too Many Requests");
+  assert_json_error_response(second, "Game scanning is rate limited", "429");
+
+  std::filesystem::remove_all(folder);
+}
+
+TEST_F(ConfigHttpTest, CoverSearchRequiresAQueryAndRateLimitsRepeatedRequests) {
+  confighttp::reset_rate_limits_for_testing();
+  SimpleWeb::CaseInsensitiveMultimap headers;
+  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
+
+  const auto empty = client->request("GET", "/api/covers/search", "", headers);
+  ASSERT_EQ(empty->status_code, "400 Bad Request");
+  assert_json_error_response(empty, "A search query is required", "400");
+
+  for (int i = 0; i < 4; ++i) {
+    const auto allowed = client->request("GET", "/api/covers/search", "", headers);
+    ASSERT_EQ(allowed->status_code, "400 Bad Request");
+  }
+
+  const auto limited = client->request("GET", "/api/covers/search", "", headers);
+  ASSERT_EQ(limited->status_code, "429 Too Many Requests");
+  assert_json_error_response(limited, "Cover search is rate limited", "429");
+}
+
+TEST_F(ConfigHttpTest, CoverEndpointServesBundledAssetsAndRefusesOtherFiles) {
+  ScopedSaveAppAppsFile apps_file("cover_confinement");
+  SimpleWeb::CaseInsensitiveMultimap headers;
+  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
+
+  const auto outside = apps_file.test_dir / "secret.png";
+  write_png_signature(outside);
+
+  const std::string asset_name {"test_cover_asset.png"};
+  const auto asset = std::filesystem::path(SOLSTICE_ASSETS_DIR) / asset_name;
+  write_png_signature(asset);
+
+  const nlohmann::json apps {
+    {"env", nlohmann::json::object()},
+    {"apps", nlohmann::json::array({
+               {{"name", "Outside"}, {"image-path", outside.string()}},
+               {{"name", "Asset"}, {"image-path", asset_name}},
+             })},
+  };
+  {
+    std::ofstream file {config::stream.file_apps};
+    file << apps.dump();
+  }
+
+  const auto refused = client->request("GET", "/api/covers/0", "", headers);
+  ASSERT_EQ(refused->status_code, "404 Not Found");
+  assert_json_error_response(refused, "Cover image not found", "404");
+
+  const auto served = client->request("GET", "/api/covers/1", "", headers);
+  ASSERT_EQ(served->status_code, "200 OK");
+  const auto content_type = served->header.find("Content-Type");
+  ASSERT_NE(content_type, served->header.end());
+  EXPECT_NE(content_type->second.find("image/png"), std::string::npos);
+
+  const auto unauthenticated = client->request("GET", "/api/covers/1", "", SimpleWeb::CaseInsensitiveMultimap {});
+  EXPECT_EQ(unauthenticated->status_code, "401 Unauthorized");
+
+  std::filesystem::remove(asset);
 }

@@ -193,7 +193,36 @@ namespace confighttp {
    */
   void saveApp(const resp_https_t &response, const req_https_t &request);
 
+  /**
+   * @brief Scan a folder for game executables.
+   *
+   * @param response HTTP response receiving the discovered games.
+   * @param request Authenticated, CSRF protected request holding the folder path.
+   */
+  void scanGames(const resp_https_t &response, const req_https_t &request);
+
+  /**
+   * @brief Search Steam and IGDB for cover art.
+   *
+   * @param response HTTP response receiving the cover candidates.
+   * @param request Authenticated request whose `q` parameter is the title to search for.
+   */
+  void searchCovers(const resp_https_t &response, const req_https_t &request);
+
+  /**
+   * @brief Serve an application's cover image.
+   *
+   * @param response HTTP response receiving the image.
+   * @param request Authenticated request whose path holds the application index.
+   */
+  void getCover(const resp_https_t &response, const req_https_t &request);
+
 #ifdef SOLSTICE_TESTS
+  /**
+   * @brief Clear the scan and cover search rate limits for deterministic HTTP tests.
+   */
+  void reset_rate_limits_for_testing();
+
   /**
    * @brief Replace native permission statuses for deterministic HTTP tests.
    *

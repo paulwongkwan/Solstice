@@ -56,6 +56,19 @@ TEST(RateLimiterTest, RejectsEverythingWhenNoCallsAreAllowed) {
   EXPECT_FALSE(limiter.allow(start + std::chrono::milliseconds {5000}));
 }
 
+TEST(RateLimiterTest, AllowsCallsAgainAfterAReset) {
+  rate_limiter::limiter_t limiter {std::chrono::milliseconds {1000}, 1};
+  const steady_time start {};
+
+  ASSERT_TRUE(limiter.allow(start));
+  ASSERT_FALSE(limiter.allow(start));
+
+  limiter.reset();
+
+  EXPECT_TRUE(limiter.allow(start));
+  EXPECT_FALSE(limiter.allow(start));
+}
+
 TEST(RateLimiterTest, CountsCallsMadeWithoutAnExplicitTime) {
   rate_limiter::limiter_t limiter {std::chrono::hours {1}};
 

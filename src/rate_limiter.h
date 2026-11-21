@@ -42,6 +42,11 @@ namespace rate_limiter {
      */
     bool allow(std::chrono::steady_clock::time_point now);
 
+    /**
+     * @brief Forget every accepted call so the next one is allowed again.
+     */
+    void reset();
+
   private:
     std::chrono::milliseconds window;  ///< Length of the sliding window.
     std::size_t max_calls;  ///< Number of calls allowed inside the window.

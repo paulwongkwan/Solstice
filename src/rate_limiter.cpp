@@ -29,4 +29,9 @@ namespace rate_limiter {
     calls.push_back(now);
     return true;
   }
+
+  void limiter_t::reset() {
+    const std::scoped_lock lock {mutex};
+    calls.clear();
+  }
 }  // namespace rate_limiter
