@@ -31,6 +31,17 @@ namespace game_scanner {
   bool is_game_executable(std::string_view filename);
 
   /**
+   * @brief Whether a path can be scanned without waiting on the network.
+   *
+   * Only absolute paths on a local drive qualify. Relative paths, UNC shares, device paths, and mapped network
+   * drives are rejected, because walking them can block for minutes when the share is unavailable.
+   *
+   * @param path Folder path supplied by a client.
+   * @return True when the path is absolute and stored on a local drive.
+   */
+  bool is_local_path(const std::filesystem::path &path);
+
+  /**
    * @brief Derive a display name from an executable file name.
    *
    * @param filename File name, with or without its extension.

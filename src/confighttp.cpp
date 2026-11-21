@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <format>
@@ -53,6 +54,7 @@
 #include "platform/common.h"
 #include "platform/permissions.h"
 #include "process.h"
+#include "rate_limiter.h"
 #include "rtsp.h"
 #include "system_tray.h"
 #include "utility.h"
@@ -531,6 +533,40 @@ namespace confighttp {
 
     response->write(code, tree.dump(), headers);
   }
+
+  /**
+   * @brief Send a 429 Too Many Requests response.
+   *
+   * @param response The HTTP response object.
+   * @param error_message The error message to include in the response.
+   */
+  void too_many_requests(const resp_https_t &response, const std::string &error_message) {
+    constexpr auto code = SimpleWeb::StatusCode::client_error_too_many_requests;
+
+    nlohmann::json tree;
+    tree["status_code"] = code;
+    tree["status"] = false;
+    tree["error"] = error_message;
+
+    SimpleWeb::CaseInsensitiveMultimap headers;
+    headers.emplace("Content-Type", "application/json");
+    headers.emplace("X-Frame-Options", "DENY");
+    headers.emplace("Content-Security-Policy", "frame-ancestors 'none';");
+
+    response->write(code, tree.dump(), headers);
+  }
+
+  namespace {
+    /**
+     * @brief Limits game scans, because walking a large or unhealthy volume is slow.
+     */
+    rate_limiter::limiter_t scan_limiter {std::chrono::milliseconds {2000}};
+
+    /**
+     * @brief Limits cover searches, because every search queries the Steam store and optionally IGDB.
+     */
+    rate_limiter::limiter_t cover_search_limiter {std::chrono::milliseconds {1000}, 5};
+  }  // namespace
 
   /**
    * @brief Validate the request content type and send a bad request when mismatched.
@@ -1554,7 +1590,10 @@ namespace confighttp {
    * }
    * @endcode
    *
-   * Each game reports whether an application with the same path already exists.
+   * Each game reports whether an application with the same path already exists. The folder must be absolute and on a
+   * local drive; relative paths, UNC shares, and mapped network drives are rejected with a bad request.
+   *
+   * Requests are limited to one scan every two seconds, and further requests are answered with 429 Too Many Requests.
    *
    * @api_examples{/api/games/scan|:| POST|:| {"path":"D:\\Games"}}
    */
@@ -1573,6 +1612,11 @@ namespace confighttp {
 
     print_req(request);
 
+    if (!scan_limiter.allow()) {
+      too_many_requests(response, "Game scanning is rate limited; wait a few seconds and try again");
+      return;
+    }
+
     std::stringstream ss;
     ss << request->content.rdbuf();
     try {
@@ -1583,7 +1627,13 @@ namespace confighttp {
         return;
       }
 
-      const auto games = game_scanner::scan(path);
+      const std::filesystem::path root {path};
+      if (!game_scanner::is_local_path(root)) {
+        bad_request(response, "Only absolute paths on local drives can be scanned");
+        return;
+      }
+
+      const auto games = game_scanner::scan(root);
       if (games.empty()) {
         BOOST_LOG(info) << "No games were found in ["sv << path << ']';
       }
@@ -1706,6 +1756,8 @@ namespace confighttp {
    *
    * The `q` query parameter holds the title to search for. IGDB is only queried when its credentials are configured.
    *
+   * Requests are limited to five searches per second, and further requests are answered with 429 Too Many Requests.
+   *
    * @api_examples{/api/covers/search?q=Hades|:| GET|:| null}
    */
   void searchCovers(const resp_https_t &response, const req_https_t &request) {
@@ -1714,6 +1766,11 @@ namespace confighttp {
     }
 
     print_req(request);
+
+    if (!cover_search_limiter.allow()) {
+      too_many_requests(response, "Cover search is rate limited; wait a moment and try again");
+      return;
+    }
 
     try {
       const auto query_params = request->parse_query_string();

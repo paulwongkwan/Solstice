@@ -114,6 +114,11 @@ Open **Games** in the Web UI, enter a folder that holds your installed games, an
 executables it finds, skips installers and support tooling, and marks the ones that are already configured. Choose the
 games you want and select **Add selected**; they become applications that Moonlight clients can launch.
 
+The folder must be an absolute path on a local drive. Relative paths, network shares, and mapped network drives are
+rejected, because scanning one can block for minutes while the share is unavailable. Scans are limited to one every few
+seconds and cover searches to a handful per second; a request over the limit fails with a message asking you to try
+again shortly.
+
 The cover picker searches [IGDB](https://www.igdb.com) and the Steam store. Steam covers work without configuration;
 IGDB needs the `igdb_client_id` and `igdb_client_secret` options described in the
 [configuration guide](configuration.md). **Find covers** fills in the best match for every selected game.

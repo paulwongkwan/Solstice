@@ -13,6 +13,9 @@
 #include <cctype>
 #include <system_error>
 
+// lib includes
+#include <Windows.h>
+
 namespace game_scanner {
   using namespace std::literals;
 
@@ -93,6 +96,28 @@ namespace game_scanner {
     return std::ranges::none_of(skipped_fragments, [&lower](std::string_view fragment) {
       return lower.find(fragment) != std::string::npos;
     });
+  }
+
+  bool is_local_path(const std::filesystem::path &path) {
+    if (path.empty() || !path.is_absolute()) {
+      return false;
+    }
+
+    // UNC shares, including the extended-length and device forms, live on another machine.
+    const auto text = path.string();
+    if (text.starts_with("\\\\") || text.starts_with("//")) {
+      return false;
+    }
+
+    const auto root = path.root_name().wstring();
+    if (root.size() == 2 && root[1] == L':') {
+      const std::wstring drive {root + L"\\"};
+      if (GetDriveTypeW(drive.c_str()) == DRIVE_REMOTE) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   std::string display_name(std::string_view filename) {

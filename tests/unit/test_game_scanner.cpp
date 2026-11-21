@@ -75,6 +75,29 @@ TEST(GameScannerDisplayNameTest, TurnsFileNamesIntoNames) {
   EXPECT_EQ(game_scanner::display_name("no_extension"), "No Extension");
 }
 
+TEST(GameScannerLocalPathTest, AcceptsAbsolutePathsOnLocalDrives) {
+  EXPECT_TRUE(game_scanner::is_local_path(R"(C:\Games\Hades)"));
+  EXPECT_TRUE(game_scanner::is_local_path("D:/SteamLibrary/steamapps/common"));
+
+  temporary_directory_t directory;
+  EXPECT_TRUE(game_scanner::is_local_path(directory.path));
+}
+
+TEST(GameScannerLocalPathTest, RejectsRelativeAndEmptyPaths) {
+  EXPECT_FALSE(game_scanner::is_local_path(""));
+  EXPECT_FALSE(game_scanner::is_local_path("Games"));
+  EXPECT_FALSE(game_scanner::is_local_path(R"(.\Games)"));
+  EXPECT_FALSE(game_scanner::is_local_path(R"(..\Games)"));
+}
+
+TEST(GameScannerLocalPathTest, RejectsNetworkAndDevicePaths) {
+  EXPECT_FALSE(game_scanner::is_local_path(R"(\\server\share\Games)"));
+  EXPECT_FALSE(game_scanner::is_local_path("//server/share/Games"));
+  EXPECT_FALSE(game_scanner::is_local_path(R"(\\?\UNC\server\share)"));
+  EXPECT_FALSE(game_scanner::is_local_path(R"(\\.\PhysicalDrive0)"));
+  EXPECT_FALSE(game_scanner::is_local_path(R"(\\?\C:\Games)"));
+}
+
 TEST(GameScannerScanTest, FindsExecutablesRecursively) {
   temporary_directory_t directory;
   touch(directory.path / "Hades.exe");
