@@ -150,5 +150,19 @@ function removeCmd(index) {
               v-model="config.system_tray"
               default="true"
     ></Checkbox>
+
+    <!-- IGDB cover search credentials -->
+    <div class="mb-3">
+      <label for="igdb_client_id" class="form-label">{{ $t('config.igdb_client_id') }}</label>
+      <input type="text" class="form-control" id="igdb_client_id" v-model="config.igdb_client_id"
+             autocomplete="off">
+      <div class="form-text">{{ $t('config.igdb_client_id_desc') }}</div>
+    </div>
+    <div class="mb-3">
+      <label for="igdb_client_secret" class="form-label">{{ $t('config.igdb_client_secret') }}</label>
+      <input type="password" class="form-control" id="igdb_client_secret" v-model="config.igdb_client_secret"
+             autocomplete="off">
+      <div class="form-text">{{ $t('config.igdb_client_secret_desc') }}</div>
+    </div>
   </div>
 </template>

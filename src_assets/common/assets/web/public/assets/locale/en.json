@@ -258,7 +258,13 @@
     "fp16_sdr_gamma_encoded": "Treat FP16 SDR captures as gamma-encoded",
     "fp16_sdr_gamma_encoded_desc": "Enable this if the stream looks washed out or its highlights are blown out while the display is in SDR mode and the desktop is captured in FP16 format (the log shows DXGI_FORMAT_R16G16B16A16_FLOAT as the desktop format). Solstice will then skip the sRGB curve for FP16 SDR captures. Leave this disabled otherwise, because it darkens the stream when the FP16 capture is linear. It has no effect when the display is in HDR mode.",
     "gamepad": "Emulated Gamepad Type",
-    "gamepad_auto": "Automatic selection options",
+    "gamepad_auto": "Automatic selection options",
+    "gamepad_backend": "Gamepad Driver",
+    "gamepad_backend_auto": "Automatic (libvirtualgamepad, then HIDMaestro, then ViGEmBus)",
+    "gamepad_backend_desc": "Choose which virtual gamepad driver to prefer. ViGEmBus is used whenever the preferred driver is unavailable or cannot create the selected profile.",
+    "gamepad_backend_hidmaestro": "HIDMaestro",
+    "gamepad_backend_libvirtualgamepad": "libvirtualgamepad",
+    "gamepad_backend_vigembus": "ViGEmBus",
     "gamepad_desc": "Choose which type of gamepad to emulate on the host",
     "gamepad_ds4": "DS4 (PS4)",
     "gamepad_ds4_manual": "PlayStation-style gamepad options",
@@ -278,6 +284,14 @@
     "hevc_mode_desc": "Allows the client to request HEVC Main or HEVC Main10 video streams. HEVC is more CPU-intensive to encode, so enabling this may reduce performance when using software encoding.",
     "high_resolution_scrolling": "High Resolution Scrolling Support",
     "high_resolution_scrolling_desc": "When enabled, Solstice will pass through high resolution scroll events from Moonlight clients. This can be useful to disable for older applications that scroll too fast with high resolution scroll events.",
+    "igdb_client_id": "IGDB Client ID",
+
+    "igdb_client_id_desc": "Twitch application client ID used for IGDB cover searches. Without it, covers are only searched on the Steam store.",
+
+    "igdb_client_secret": "IGDB Client Secret",
+
+    "igdb_client_secret_desc": "Twitch application client secret paired with the client ID.",
+
     "install_steam_audio_drivers": "Install Steam Audio Drivers",
     "install_steam_audio_drivers_desc": "If Steam is installed, this will automatically install the Steam Streaming Speakers driver to support 5.1/7.1 surround sound and muting host audio.",
     "key_repeat_delay": "Key Repeat Delay",

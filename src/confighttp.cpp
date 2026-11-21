@@ -1116,6 +1116,7 @@ namespace confighttp {
       input_tree.erase("index");
 
       if (index == -1) {
+        app_json::fill_working_directory(input_tree);
         app_json::append(file_tree, nlohmann::json::array({input_tree}));
       } else {
         nlohmann::json newApps = nlohmann::json::array();
@@ -1190,6 +1191,7 @@ namespace confighttp {
         }
         normalize_optional_app_fields(entry);
         entry.erase("index");
+        app_json::fill_working_directory(entry);
       }
 
       const auto added = app_json::append(file_tree, *entries);

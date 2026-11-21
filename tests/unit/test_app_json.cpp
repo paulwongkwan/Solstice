@@ -84,3 +84,54 @@ TEST(AppJsonAppendTest, SortingKeepsExistingEntriesWithMissingNames) {
   EXPECT_EQ(file_tree["apps"][0]["cmd"], "orphan");
   EXPECT_EQ(file_tree["apps"][1]["name"], "Hades");
 }
+
+TEST(AppJsonWorkingDirTest, ReadsTheDirectoryOfAQuotedExecutable) {
+  EXPECT_EQ(app_json::executable_directory(R"("C:\Games\Hades\Hades.exe")"), R"(C:\Games\Hades)");
+  EXPECT_EQ(app_json::executable_directory(R"(  "D:/SteamLibrary/steamapps/common/Hades/Hades.exe"  )"), "D:/SteamLibrary/steamapps/common/Hades");
+  EXPECT_EQ(app_json::executable_directory(R"("C:\Games\Hades.EXE")"), R"(C:\Games)");
+}
+
+TEST(AppJsonWorkingDirTest, RejectsCommandsThatAreNotASingleExecutable) {
+  EXPECT_FALSE(app_json::executable_directory(R"("C:\Games\Hades\Hades.exe" -windowed)").has_value());
+  EXPECT_FALSE(app_json::executable_directory(R"(C:\Games\Hades\Hades.exe)").has_value());
+  EXPECT_FALSE(app_json::executable_directory(R"("Hades.exe")").has_value());
+  EXPECT_FALSE(app_json::executable_directory(R"("C:\Games\Hades\readme.txt")").has_value());
+  EXPECT_FALSE(app_json::executable_directory("").has_value());
+  EXPECT_FALSE(app_json::executable_directory(R"("C:\Games\Hades\Hades.exe)").has_value());
+}
+
+TEST(AppJsonWorkingDirTest, FillsAMissingWorkingDirectory) {
+  nlohmann::json entry = {{"name", "Hades"}, {"cmd", R"("C:\Games\Hades\Hades.exe")"}};
+
+  EXPECT_TRUE(app_json::fill_working_directory(entry));
+  EXPECT_EQ(entry["working-dir"], R"(C:\Games\Hades)");
+}
+
+TEST(AppJsonWorkingDirTest, KeepsAnExistingWorkingDirectory) {
+  nlohmann::json entry = {{"name", "Hades"}, {"cmd", R"("C:\Games\Hades\Hades.exe")"}, {"working-dir", R"(D:\Elsewhere)"}};
+
+  EXPECT_FALSE(app_json::fill_working_directory(entry));
+  EXPECT_EQ(entry["working-dir"], R"(D:\Elsewhere)");
+}
+
+TEST(AppJsonWorkingDirTest, FillsAWorkingDirectoryThatIsEmptyOrNull) {
+  nlohmann::json empty = {{"cmd", R"("C:\Games\Hades\Hades.exe")"}, {"working-dir", "   "}};
+  EXPECT_TRUE(app_json::fill_working_directory(empty));
+  EXPECT_EQ(empty["working-dir"], R"(C:\Games\Hades)");
+
+  nlohmann::json missing = {{"cmd", R"("C:\Games\Hades\Hades.exe")"}};
+  EXPECT_TRUE(app_json::fill_working_directory(missing));
+}
+
+TEST(AppJsonWorkingDirTest, IgnoresEntriesWithoutAUsableCommand) {
+  nlohmann::json no_cmd = {{"name", "Hades"}};
+  EXPECT_FALSE(app_json::fill_working_directory(no_cmd));
+  EXPECT_FALSE(no_cmd.contains("working-dir"));
+
+  nlohmann::json steam = {{"cmd", R"("C:\Program Files (x86)\Steam\steam.exe" -applaunch 1145360)"}};
+  EXPECT_FALSE(app_json::fill_working_directory(steam));
+  EXPECT_FALSE(steam.contains("working-dir"));
+
+  nlohmann::json not_an_object = "Hades";
+  EXPECT_FALSE(app_json::fill_working_directory(not_an_object));
+}

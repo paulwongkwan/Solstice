@@ -119,6 +119,18 @@ watch(
       <div class="form-text">{{ $t('config.gamepad_desc') }}</div>
     </div>
 
+    <!-- Virtual Gamepad Driver -->
+    <div class="mb-3" v-if="config.controller === 'enabled'">
+      <label for="gamepad_backend" class="form-label">{{ $t('config.gamepad_backend') }}</label>
+      <select id="gamepad_backend" class="form-select" v-model="config.gamepad_backend">
+        <option value="auto">{{ $t('config.gamepad_backend_auto') }}</option>
+        <option value="libvirtualgamepad">{{ $t('config.gamepad_backend_libvirtualgamepad') }}</option>
+        <option value="hidmaestro">{{ $t('config.gamepad_backend_hidmaestro') }}</option>
+        <option value="vigembus">{{ $t('config.gamepad_backend_vigembus') }}</option>
+      </select>
+      <div class="form-text">{{ $t('config.gamepad_backend_desc') }}</div>
+    </div>
+
     <!-- Additional options based on gamepad type -->
     <template v-if="config.controller === 'enabled'">
       <template v-if="config.gamepad === 'ds4' || config.gamepad === 'auto'">

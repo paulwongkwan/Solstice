@@ -247,52 +247,6 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     </tr>
 </table>
 
-### notify_pre_releases
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Whether to be notified of new pre-release versions of Solstice.
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            disabled
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            notify_pre_releases = disabled
-            @endcode</td>
-    </tr>
-</table>
-
-### system_tray
-
-<table>
-    <tr>
-        <td>Description</td>
-        <td colspan="2">
-            Show icon in system tray and display desktop notifications
-        </td>
-    </tr>
-    <tr>
-        <td>Default</td>
-        <td colspan="2">@code{}
-            enabled
-            @endcode</td>
-    </tr>
-    <tr>
-        <td>Example</td>
-        <td colspan="2">@code{}
-            system_tray = enabled
-            @endcode</td>
-    </tr>
-</table>
-
 ### igdb_client_id
 
 <table>
@@ -337,6 +291,52 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
         <td>Example</td>
         <td colspan="2">@code{}
             igdb_client_secret = 0123456789abcdef0123456789abcdef
+            @endcode</td>
+    </tr>
+</table>
+
+### notify_pre_releases
+
+<table>
+    <tr>
+        <td>Description</td>
+        <td colspan="2">
+            Whether to be notified of new pre-release versions of Solstice.
+        </td>
+    </tr>
+    <tr>
+        <td>Default</td>
+        <td colspan="2">@code{}
+            disabled
+            @endcode</td>
+    </tr>
+    <tr>
+        <td>Example</td>
+        <td colspan="2">@code{}
+            notify_pre_releases = disabled
+            @endcode</td>
+    </tr>
+</table>
+
+### system_tray
+
+<table>
+    <tr>
+        <td>Description</td>
+        <td colspan="2">
+            Show icon in system tray and display desktop notifications
+        </td>
+    </tr>
+    <tr>
+        <td>Default</td>
+        <td colspan="2">@code{}
+            enabled
+            @endcode</td>
+    </tr>
+    <tr>
+        <td>Example</td>
+        <td colspan="2">@code{}
+            system_tray = enabled
             @endcode</td>
     </tr>
 </table>
