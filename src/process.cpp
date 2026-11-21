@@ -571,6 +571,29 @@ namespace proc {
   }
 
   /**
+   * @brief Check whether a file starts with a PNG or JPEG signature.
+   *
+   * @param path Image file to inspect.
+   * @return True when the file is a supported image.
+   */
+  bool check_valid_image(const std::filesystem::path &path) {
+    static constexpr std::array<unsigned char, 8> PNG_SIGNATURE = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    static constexpr std::array<unsigned char, 3> JPEG_SIGNATURE = {0xFF, 0xD8, 0xFF};
+
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+      return false;
+    }
+
+    std::array<unsigned char, 8> header {};
+    file.read(reinterpret_cast<char *>(header.data()), static_cast<std::streamsize>(header.size()));
+    const auto read = static_cast<std::size_t>(file.gcount());
+
+    return (read >= PNG_SIGNATURE.size() && std::equal(PNG_SIGNATURE.begin(), PNG_SIGNATURE.end(), header.begin())) ||
+           (read >= JPEG_SIGNATURE.size() && std::equal(JPEG_SIGNATURE.begin(), JPEG_SIGNATURE.end(), header.begin()));
+  }
+
+  /**
    * @brief Validate app image path.
    */
   std::string validate_app_image_path(std::string app_image_path) {
@@ -582,16 +605,15 @@ namespace proc {
     auto image_extension = std::filesystem::path(app_image_path).extension().string();
     boost::to_lower(image_extension);
 
-    // return the default box image if the extension is not "png"
-    if (image_extension != ".png") {
+    // return the default box image if the extension is not a supported image type
+    if (image_extension != ".png" && image_extension != ".jpg" && image_extension != ".jpeg") {
       return DEFAULT_APP_IMAGE_PATH;
     }
 
     // check if image is in assets directory
     if (auto full_image_path = std::filesystem::path(SOLSTICE_ASSETS_DIR) / app_image_path; std::filesystem::exists(full_image_path)) {
-      // Validate PNG signature
-      if (!check_valid_png(full_image_path)) {
-        BOOST_LOG(warning) << "Invalid PNG file at path ["sv << full_image_path << ']';
+      if (!check_valid_image(full_image_path)) {
+        BOOST_LOG(warning) << "Invalid image file at path ["sv << full_image_path << ']';
         return DEFAULT_APP_IMAGE_PATH;
       }
       return full_image_path.string();
@@ -609,13 +631,12 @@ namespace proc {
       return DEFAULT_APP_IMAGE_PATH;
     }
 
-    // Validate PNG signature
-    if (!check_valid_png(app_image_path)) {
-      BOOST_LOG(warning) << "Invalid PNG file at path ["sv << app_image_path << ']';
+    if (!check_valid_image(app_image_path)) {
+      BOOST_LOG(warning) << "Invalid image file at path ["sv << app_image_path << ']';
       return DEFAULT_APP_IMAGE_PATH;
     }
 
-    // image is a png, and not in assets directory
+    // image is valid, and not in assets directory
     // return only "content-type" http header compatible image type
     return app_image_path;
   }

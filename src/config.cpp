@@ -675,6 +675,8 @@ namespace config {
     {},  // Password
     {},  // Password Salt
     platf::appdata().string() + "/solstice.conf",  // config file
+    {},  // IGDB client ID
+    {},  // IGDB client secret
     {},  // cmd args
     47989,  // Base port number
     "ipv4",  // Address family
@@ -1671,6 +1673,9 @@ namespace config {
 
     bool_f(vars, "notify_pre_releases", solstice.notify_pre_releases);
     bool_f(vars, "system_tray", solstice.system_tray);
+
+    string_f(vars, "igdb_client_id"s, solstice.igdb_client_id);
+    string_f(vars, "igdb_client_secret"s, solstice.igdb_client_secret);
 
     int port = solstice.port;
     int_between_f(vars, "port"s, port, {1024 + nvhttp::PORT_HTTPS, 65535 - rtsp_stream::RTSP_SETUP_PORT});

@@ -361,6 +361,9 @@ namespace config {
 
     std::string config_file;  ///< Path to the active Solstice configuration file.
 
+    std::string igdb_client_id;  ///< Twitch application client ID used for IGDB cover searches.
+    std::string igdb_client_secret;  ///< Twitch application client secret used for IGDB cover searches.
+
     /**
      * @brief Command-line options parsed before configuration loading.
      */

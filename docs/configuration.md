@@ -293,6 +293,54 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     </tr>
 </table>
 
+### igdb_client_id
+
+<table>
+    <tr>
+        <td>Description</td>
+        <td colspan="2">
+            Twitch application client ID used to search cover art on [IGDB](https://www.igdb.com). The Game Scanner
+            page and the application cover picker search IGDB and the Steam store; without these credentials only the
+            Steam store is searched.
+            @note{Create a Twitch application at <https://dev.twitch.tv/console/apps> to get a client ID and secret.}
+        </td>
+    </tr>
+    <tr>
+        <td>Default</td>
+        <td colspan="2">@code{}
+            @endcode</td>
+    </tr>
+    <tr>
+        <td>Example</td>
+        <td colspan="2">@code{}
+            igdb_client_id = abcdefghijklmnopqrstuvwxyz0123
+            @endcode</td>
+    </tr>
+</table>
+
+### igdb_client_secret
+
+<table>
+    <tr>
+        <td>Description</td>
+        <td colspan="2">
+            Twitch application client secret paired with `igdb_client_id`. It is only used to request an app access
+            token for IGDB cover searches.
+        </td>
+    </tr>
+    <tr>
+        <td>Default</td>
+        <td colspan="2">@code{}
+            @endcode</td>
+    </tr>
+    <tr>
+        <td>Example</td>
+        <td colspan="2">@code{}
+            igdb_client_secret = 0123456789abcdef0123456789abcdef
+            @endcode</td>
+    </tr>
+</table>
+
 ## Input
 
 ### controller

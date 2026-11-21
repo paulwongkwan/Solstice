@@ -37,9 +37,11 @@
 // local includes
 #include "config.h"
 #include "confighttp.h"
+#include "cover_finder.h"
 #include "crypto.h"
 #include "display_device.h"
 #include "file_handler.h"
+#include "game_scanner.h"
 #include "globals.h"
 #include "httpcommon.h"
 #include "input.h"
@@ -1474,6 +1476,138 @@ namespace confighttp {
   }
 
   /**
+   * @brief Scan a folder for game executables.
+   * @param response The HTTP response object.
+   * @param request The HTTP request object.
+   * The body for the post request should be JSON serialized in the following format:
+   * @code{.json}
+   * {
+   *   "path": "D:\\Games"
+   * }
+   * @endcode
+   *
+   * Each game reports whether an application with the same path already exists.
+   *
+   * @api_examples{/api/games/scan|:| POST|:| {"path":"D:\\Games"}}
+   */
+  void scanGames(const resp_https_t &response, const req_https_t &request) {
+    if (!check_content_type(response, request, "application/json")) {
+      return;
+    }
+    if (!authenticate(response, request)) {
+      return;
+    }
+
+    std::string client_id = get_client_id(request);
+    if (!validate_csrf_token(response, request, client_id)) {
+      return;
+    }
+
+    print_req(request);
+
+    std::stringstream ss;
+    ss << request->content.rdbuf();
+    try {
+      const auto input_tree = nlohmann::json::parse(ss);
+      const std::string path = input_tree.value("path", ""s);
+      if (path.empty()) {
+        bad_request(response, "A folder path is required");
+        return;
+      }
+
+      const auto games = game_scanner::scan(path);
+      if (games.empty()) {
+        BOOST_LOG(info) << "No games were found in ["sv << path << ']';
+      }
+
+      std::vector<std::string> configured_commands;
+      try {
+        const auto file_tree = nlohmann::json::parse(file_handler::read_file(config::stream.file_apps.c_str()));
+        for (const auto &app : file_tree["apps"]) {
+          if (app.contains("cmd") && app["cmd"].is_string()) {
+            configured_commands.emplace_back(app["cmd"].get<std::string>());
+          }
+        }
+      } catch (const std::exception &e) {
+        BOOST_LOG(debug) << "Couldn't read the application list while scanning: "sv << e.what();
+      }
+
+      const auto lowercase = [](std::string value) {
+        boost::to_lower(value);
+        return value;
+      };
+
+      nlohmann::json output_games = nlohmann::json::array();
+      for (const auto &game : games) {
+        const auto game_path = lowercase(game.path);
+        const bool added = std::any_of(configured_commands.begin(), configured_commands.end(), [&](const std::string &command) {
+          return lowercase(command).find(game_path) != std::string::npos;
+        });
+
+        output_games.push_back({
+          {"name", game.name},
+          {"path", game.path},
+          {"added", added},
+        });
+      }
+
+      nlohmann::json output_tree;
+      output_tree["games"] = output_games;
+      send_response(response, output_tree);
+    } catch (std::exception &e) {
+      BOOST_LOG(warning) << "ScanGames: "sv << e.what();
+      bad_request(response, e.what());
+    }
+  }
+
+  /**
+   * @brief Search IGDB and the Steam store for cover art.
+   * @param response The HTTP response object.
+   * @param request The HTTP request object.
+   *
+   * The `q` query parameter holds the title to search for. IGDB is only queried when its credentials are configured.
+   *
+   * @api_examples{/api/covers/search?q=Hades|:| GET|:| null}
+   */
+  void searchCovers(const resp_https_t &response, const req_https_t &request) {
+    if (!authenticate(response, request)) {
+      return;
+    }
+
+    print_req(request);
+
+    try {
+      const auto query_params = request->parse_query_string();
+      const auto query_it = query_params.find("q");
+      if (query_it == query_params.end() || query_it->second.empty()) {
+        bad_request(response, "A search query is required");
+        return;
+      }
+
+      const auto candidates = cover_finder::search(query_it->second);
+
+      nlohmann::json output_candidates = nlohmann::json::array();
+      for (const auto &candidate : candidates) {
+        output_candidates.push_back({
+          {"source", candidate.source},
+          {"title", candidate.title},
+          {"thumbnail", candidate.thumbnail_url},
+          {"image", candidate.image_url},
+          {"key", candidate.key},
+        });
+      }
+
+      nlohmann::json output_tree;
+      output_tree["candidates"] = output_candidates;
+      output_tree["igdb_enabled"] = !config::solstice.igdb_client_id.empty() && !config::solstice.igdb_client_secret.empty();
+      send_response(response, output_tree);
+    } catch (std::exception &e) {
+      BOOST_LOG(warning) << "SearchCovers: "sv << e.what();
+      bad_request(response, e.what());
+    }
+  }
+
+  /**
    * @brief Get an application's image.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
@@ -1526,8 +1660,12 @@ namespace confighttp {
         return;
       }
 
+      auto extension = std::filesystem::path(validated_path).extension().string();
+      boost::to_lower(extension);
+      const bool jpeg = extension == ".jpg" || extension == ".jpeg";
+
       SimpleWeb::CaseInsensitiveMultimap headers;
-      headers.emplace("Content-Type", "image/png");
+      headers.emplace("Content-Type", jpeg ? "image/jpeg" : "image/png");
       headers.emplace("X-Frame-Options", "DENY");
       headers.emplace("Content-Security-Policy", "frame-ancestors 'none';");
 
@@ -1576,12 +1714,25 @@ namespace confighttp {
       const std::string coverdir = platf::appdata().string() + "/covers/";
       file_handler::make_directory(coverdir);
 
-      std::basic_string path = coverdir + http::url_escape(key) + ".png";
+      std::string extension = ".png";
       if (!url.empty()) {
-        if (http::url_get_host(url) != "images.igdb.com") {
-          bad_request(response, "Only images.igdb.com is allowed");
+        if (!cover_finder::is_allowed_cover_host(http::url_get_host(url))) {
+          bad_request(response, "Cover images must come from IGDB or Steam");
           return;
         }
+
+        const auto without_query = url.substr(0, url.find('?'));
+        if (const auto dot = without_query.find_last_of('.'); dot != std::string::npos) {
+          auto candidate = without_query.substr(dot);
+          boost::to_lower(candidate);
+          if (candidate == ".jpg" || candidate == ".jpeg" || candidate == ".png") {
+            extension = candidate;
+          }
+        }
+      }
+
+      std::basic_string path = coverdir + http::url_escape(key) + extension;
+      if (!url.empty()) {
         if (!http::download_file(url, path)) {
           bad_request(response, "Failed to download cover");
           return;
@@ -2341,6 +2492,7 @@ namespace confighttp {
     server.resource["^/api/apps$"]["POST"] = saveApp;
     server.resource["^/api/apps/([0-9]+)$"]["DELETE"] = deleteApp;
     server.resource["^/api/apps/close$"]["POST"] = closeApp;
+    server.resource["^/api/games/scan$"]["POST"] = scanGames;
     server.resource["^/api/clients/list$"]["GET"] = getClients;
     server.resource["^/api/clients/unpair$"]["POST"] = unpair;
     server.resource["^/api/clients/unpair-all$"]["POST"] = unpairAll;
@@ -2350,6 +2502,7 @@ namespace confighttp {
     server.resource["^/api/configLocale$"]["GET"] = getLocale;
     server.resource["^/api/covers/([0-9]+)$"]["GET"] = getCover;
     server.resource["^/api/covers/upload$"]["POST"] = uploadCover;
+    server.resource["^/api/covers/search$"]["GET"] = searchCovers;
     server.resource["^/api/csrf-token$"]["GET"] = getCSRFToken;
     server.resource["^/api/password$"]["POST"] = savePassword;
     server.resource["^/api/pin$"]["DELETE"] = cancelPairing;

@@ -109,6 +109,15 @@ After installing or updating a gamepad driver, restart your computer.
 
 ## Usage
 
+### Adding games
+Open **Games** in the Web UI, enter a folder that holds your installed games, and select **Scan**. Solstice lists the
+executables it finds, skips installers and support tooling, and marks the ones that are already configured. Choose the
+games you want and select **Add selected**; they become applications that Moonlight clients can launch.
+
+The cover picker searches [IGDB](https://www.igdb.com) and the Steam store. Steam covers work without configuration;
+IGDB needs the `igdb_client_id` and `igdb_client_secret` options described in the
+[configuration guide](configuration.md). **Find covers** fills in the best match for every selected game.
+
 ### Basic usage
 If Solstice is not installed/running as a service, then start Solstice with the following command, unless a start
 command is listed in the specified package [install](#install) instructions above.

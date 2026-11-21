@@ -4,6 +4,10 @@
  */
 #pragma once
 
+// standard includes
+#include <string>
+#include <vector>
+
 // lib includes
 #include <curl/curl.h>
 
@@ -50,6 +54,24 @@ namespace http {
    * @return True when the file is downloaded successfully.
    */
   bool download_file(const std::string &url, const std::string &file, long ssl_version = CURL_SSLVERSION_TLSv1_2);
+  /**
+   * @brief Perform an HTTP request and return the response body.
+   *
+   * @param url URL used for the HTTP request.
+   * @param out Receives the response body on success.
+   * @param headers Extra request headers, such as an API key.
+   * @param post_body Body to send with a POST request; empty for a GET request.
+   * @param timeout_seconds Whole-request timeout in seconds.
+   * @return True when the request completed with a success status.
+   */
+  bool fetch_string(
+    const std::string &url,
+    std::string &out,
+    const std::vector<std::string> &headers = {},
+    const std::string &post_body = {},
+    long timeout_seconds = 15
+  );
+
   /**
    * @brief Percent-encode a string for safe inclusion in a URL.
    *

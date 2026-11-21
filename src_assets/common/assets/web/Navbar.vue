@@ -36,6 +36,12 @@
               </RouterLink>
             </li>
             <li class="nav-item">
+              <RouterLink class="nav-link" to="/games">
+                <Gamepad2 :size="18" class="icon"></Gamepad2>
+                {{ $t('navbar.games') }}
+              </RouterLink>
+            </li>
+            <li class="nav-item">
               <RouterLink class="nav-link" to="/config">
                 <Settings :size="18" class="icon"></Settings>
                 {{ $t('navbar.configuration') }}
@@ -82,7 +88,7 @@
 </template>
 
 <script>
-import { CircleUserRound, Home, Info, Layers, Lock, LogOut, Settings, Shield, Star } from '@lucide/vue'
+import { CircleUserRound, Gamepad2, Home, Info, Layers, Lock, LogOut, Settings, Shield, Star } from '@lucide/vue'
 import ThemeToggle from './ThemeToggle.vue'
 import Notification from './Notification.vue'
 
@@ -90,6 +96,7 @@ export default {
   components: {
     ThemeToggle,
     Notification,
+    Gamepad2,
     Home,
     Lock,
     Layers,

@@ -7,6 +7,7 @@
 // standard includes
 #include <filesystem>
 #include <utility>
+#include <vector>
 
 // lib includes
 #include <boost/asio/ssl/context.hpp>
@@ -237,6 +238,72 @@ namespace http {
 
     curl_easy_cleanup(curl);
     fclose(fp);
+    return result == CURLE_OK;
+  }
+
+  namespace {
+    /**
+     * @brief Append a libcurl response chunk to a string.
+     *
+     * @param data Response bytes.
+     * @param size Size of one element.
+     * @param nmemb Number of elements.
+     * @param userdata Destination string.
+     * @return Number of bytes consumed.
+     */
+    size_t append_body(char *data, size_t size, size_t nmemb, void *userdata) {
+      auto *body = static_cast<std::string *>(userdata);
+      body->append(data, size * nmemb);
+      return size * nmemb;
+    }
+  }  // namespace
+
+  bool fetch_string(
+    const std::string &url,
+    std::string &out,
+    const std::vector<std::string> &headers,
+    const std::string &post_body,
+    long timeout_seconds
+  ) {
+    CURL *curl = curl_easy_init();
+    if (!curl) {
+      BOOST_LOG(error) << "Couldn't create CURL instance"sv;
+      return false;
+    }
+
+    out.clear();
+    curl_slist *header_list = nullptr;
+    for (const auto &header : headers) {
+      header_list = curl_slist_append(header_list, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_seconds);
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Solstice"sv.data());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_body);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
+    if (header_list) {
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+    }
+    if (!post_body.empty()) {
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_body.c_str());
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(post_body.size()));
+    }
+
+    const CURLcode result = curl_easy_perform(curl);
+    if (result != CURLE_OK) {
+      BOOST_LOG(debug) << "HTTP request failed ["sv << url << ", code:"sv << result << ']';
+      out.clear();
+    }
+
+    if (header_list) {
+      curl_slist_free_all(header_list);
+    }
+    curl_easy_cleanup(curl);
     return result == CURLE_OK;
   }
 
