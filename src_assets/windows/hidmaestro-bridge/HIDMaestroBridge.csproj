@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The HIDMaestro SDK is a .NET assembly, so the Solstice host talks to it
+    through this small helper process instead of hosting the runtime itself.
+    Publish it self-contained and trimmed: the resulting executable carries the
+    .NET runtime and the HIDMaestro payload, so a user needs nothing installed.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <AssemblyName>HIDMaestroBridge</AssemblyName>
+    <RootNamespace>Solstice.HIDMaestroBridge</RootNamespace>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Extracted from the pinned HIDMaestro release archive at build time. -->
+    <Reference Include="HIDMaestro.Core">
+      <HintPath>$(HIDMaestroCorePath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

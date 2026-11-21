@@ -328,8 +328,8 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
             reported by the client. If the type is unknown, Solstice can select a PlayStation-style
             controller from reported motion or touchpad support; otherwise it uses an Xbox-style controller.
             @note{The ViGEmBus fallback supports only the auto, x360, and ds4 profiles. The other profiles require the
-            libvirtualgamepad driver, and Xbox 360 emulation is only available through ViGEmBus because Windows reaches
-            Xbox 360 devices through the USB bus.}
+            libvirtualgamepad driver or HIDMaestro. Xbox 360 emulation is available through ViGEmBus and HIDMaestro;
+            libvirtualgamepad cannot create it because Windows reaches Xbox 360 devices through the USB bus.}
         </td>
     </tr>
     <tr>
@@ -356,6 +356,49 @@ Windows provides no consent prompt for directory ACLs, so the Web UI shows setup
     <tr>
         <td>auto</td>
         <td>Select a profile from the client's reported controller type</td>
+    </tr>
+</table>
+
+### gamepad_backend
+
+<table>
+    <tr>
+        <td>Description</td>
+        <td colspan="2">
+            The virtual gamepad driver Solstice prefers. ViGEmBus is always the fallback: it is used when the preferred
+            driver is not installed, cannot create the configured profile, or fails to create the virtual gamepad.
+            @note{**auto** tries libvirtualgamepad first, then HIDMaestro, then ViGEmBus.}
+        </td>
+    </tr>
+    <tr>
+        <td>Default</td>
+        <td colspan="2">@code{}
+            auto
+            @endcode</td>
+    </tr>
+    <tr>
+        <td>Example</td>
+        <td colspan="2">@code{}
+            gamepad_backend = hidmaestro
+            @endcode</td>
+    </tr>
+    <tr>
+        <td rowspan="4">Choices</td>
+        <td>auto</td>
+        <td>Prefer libvirtualgamepad, then HIDMaestro, then ViGEmBus.</td>
+    </tr>
+    <tr>
+        <td>libvirtualgamepad</td>
+        <td>Use the libvirtualgamepad driver when the requested profile is available, otherwise ViGEmBus.</td>
+    </tr>
+    <tr>
+        <td>hidmaestro</td>
+        <td>Use a [HIDMaestro](https://github.com/hifihedgehog/HIDMaestro) virtual controller when its driver is
+            installed, otherwise ViGEmBus.</td>
+    </tr>
+    <tr>
+        <td>vigembus</td>
+        <td>Always use [ViGEmBus](https://github.com/nefarius/ViGEmBus).</td>
     </tr>
 </table>
 

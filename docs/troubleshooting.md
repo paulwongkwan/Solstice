@@ -95,17 +95,19 @@ resort suggestion.
 
 ### No gamepad detected
 Confirm **Enable Gamepad Input** is on under **Configuration > Input**. Solstice creates virtual gamepads through
-[ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest); install version 1.17 or newer and restart your computer.
-The Troubleshooting page shows the installed ViGEmBus version and whether Solstice supports it. Reconnect the Moonlight
-session after choosing a different emulated gamepad profile.
+[libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad), [HIDMaestro](https://github.com/hifihedgehog/HIDMaestro),
+or [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest); install version 1.17 or newer of ViGEmBus and
+restart your computer. The Troubleshooting page shows the installed driver versions and whether Solstice supports them.
+Reconnect the Moonlight session after choosing a different emulated gamepad profile or a different `gamepad_backend`.
 
 ![ViGEmBus driver status on the Troubleshooting page, with the installer button](images/vigembus-installer.png)
 
 To emulate Xbox One, Xbox Series, DualSense, Switch Pro, or Steam Controller pads instead, install the
 [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) driver. The package is bundled in the installation
 directory under `drivers\vhf-gamepad`; run `install.ps1` from an elevated PowerShell prompt after the catalog has been
-signed for your build, then restart your computer. Solstice detects the driver automatically and falls back to
-ViGEmBus when it is unavailable.
+signed for your build, then restart your computer. [HIDMaestro](https://github.com/hifihedgehog/HIDMaestro) offers the
+same profiles plus Xbox 360, and Solstice prefers it when libvirtualgamepad is not installed. Solstice detects either
+driver automatically and falls back to ViGEmBus when it is unavailable.
 
 ### Games do not detect keyboard input
 Solstice sends keyboard input with the Windows `SendInput` API. Games that read keyboard state only through Raw Input

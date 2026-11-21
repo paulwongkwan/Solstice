@@ -180,6 +180,7 @@
         controllerEnabled: false,
         vigembus: null,
         libvirtualgamepad: null,
+        hidmaestro: null,
         permissions: [],
       }
     },
@@ -206,6 +207,7 @@
           const driverStatus = await fetch("./api/virtual-input/status").then((r) => r.json());
           this.vigembus = driverStatus.vigembus;
           this.libvirtualgamepad = driverStatus.libvirtualgamepad;
+          this.hidmaestro = driverStatus.hidmaestro;
         } catch (e) {
           console.error("Failed to fetch the virtual gamepad driver status:", e);
         }
@@ -234,7 +236,8 @@
         }
 
         const libvirtualgamepadUsable = this.libvirtualgamepad?.installed && this.libvirtualgamepad?.version_compatible;
-        return this.buildVigembusNotice(libvirtualgamepadUsable || (this.vigembus.installed && this.vigembus.version_compatible));
+        const hidmaestroUsable = this.hidmaestro?.installed && this.hidmaestro?.version_compatible;
+        return this.buildVigembusNotice(libvirtualgamepadUsable || hidmaestroUsable || (this.vigembus.installed && this.vigembus.version_compatible));
       },
       installedVersionNotStable() {
         if (!this.githubVersion || !this.version) {

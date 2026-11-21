@@ -649,6 +649,7 @@ namespace config {
     std::chrono::duration<double> {1 / 24.9},  // key_repeat_period
 
     "auto",  // Default gamepad profile.
+    "auto",  // Default virtual gamepad driver.
     true,  // back as touchpad click enabled for PlayStation-style gamepads
     true,  // client gamepads with motion events use PlayStation-style emulation
     true,  // client gamepads with touchpads use PlayStation-style emulation
@@ -1652,6 +1653,9 @@ namespace config {
     }
 
     string_restricted_f(vars, "gamepad"s, input.gamepad, get_supported_gamepad_options());
+
+    static const std::vector<std::string_view> gamepad_backends {"auto"sv, "libvirtualgamepad"sv, "hidmaestro"sv, "vigembus"sv};
+    string_restricted_f(vars, "gamepad_backend"s, input.gamepad_backend, gamepad_backends);
     bool_f(vars, "ds4_back_as_touchpad_click", input.ds4_back_as_touchpad_click);
     bool_f(vars, "motion_as_ds4", input.motion_as_ds4);
     bool_f(vars, "touchpad_as_ds4", input.touchpad_as_ds4);

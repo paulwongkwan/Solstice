@@ -163,6 +163,13 @@ namespace confighttp {
    */
   nlohmann::json get_libvirtualgamepad_driver_status();
 
+  /**
+   * @brief Build HIDMaestro driver version and installation status.
+   *
+   * @return HIDMaestro driver status JSON.
+   */
+  nlohmann::json get_hidmaestro_driver_status();
+
   void getVirtualInputStatus(const resp_https_t &response, const req_https_t &request);
 
   /**

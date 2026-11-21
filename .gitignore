@@ -61,3 +61,7 @@ junit.xml
 *.pyc
 .venv/
 venv/
+
+# .NET
+bin/
+obj/

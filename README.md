@@ -21,7 +21,8 @@ network.
   mode.
 - **Virtual gamepads.** Xbox 360, Xbox One, Xbox Series, DualShock 4, DualSense, Switch Pro, and Steam Controller
   emulation, either fixed or selected automatically from the client's controller, through
-  [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) with the
+  [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) or
+  [HIDMaestro](https://github.com/hifihedgehog/HIDMaestro) with the
   [ViGEmBus](https://github.com/nefarius/ViGEmBus) fallback.
 - **Web UI with sign-in.** Pair clients, change settings, and read logs from `https://localhost:47990`, protected by a
   login screen with an optional "remember me" session.
@@ -48,9 +49,10 @@ them alone.
 > [!NOTE]
 > Virtual gamepads need a driver. The installer ships the
 > [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) package under `drivers\vhf-gamepad` but does not
-> install it, because its catalog has to be signed for each distribution; the
-> [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) fallback covers Xbox 360 and DualShock 4 when no
-> driver is installed. Without a driver, keyboard, mouse, touch, and pen input still work.
+> install it, because its catalog has to be signed for each distribution;
+> [HIDMaestro](https://github.com/hifihedgehog/HIDMaestro) and the
+> [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) fallback cover the same profiles when it is not
+> installed. Without a driver, keyboard, mouse, touch, and pen input still work.
 
 ## Install
 

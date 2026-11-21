@@ -135,6 +135,28 @@
                     </a>
                   </td>
                 </tr>
+                <tr id="hidmaestro">
+                  <th scope="row">{{ $t('troubleshooting.hidmaestro_driver') }}</th>
+                  <td>{{ driverVersion(hidmaestro) }}</td>
+                  <td>{{ hidmaestro.supported_versions }}</td>
+                  <td>
+                    <span class="status-icon driver-status-icon" :class="driverStatusClass(hidmaestro)"
+                          :title="driverStatusText(hidmaestro)">
+                      <alert-circle v-if="!hidmaestro.installed" :size="20" aria-hidden="true"></alert-circle>
+                      <check-circle v-else :size="20" aria-hidden="true"></check-circle>
+                      <span class="visually-hidden">{{ driverStatusText(hidmaestro) }}</span>
+                    </span>
+                  </td>
+                  <td class="driver-download-column">
+                    <a class="btn btn-outline-primary driver-download-button"
+                       href="https://github.com/hifihedgehog/HIDMaestro/releases/latest"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                      <download :size="17"></download>
+                      {{ $t('troubleshooting.driver_download') }}
+                    </a>
+                  </td>
+                </tr>
                 <tr id="libvirtualgamepad">
                   <th scope="row">{{ $t('troubleshooting.libvirtualgamepad_driver') }}</th>
                   <td>{{ driverVersion(libvirtualgamepad) }}</td>
@@ -423,6 +445,13 @@
             supported_versions: '',
           },
           libvirtualgamepad: {
+            installed: false,
+            version: '',
+            version_compatible: false,
+            minimum_version: '',
+            supported_versions: '',
+          },
+          hidmaestro: {
             installed: false,
             version: '',
             version_compatible: false,

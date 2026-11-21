@@ -20,6 +20,7 @@
 // standard includes
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <memory>
 #include <optional>
 #include <thread>
@@ -36,6 +37,7 @@
 #include "src/logging.h"
 #include "src/platform/common.h"
 #include "utf_utils.h"
+#include "hidmaestro.h"
 #include "vhf_gamepad.h"
 
 namespace platf {
@@ -525,6 +527,7 @@ namespace platf {
   struct input_raw_t {
     std::unique_ptr<vigem_t> vigem;  ///< ViGEm gamepad context.
     std::unique_ptr<vhf_gamepad_t> vhf;  ///< libvirtualgamepad gamepad context.
+    std::unique_ptr<hidmaestro_t> hm;  ///< HIDMaestro gamepad context.
   };
 
   /**
@@ -532,9 +535,36 @@ namespace platf {
    */
   struct gamepad_choice_t {
     std::optional<lvg::profile> vhf_profile;  ///< libvirtualgamepad profile to create, when that backend is used.
+    std::optional<hidmaestro::profile_kind> hm_profile;  ///< HIDMaestro profile to create, when that backend is used.
     VIGEM_TARGET_TYPE vigem_type {Xbox360Wired};  ///< ViGEm target type used when the fallback backend is needed.
-    const char *description {""};  ///< Description used in the log message.
+    std::string description;  ///< Description used in the log message.
   };
+
+  /**
+   * @brief Resolve the configured gamepad name for an arriving client gamepad.
+   *
+   * @param metadata Capabilities reported when the client gamepad arrived.
+   * @return Gamepad name from the configuration, or the automatic selection.
+   */
+  std::string desired_gamepad(const gamepad_arrival_t &metadata) {
+    if (config::input.gamepad != "auto"sv) {
+      return config::input.gamepad;
+    }
+
+    if (metadata.type == LI_CTYPE_PS) {
+      return "ds4";
+    }
+    if (metadata.type == LI_CTYPE_XBOX) {
+      return "xbox_series";
+    }
+    if (config::input.motion_as_ds4 && (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
+      return "ds4";
+    }
+    if (config::input.touchpad_as_ds4 && (metadata.capabilities & LI_CCAP_TOUCHPAD)) {
+      return "dualsense";
+    }
+    return "xbox_series";
+  }
 
   /**
    * @brief Return the gamepad choices offered by the available backends.
@@ -543,23 +573,27 @@ namespace platf {
    * @param vhf_profiles Profiles the libvirtualgamepad driver accepts, or zero when it is unavailable.
    * @return Automatic and per-profile choices with availability metadata.
    */
-  std::vector<supported_gamepad_t> supported_gamepad_list(const bool vigem_available, const lvg::profile_mask_t vhf_profiles) {
+  std::vector<supported_gamepad_t> supported_gamepad_list(const bool vigem_available, const lvg::profile_mask_t vhf_profiles, const bool hm_available) {
     const auto vigem_reason = vigem_available ? "" : "gamepads.vigembus-not-available";
     const auto vhf_available = vhf_profiles != 0;
     const auto vhf_reason = vhf_available ? "" : "gamepads.vhf-not-available";
+    const auto hm_reason = hm_available ? "" : "gamepads.hidmaestro-not-available";
     const auto vhf_enabled = [vhf_profiles](const lvg::profile profile) {
       return (vhf_profiles & lvg::profile_bit(profile)) != 0;
     };
+    const auto profile_available = [&](const lvg::profile profile) {
+      return hm_available || vhf_enabled(profile);
+    };
 
     return {
-      {"auto", vigem_available || vhf_available, "gamepads.not-available"},
-      {"x360", vigem_available, vigem_reason},
-      {"ds4", vigem_available || vhf_enabled(lvg::profile::dualshock_4), vhf_available ? vigem_reason : vhf_reason},
-      {"dualsense", vhf_enabled(lvg::profile::dualsense), vhf_reason},
-      {"switch_pro", vhf_enabled(lvg::profile::switch_pro), vhf_reason},
-      {"steam_controller", vhf_enabled(lvg::profile::steam_controller), vhf_reason},
-      {"xbox_one", vhf_enabled(lvg::profile::xbox_one), vhf_reason},
-      {"xbox_series", vhf_enabled(lvg::profile::xbox_series), vhf_reason},
+      {"auto", vigem_available || vhf_available || hm_available, "gamepads.not-available"},
+      {"x360", vigem_available || hm_available, hm_available ? vigem_reason : hm_reason},
+      {"ds4", vigem_available || profile_available(lvg::profile::dualshock_4), profile_available(lvg::profile::dualshock_4) ? vigem_reason : vhf_reason},
+      {"dualsense", profile_available(lvg::profile::dualsense), hm_available ? "" : vhf_reason},
+      {"switch_pro", profile_available(lvg::profile::switch_pro), hm_available ? "" : vhf_reason},
+      {"steam_controller", profile_available(lvg::profile::steam_controller), hm_available ? "" : vhf_reason},
+      {"xbox_one", profile_available(lvg::profile::xbox_one), hm_available ? "" : vhf_reason},
+      {"xbox_series", profile_available(lvg::profile::xbox_series), hm_available ? "" : vhf_reason},
     };
   }
 
@@ -570,63 +604,59 @@ namespace platf {
    * @param vhf libvirtualgamepad backend, or nullptr when it is unavailable.
    * @return Selected backend and controller profile.
    */
-  gamepad_choice_t select_gamepad(const gamepad_arrival_t &metadata, const vhf_gamepad_t *vhf) {
-    const auto vhf_supports = [vhf](const lvg::profile profile) {
-      return vhf && vhf->supports(profile);
+  gamepad_choice_t select_gamepad(const gamepad_arrival_t &metadata, const vhf_gamepad_t *vhf, const hidmaestro_t *hm) {
+    const auto name = desired_gamepad(metadata);
+    const auto ps_like = name == "ds4"sv || name == "dualsense"sv || name == "switch_pro"sv || name == "steam_controller"sv;
+    const auto fallback_type = ps_like ? DualShock4Wired : Xbox360Wired;
+
+    const auto vigem_choice = [&]() {
+      return gamepad_choice_t {std::nullopt, std::nullopt, fallback_type, std::format("{} controller through ViGEmBus", name)};
     };
-    const auto vhf_choice = [](const lvg::profile profile, const VIGEM_TARGET_TYPE fallback, const char *description) {
-      return gamepad_choice_t {profile, fallback, description};
+    const auto vhf_choice = [&](const lvg::profile profile) {
+      return gamepad_choice_t {profile, std::nullopt, fallback_type, std::format("{} controller through libvirtualgamepad", name)};
     };
-    const auto vigem_choice = [](const VIGEM_TARGET_TYPE type, const char *description) {
-      return gamepad_choice_t {std::nullopt, type, description};
+    const auto hm_choice = [&](const hidmaestro::profile_kind profile) {
+      return gamepad_choice_t {std::nullopt, profile, fallback_type, std::format("{} controller through HIDMaestro", name)};
     };
 
-    if (config::input.gamepad == "x360"sv) {
-      return vigem_choice(Xbox360Wired, "Xbox 360 controller (manual selection)");
-    }
-    if (config::input.gamepad == "ds4"sv) {
-      if (vhf_supports(lvg::profile::dualshock_4)) {
-        return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (manual selection)");
+    const auto try_vhf = [&]() -> std::optional<gamepad_choice_t> {
+      const auto profile = vhf::profile_from_name(name);
+      if (vhf && profile && vhf->supports(*profile)) {
+        return vhf_choice(*profile);
       }
-      return vigem_choice(DualShock4Wired, "DualShock 4 controller (manual selection)");
+      return std::nullopt;
+    };
+    const auto try_hm = [&]() -> std::optional<gamepad_choice_t> {
+      const auto profile = hidmaestro::profile_from_name(name);
+      if (hm && hm->available() && profile) {
+        return hm_choice(*profile);
+      }
+      return std::nullopt;
+    };
+
+    if (config::input.gamepad_backend == "vigembus"sv) {
+      return vigem_choice();
+    }
+    if (config::input.gamepad_backend == "hidmaestro"sv) {
+      if (auto selected = try_hm()) {
+        return *selected;
+      }
+      return vigem_choice();
+    }
+    if (config::input.gamepad_backend == "libvirtualgamepad"sv) {
+      if (auto selected = try_vhf()) {
+        return *selected;
+      }
+      return vigem_choice();
     }
 
-    if (const auto profile = vhf::profile_from_name(config::input.gamepad); profile && vhf_supports(*profile)) {
-      return vhf_choice(*profile, DualShock4Wired, "controller (manual selection)");
+    if (auto selected = try_vhf()) {
+      return *selected;
     }
-
-    if (config::input.gamepad != "auto"sv) {
-      BOOST_LOG(warning) << "Gamepad type '"sv << config::input.gamepad << "' is not available; using automatic selection"sv;
+    if (auto selected = try_hm()) {
+      return *selected;
     }
-
-    if (metadata.type == LI_CTYPE_PS) {
-      if (vhf_supports(lvg::profile::dualshock_4)) {
-        return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (auto-selected by client-reported type)");
-      }
-      return vigem_choice(DualShock4Wired, "DualShock 4 controller (auto-selected by client-reported type)");
-    }
-    if (metadata.type == LI_CTYPE_XBOX) {
-      if (vhf_supports(lvg::profile::xbox_series)) {
-        return vhf_choice(lvg::profile::xbox_series, Xbox360Wired, "Xbox Series controller (auto-selected by client-reported type)");
-      }
-      return vigem_choice(Xbox360Wired, "Xbox 360 controller (auto-selected by client-reported type)");
-    }
-    if (config::input.motion_as_ds4 && (metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO)) && vhf_supports(lvg::profile::dualshock_4)) {
-      return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (auto-selected by motion sensor presence)");
-    }
-    if (config::input.touchpad_as_ds4 && (metadata.capabilities & LI_CCAP_TOUCHPAD)) {
-      if (vhf_supports(lvg::profile::dualsense)) {
-        return vhf_choice(lvg::profile::dualsense, DualShock4Wired, "DualSense controller (auto-selected by touchpad presence)");
-      }
-      if (vhf_supports(lvg::profile::dualshock_4)) {
-        return vhf_choice(lvg::profile::dualshock_4, DualShock4Wired, "DualShock 4 controller (auto-selected by touchpad presence)");
-      }
-      return vigem_choice(DualShock4Wired, "DualShock 4 controller (auto-selected by touchpad presence)");
-    }
-    if (vhf_supports(lvg::profile::xbox_series)) {
-      return vhf_choice(lvg::profile::xbox_series, Xbox360Wired, "Xbox Series controller (default)");
-    }
-    return vigem_choice(Xbox360Wired, "Xbox 360 controller (default)");
+    return vigem_choice();
   }
 
   input_t input() {
@@ -636,6 +666,11 @@ namespace platf {
       auto vhf = std::make_unique<vhf_gamepad_t>();
       if (vhf->init() == 0) {
         raw.vhf = std::move(vhf);
+      }
+
+      auto hm = std::make_unique<hidmaestro_t>();
+      if (hm->init() == 0) {
+        raw.hm = std::move(hm);
       }
 
       auto vigem = std::make_unique<vigem_t>();
@@ -762,7 +797,7 @@ namespace platf {
   int alloc_gamepad(input_t &input, const gamepad_id_t &id, const gamepad_arrival_t &metadata, feedback_queue_t feedback_queue) {
     auto raw = (input_raw_t *) input.get();
 
-    const auto choice = select_gamepad(metadata, raw->vhf.get());
+    const auto choice = select_gamepad(metadata, raw->vhf.get(), raw->hm.get());
 
     if (choice.vhf_profile && raw->vhf) {
       if (vhf::folds_playstation_state(*choice.vhf_profile)) {
@@ -786,7 +821,25 @@ namespace platf {
         return 0;
       }
 
-      BOOST_LOG(warning) << "Couldn't create the virtual gamepad through libvirtualgamepad; falling back to ViGEmBus"sv;
+      BOOST_LOG(warning) << "Couldn't create the virtual gamepad through libvirtualgamepad; trying the next backend"sv;
+    }
+
+    if (choice.hm_profile && raw->hm) {
+      if (hidmaestro::folds_playstation_state(*choice.hm_profile)) {
+        if (!(metadata.capabilities & (LI_CCAP_ACCEL | LI_CCAP_GYRO))) {
+          BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " is emulating a "sv << hidmaestro::name_from_profile(*choice.hm_profile) << " controller, but the client gamepad doesn't have motion sensors active"sv;
+        }
+        if (!(metadata.capabilities & LI_CCAP_TOUCHPAD)) {
+          BOOST_LOG(warning) << "Gamepad " << id.globalIndex << " is emulating a "sv << hidmaestro::name_from_profile(*choice.hm_profile) << " controller, but the client gamepad doesn't have a touchpad"sv;
+        }
+      }
+
+      BOOST_LOG(info) << "Gamepad " << id.globalIndex << " will be a "sv << choice.description;
+      if (raw->hm->alloc_gamepad(id, feedback_queue, *choice.hm_profile) == 0) {
+        return 0;
+      }
+
+      BOOST_LOG(warning) << "Couldn't create the virtual gamepad through HIDMaestro; falling back to ViGEmBus"sv;
     }
 
     if (!ensure_vigem(raw)) {
@@ -824,6 +877,10 @@ namespace platf {
       return 0;
     }
 
+    if (raw->hm && raw->hm->rebind_gamepad(id, feedback_queue) == 0) {
+      return 0;
+    }
+
     if (!raw->vigem) {
       return -1;
     }
@@ -836,6 +893,10 @@ namespace platf {
 
     if (raw->vhf) {
       raw->vhf->free_gamepad(nr);
+    }
+
+    if (raw->hm) {
+      raw->hm->free_gamepad(nr);
     }
 
     if (!raw->vigem) {
@@ -1102,6 +1163,11 @@ namespace platf {
       return;
     }
 
+    if (raw->hm && raw->hm->attached(nr)) {
+      raw->hm->update_gamepad(nr, gamepad_state);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1281,6 +1347,11 @@ namespace platf {
       return;
     }
 
+    if (raw->hm && raw->hm->attached(touch.id.globalIndex)) {
+      raw->hm->update_touch(touch);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1313,6 +1384,11 @@ namespace platf {
 
     if (raw->vhf && raw->vhf->attached(motion.id.globalIndex)) {
       raw->vhf->update_motion(motion);
+      return;
+    }
+
+    if (raw->hm && raw->hm->attached(motion.id.globalIndex)) {
+      raw->hm->update_motion(motion);
       return;
     }
 
@@ -1350,6 +1426,11 @@ namespace platf {
       return;
     }
 
+    if (raw->hm && raw->hm->attached(battery.id.globalIndex)) {
+      raw->hm->update_battery(battery);
+      return;
+    }
+
     auto *vigem = raw->vigem.get();
 
     // If there is no gamepad support
@@ -1378,13 +1459,13 @@ namespace platf {
   std::vector<supported_gamepad_t> &supported_gamepads(input_t *input) {
     static std::vector<supported_gamepad_t> gps;
     if (!input || !input->get()) {
-      gps = supported_gamepad_list(false, 0);
+      gps = supported_gamepad_list(false, 0, false);
       return gps;
     }
 
     const auto raw = (input_raw_t *) input->get();
     const auto vhf_profiles = raw->vhf ? raw->vhf->available_profiles() : 0;
-    gps = supported_gamepad_list(raw->vigem != nullptr, vhf_profiles);
+    gps = supported_gamepad_list(raw->vigem != nullptr, vhf_profiles, raw->hm != nullptr);
     return gps;
   }
 

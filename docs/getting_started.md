@@ -87,16 +87,20 @@ set up by hand:
 After installation, some initial setup is required.
 
 ### Windows
-Solstice creates virtual gamepads through one of two drivers. The
-[ViGEmBus](https://github.com/nefarius/ViGEmBus) fallback is used whenever the other driver is missing, and it supports
-the **auto**, **x360**, and **ds4** profiles. [libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) uses a
-user-mode Virtual HID Framework driver and adds **xbox_one**, **xbox_series**, **dualsense**, **switch_pro**, and
-**steam_controller**; when it is installed, **auto** picks a profile from the controller the client reports.
+Solstice creates virtual gamepads through one of three drivers. The
+[ViGEmBus](https://github.com/nefarius/ViGEmBus) fallback is used whenever the preferred driver is missing or cannot
+create the selected profile, and it supports the **auto**, **x360**, and **ds4** profiles.
+[libvirtualgamepad](https://github.com/Nonary/libvirtualgamepad) uses a user-mode Virtual HID Framework driver and adds
+**xbox_one**, **xbox_series**, **dualsense**, **switch_pro**, and **steam_controller**.
+[HIDMaestro](https://github.com/hifihedgehog/HIDMaestro) adds all of those profiles plus **x360**. When a driver is
+installed, **auto** picks a profile from the controller the client reports. Set `gamepad_backend` to
+`libvirtualgamepad`, `hidmaestro`, or `vigembus` to choose the driver explicitly.
 
-Enable gamepad input in the Web UI under **Configuration > Input**. The driver package is bundled under `drivers` in the
-installation directory together with an `install.ps1` script, but it is not installed automatically: the catalog has to
-be signed with the distribution's own code-signing identity first, so install it from an elevated PowerShell prompt
-only when your build ships a signed package.
+Enable gamepad input in the Web UI under **Configuration > Input**. The libvirtualgamepad driver package is bundled
+under `drivers\vhf-gamepad` in the installation directory together with an `install.ps1` script, but it is not installed
+automatically: the catalog has to be signed with the distribution's own code-signing identity first, so install it from
+an elevated PowerShell prompt only when your build ships a signed package. HIDMaestro is a separate download from its
+releases page; once its driver is installed, Solstice uses it without further configuration.
 
 Keyboard and mouse input is injected with the Windows `SendInput` API, and touch and pen input uses the Windows
 pointer injection APIs. No additional driver is required for those devices.

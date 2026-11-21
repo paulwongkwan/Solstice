@@ -40,6 +40,48 @@ add_subdirectory(tools)  # todo - this is temporary, only tools for Windows are 
 # libvirtualgamepad
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/third-party/libvirtualgamepad/include")
 
+# HIDMaestro is a managed SDK, so its bridge is published beside the executable
+# and shipped under drivers/hidmaestro.
+find_program(DOTNET_EXECUTABLE dotnet)
+set(HIDMAESTRO_VERSION "2.3.0")
+set(HIDMAESTRO_CACHE_DIR "${CMAKE_BINARY_DIR}/hidmaestro")
+set(HIDMAESTRO_ARCHIVE "${HIDMAESTRO_CACHE_DIR}/HIDMaestro-v${HIDMAESTRO_VERSION}.zip")
+set(HIDMAESTRO_CORE "${HIDMAESTRO_CACHE_DIR}/HIDMaestro.Core.dll")
+if(DOTNET_EXECUTABLE)
+    if(NOT EXISTS "${HIDMAESTRO_CORE}")
+        file(MAKE_DIRECTORY "${HIDMAESTRO_CACHE_DIR}")
+        if(NOT EXISTS "${HIDMAESTRO_ARCHIVE}")
+            file(DOWNLOAD
+                    "https://github.com/hifihedgehog/HIDMaestro/releases/download/v${HIDMAESTRO_VERSION}/HIDMaestro-v${HIDMAESTRO_VERSION}.zip"
+                    "${HIDMAESTRO_ARCHIVE}"
+                    EXPECTED_HASH SHA256=fddb61b76d076aa2cf508a46c1e30e23aa75b4ae622d52b15e7259959fd12295
+                    SHOW_PROGRESS)
+        endif()
+        file(ARCHIVE_EXTRACT
+                INPUT "${HIDMAESTRO_ARCHIVE}"
+                DESTINATION "${HIDMAESTRO_CACHE_DIR}"
+                PATTERNS "HIDMaestro.Core.dll")
+    endif()
+
+    add_custom_target(hidmaestro_bridge ALL
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/drivers/hidmaestro"
+            COMMAND "${DOTNET_EXECUTABLE}" publish
+                    "${CMAKE_SOURCE_DIR}/src_assets/windows/hidmaestro-bridge/HIDMaestroBridge.csproj"
+                    -c Release
+                    -p:HIDMaestroCorePath=${HIDMAESTRO_CORE}
+                    -o "${CMAKE_BINARY_DIR}/drivers/hidmaestro"
+            BYPRODUCTS "${CMAKE_BINARY_DIR}/drivers/hidmaestro/HIDMaestroBridge.exe"
+            COMMENT "Publishing the HIDMaestro bridge"
+            VERBATIM)
+
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/drivers/hidmaestro/"
+            DESTINATION "drivers/hidmaestro"
+            COMPONENT assets
+            PATTERN "*.pdb" EXCLUDE)
+else()
+    message(WARNING "dotnet was not found, so the HIDMaestro bridge is not built")
+endif()
+
 # nvidia
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/third-party/nvapi")
 file(GLOB NVPREFS_FILES CONFIGURE_DEPENDS
@@ -70,6 +112,8 @@ set(PLATFORM_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/platform/windows/misc.h"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/misc.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/input.cpp"
+        "${CMAKE_SOURCE_DIR}/src/platform/windows/hidmaestro.cpp"
+        "${CMAKE_SOURCE_DIR}/src/platform/windows/hidmaestro.h"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/vhf_gamepad.cpp"
         "${CMAKE_SOURCE_DIR}/src/platform/windows/vhf_gamepad.h"
         "${CMAKE_SOURCE_DIR}/third-party/libvirtualgamepad/client/client.cpp"
