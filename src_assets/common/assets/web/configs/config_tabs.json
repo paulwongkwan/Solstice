@@ -6,8 +6,8 @@
       "locale": "en",
       "sunshine_name": "",
       "min_log_level": 2,
-      "global_prep_cmd": [],
-      "igdb_client_id": "",
+      "global_prep_cmd": [],
+      "igdb_client_id": "",
       "igdb_client_secret": "",
       "notify_pre_releases": "disabled",
       "system_tray": "enabled"
@@ -18,7 +18,7 @@
     "nameKey": "config.category_input",
     "options": {
       "controller": "enabled",
-      "gamepad": "auto",
+      "gamepad": "auto",
       "gamepad_backend": "auto",
       "ds4_back_as_touchpad_click": "enabled",
       "motion_as_ds4": "enabled",
