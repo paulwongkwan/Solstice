@@ -118,6 +118,11 @@ The cover picker searches [IGDB](https://www.igdb.com) and the Steam store. Stea
 IGDB needs the `igdb_client_id` and `igdb_client_secret` options described in the
 [configuration guide](configuration.md). **Find covers** fills in the best match for every selected game.
 
+The same page can import your Steam library. Select **Load Steam games** and Solstice reads `libraryfolders.vdf` plus
+the `appmanifest_*.acf` files of every library, listing each fully installed game with its real title, application ID,
+and exact Steam cover. Those entries launch through `steam.exe -applaunch <appid>`, so Steam handles updates,
+proton, and launch options.
+
 ### Basic usage
 If Solstice is not installed/running as a service, then start Solstice with the following command, unless a start
 command is listed in the specified package [install](#install) instructions above.

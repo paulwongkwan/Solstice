@@ -131,6 +131,8 @@ set(SOLSTICE_TARGET_FILES
         "${CMAKE_SOURCE_DIR}/src/app_json.h"
         "${CMAKE_SOURCE_DIR}/src/cover_finder.cpp"
         "${CMAKE_SOURCE_DIR}/src/cover_finder.h"
+        "${CMAKE_SOURCE_DIR}/src/steam_library.cpp"
+        "${CMAKE_SOURCE_DIR}/src/steam_library.h"
         "${CMAKE_SOURCE_DIR}/src/game_scanner.cpp"
         "${CMAKE_SOURCE_DIR}/src/game_scanner.h"
         "${CMAKE_SOURCE_DIR}/src/httpcommon.cpp"

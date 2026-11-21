@@ -44,6 +44,7 @@
 #include "file_handler.h"
 #include "game_scanner.h"
 #include "globals.h"
+#include "steam_library.h"
 #include "httpcommon.h"
 #include "input.h"
 #include "logging.h"
@@ -1626,6 +1627,77 @@ namespace confighttp {
   }
 
   /**
+   * @brief List the Steam applications that are installed on the host.
+   * @param response The HTTP response object.
+   * @param request The HTTP request object.
+   *
+   * The Steam installation is discovered from the registry, its library folders are read from `libraryfolders.vdf`,
+   * and each installed `appmanifest_<appid>.acf` supplies the real title and application ID. Every game reports
+   * whether an application that launches the same Steam ID already exists.
+   *
+   * @api_examples{/api/games/steam|:| GET|:| null}
+   */
+  void steamGames(const resp_https_t &response, const req_https_t &request) {
+    if (!authenticate(response, request)) {
+      return;
+    }
+
+    print_req(request);
+
+    try {
+      nlohmann::json output_tree;
+      const auto steam_root = steam_library::find_steam_root();
+      if (!steam_root) {
+        output_tree["available"] = false;
+        output_tree["games"] = nlohmann::json::array();
+        send_response(response, output_tree);
+        return;
+      }
+
+      const auto steam_exe = *steam_root / "steam.exe";
+
+      std::vector<std::string> configured_commands;
+      try {
+        const auto file_tree = nlohmann::json::parse(file_handler::read_file(config::stream.file_apps.c_str()));
+        for (const auto &app : file_tree["apps"]) {
+          if (app.contains("cmd") && app["cmd"].is_string()) {
+            configured_commands.emplace_back(app["cmd"].get<std::string>());
+          }
+        }
+      } catch (const std::exception &e) {
+        BOOST_LOG(debug) << "Couldn't read the application list while scanning Steam: "sv << e.what();
+      }
+
+      nlohmann::json output_games = nlohmann::json::array();
+      for (const auto &game : steam_library::scan_installed(*steam_root)) {
+        const int app_id = std::atoi(game.app_id.c_str());
+        const auto command = steam_library::launch_command(steam_exe, game.app_id);
+        const auto marker = "-applaunch "s + game.app_id;
+        const bool added = std::any_of(configured_commands.begin(), configured_commands.end(), [&](const std::string &configured) {
+          return configured.find(marker) != std::string::npos;
+        });
+
+        output_games.push_back({
+          {"name", game.name},
+          {"app_id", game.app_id},
+          {"install_dir", game.install_dir},
+          {"cover", app_id > 0 ? cover_finder::steam_cover_url(app_id) : std::string {}},
+          {"command", command},
+          {"added", added},
+        });
+      }
+
+      output_tree["available"] = true;
+      output_tree["steam_path"] = steam_root->string();
+      output_tree["games"] = output_games;
+      send_response(response, output_tree);
+    } catch (std::exception &e) {
+      BOOST_LOG(warning) << "SteamGames: "sv << e.what();
+      bad_request(response, e.what());
+    }
+  }
+
+  /**
    * @brief Search IGDB and the Steam store for cover art.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
@@ -2559,6 +2631,7 @@ namespace confighttp {
     server.resource["^/api/apps/close$"]["POST"] = closeApp;
     server.resource["^/api/apps/batch$"]["POST"] = saveApps;
     server.resource["^/api/games/scan$"]["POST"] = scanGames;
+    server.resource["^/api/games/steam$"]["GET"] = steamGames;
     server.resource["^/api/clients/list$"]["GET"] = getClients;
     server.resource["^/api/clients/unpair$"]["POST"] = unpair;
     server.resource["^/api/clients/unpair-all$"]["POST"] = unpairAll;

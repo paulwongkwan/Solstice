@@ -79,6 +79,67 @@
           <p v-if="igdbEnabled === false" class="text-muted small mb-0">{{ $t('games.igdb_hint') }}</p>
         </div>
       </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+              <h3 class="h5 mb-1">{{ $t('games.steam_title') }}</h3>
+              <p class="text-muted small mb-0">{{ $t('games.steam_description') }}</p>
+            </div>
+            <button class="btn btn-secondary" type="button" @click="loadSteam" :disabled="steamScanning">
+              <RefreshCw :size="16" class="icon"></RefreshCw>
+              {{ steamScanning ? $t('games.steam_scanning') : $t('games.steam_scan') }}
+            </button>
+          </div>
+
+          <div v-if="steamAvailable === false" class="alert alert-info mb-0">{{ $t('games.steam_unavailable') }}</div>
+          <p v-if="steamPath" class="text-muted small mb-2">
+            {{ $t('games.steam_library') }}: <code>{{ steamPath }}</code>
+          </p>
+          <div v-if="steamAvailable && !steamScanning && steamGames.length === 0" class="text-muted small">
+            {{ $t('games.steam_no_games') }}
+          </div>
+
+          <template v-if="steamGames.length">
+            <div class="d-flex justify-content-end mb-2">
+              <button class="btn btn-primary" type="button" @click="addSteamSelected"
+                      :disabled="busy || !steamSelection.length">
+                <Plus :size="16" class="icon"></Plus>
+                {{ $t('games.add_selected') }}
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="visually-hidden">{{ $t('games.select') }}</span></th>
+                    <th scope="col">{{ $t('games.cover') }}</th>
+                    <th scope="col">{{ $t('games.name') }}</th>
+                    <th scope="col">{{ $t('games.steam_app_id') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="game in steamGames" :key="game.app_id">
+                    <td>
+                      <input class="form-check-input" type="checkbox" v-model="game.selected" :aria-label="game.name">
+                    </td>
+                    <td>
+                      <img v-if="game.cover" :src="game.cover" class="games-cover" alt="" loading="lazy">
+                      <div v-else class="games-cover games-cover-empty" aria-hidden="true"></div>
+                    </td>
+                    <td>
+                      {{ game.name }}
+                      <span v-if="game.added" class="badge bg-secondary ms-1">{{ $t('games.already_added') }}</span>
+                    </td>
+                    <td><code class="small">{{ game.app_id }}</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+        </div>
+      </div>
     </div>
 
     <div class="modal fade" ref="pickerModal" tabindex="-1" aria-hidden="true">
@@ -130,7 +191,7 @@
 
 <script>
 import { Modal } from 'bootstrap/dist/js/bootstrap'
-import { Image as ImageIcon, Plus, Search } from '@lucide/vue'
+import { Image as ImageIcon, Plus, RefreshCw, Search } from '@lucide/vue'
 import Navbar from './Navbar.vue'
 import { apiFetch } from './fetch_utils.js'
 
@@ -139,6 +200,7 @@ export default {
     ImageIcon,
     Navbar,
     Plus,
+    RefreshCw,
     Search,
   },
   data() {
@@ -157,6 +219,10 @@ export default {
       coverCandidates: [],
       coverSearching: false,
       cover: null,
+      steamGames: [],
+      steamScanning: false,
+      steamAvailable: null,
+      steamPath: '',
     }
   },
   computed: {
@@ -165,6 +231,9 @@ export default {
     },
     allSelected() {
       return this.games.length > 0 && this.games.every(game => game.selected)
+    },
+    steamSelection() {
+      return this.steamGames.filter(game => game.selected && !game.added)
     },
   },
   methods: {
@@ -315,10 +384,53 @@ export default {
      * @returns {Promise<void>}
      */
     async addSelected() {
+      await this.addGames(this.selectedGames.filter(game => !game.added))
+    },
+    /**
+     * Load the installed Steam library.
+     *
+     * @returns {Promise<void>}
+     */
+    async loadSteam() {
+      this.steamScanning = true
+      this.error = ''
+      try {
+        const response = await apiFetch('./api/games/steam')
+        if (!response.ok) {
+          throw new Error(await response.text())
+        }
+        const result = await response.json()
+        this.steamAvailable = result.available
+        this.steamPath = result.steam_path || ''
+        this.steamGames = (result.games || []).map(game => ({
+          ...game,
+          selected: false,
+        }))
+      } catch (e) {
+        this.steamAvailable = false
+        this.error = `${this.$t('games.steam_failed')}: ${e.message}`
+      } finally {
+        this.steamScanning = false
+      }
+    },
+    /**
+     * Add the selected Steam games as applications.
+     *
+     * @returns {Promise<void>}
+     */
+    async addSteamSelected() {
+      await this.addGames(this.steamSelection)
+    },
+    /**
+     * Upload the chosen covers and create the applications in one request.
+     *
+     * @param {object[]} pending Games to add.
+     * @returns {Promise<void>}
+     */
+    async addGames(pending) {
       this.busy = true
       this.error = ''
       try {
-        const pending = this.selectedGames.filter(game => !game.added)
         if (pending.length === 0) {
           return
         }
@@ -327,10 +439,11 @@ export default {
         for (const game of pending) {
           let imagePath = null
           if (game.cover) {
+            const cover = game.cover.image ? game.cover : { key: `steam_${game.app_id}`, image: game.cover }
             const upload = await apiFetch('./api/covers/upload', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ key: game.cover.key, url: game.cover.image }),
+              body: JSON.stringify({ key: cover.key, url: cover.image }),
             })
             if (upload.ok) {
               const result = await upload.json()
@@ -340,7 +453,7 @@ export default {
 
           const app = {
             name: game.name,
-            cmd: `"${game.path}"`,
+            cmd: game.command || `"${game.path}"`,
           }
           if (imagePath) {
             app['image-path'] = imagePath

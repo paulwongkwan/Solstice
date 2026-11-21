@@ -700,6 +700,15 @@
       "cover_empty": "No covers were found.",
       "cover_search_failed": "Could not search for covers",
       "use_cover": "Use cover",
-      "igdb_hint": "IGDB results require the igdb_client_id and igdb_client_secret configuration options. Only Steam store covers are searched until they are set."
+      "steam_title": "Steam library",
+    "steam_description": "Read the games installed in your Steam libraries and add them with their real titles, application IDs, and covers.",
+    "steam_scan": "Load Steam games",
+    "steam_scanning": "Reading Steam libraries…",
+    "steam_unavailable": "Steam was not found on this computer, so its library cannot be imported.",
+    "steam_library": "Steam folder",
+    "steam_no_games": "Steam is installed, but no fully installed games were found.",
+    "steam_app_id": "App ID",
+    "steam_failed": "Could not read the Steam library",
+    "igdb_hint": "IGDB results require the igdb_client_id and igdb_client_secret configuration options. Only Steam store covers are searched until they are set."
   }
 }
